@@ -1,22 +1,17 @@
-import { useState } from 'react'
-import GraphViewer from './components/GraphViewer'
-import { D3Node, D3Edge } from './utils/d3Config'
+import { useState } from 'react';
+import GraphViewer from './components/GraphViewer';
+import { D3Node, D3Edge } from './utils/d3Config';
 
 function App() {
   // Sample graph data for testing D3 integration
   const [graphData] = useState({
-    nodes: [
-      { id: 'A' },
-      { id: 'B' },
-      { id: 'C' },
-      { id: 'D' }
-    ],
+    nodes: [{ id: 'A' }, { id: 'B' }, { id: 'C' }, { id: 'D' }],
     edges: [
       { source: 'A', target: 'B' },
       { source: 'B', target: 'C' },
       { source: 'C', target: 'D' },
-      { source: 'D', target: 'A' }
-    ]
+      { source: 'D', target: 'A' },
+    ],
   });
 
   const handleNodeClick = (node: D3Node) => {
@@ -36,7 +31,7 @@ function App() {
           </h1>
         </div>
       </header>
-      
+
       <main className="graph-editor-main">
         <div className="graph-editor-panel p-6">
           <h2 className="text-lg font-semibold text-gray-800 mb-4">
@@ -52,12 +47,13 @@ function App() {
             />
           </div>
           <p className="graph-editor-help-text mt-4">
-            Click and drag nodes to move them. The force simulation will automatically adjust the layout.
+            Click and drag nodes to move them. The force simulation will
+            automatically adjust the layout.
           </p>
         </div>
       </main>
     </div>
-  )
+  );
 }
 
-export default App
+export default App;

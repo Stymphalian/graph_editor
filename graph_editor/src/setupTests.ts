@@ -1,6 +1,7 @@
 import '@testing-library/jest-dom';
 
 // Mock ResizeObserver for testing
+declare const global: any;
 global.ResizeObserver = jest.fn().mockImplementation(() => ({
   observe: jest.fn(),
   unobserve: jest.fn(),

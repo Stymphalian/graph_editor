@@ -5,9 +5,16 @@
 /* Custom base styles for graph editor */
 @layer base {
   html {
-    font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-family:
+      'Inter',
+      system-ui,
+      -apple-system,
+      BlinkMacSystemFont,
+      'Segoe UI',
+      Roboto,
+      sans-serif;
   }
-  
+
   body {
     @apply bg-gray-50 text-gray-900;
   }
@@ -18,63 +25,63 @@
   .graph-editor-layout {
     @apply min-h-screen bg-gradient-to-br from-gray-50 to-gray-100;
   }
-  
+
   .graph-editor-header {
     @apply bg-white/80 backdrop-blur-sm shadow-sm border-b border-gray-200;
   }
-  
+
   .graph-editor-main {
     @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8;
   }
-  
+
   .graph-editor-panel {
     @apply bg-white/90 backdrop-blur-sm rounded-lg shadow-graph border border-gray-200/50;
   }
-  
+
   .graph-editor-controls {
     @apply graph-controls p-4 space-y-4;
   }
-  
+
   .graph-editor-button {
     @apply px-4 py-2 text-sm font-medium rounded-md transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2;
   }
-  
+
   .graph-editor-button-primary {
     @apply graph-editor-button bg-graph-node-500 text-white hover:bg-graph-node-600 focus:ring-graph-node-500;
   }
-  
+
   .graph-editor-button-secondary {
     @apply graph-editor-button bg-gray-200 text-gray-900 hover:bg-gray-300 focus:ring-gray-500;
   }
-  
+
   .graph-editor-button-danger {
     @apply graph-editor-button bg-graph-selected-500 text-white hover:bg-graph-selected-600 focus:ring-graph-selected-500;
   }
-  
+
   .graph-editor-input {
     @apply block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-graph-node-500 focus:border-graph-node-500;
   }
-  
+
   .graph-editor-textarea {
     @apply graph-editor-input resize-none font-mono text-sm;
   }
-  
+
   .graph-editor-select {
     @apply graph-editor-input pr-10;
   }
-  
+
   .graph-editor-label {
     @apply block text-sm font-medium text-gray-700 mb-1;
   }
-  
+
   .graph-editor-help-text {
     @apply text-xs text-gray-500 mt-1;
   }
-  
+
   .graph-editor-error {
     @apply text-sm text-graph-selected-600 mt-1;
   }
-  
+
   .graph-editor-success {
     @apply text-sm text-green-600 mt-1;
   }
@@ -85,76 +92,76 @@
   .graph-container {
     @apply relative w-full h-full overflow-hidden;
   }
-  
+
   .graph-svg {
     @apply w-full h-full cursor-grab;
   }
-  
+
   .graph-svg:active {
     @apply cursor-grabbing;
   }
-  
+
   .graph-node {
     @apply cursor-pointer select-none transition-all duration-200;
   }
-  
+
   .graph-node:hover {
     @apply stroke-2 drop-shadow-md;
   }
-  
+
   .graph-node-selected {
     @apply stroke-graph-selected-500 stroke-2 drop-shadow-lg;
   }
-  
+
   .graph-edge {
     @apply stroke-graph-edge-500 stroke-2 fill-none transition-all duration-200;
   }
-  
+
   .graph-edge:hover {
     @apply stroke-graph-hover-500 stroke-2;
   }
-  
+
   .graph-edge-selected {
     @apply stroke-graph-selected-500 stroke-2;
   }
-  
+
   .graph-label {
     @apply font-sans pointer-events-none select-none;
     text-anchor: middle;
   }
-  
+
   .graph-node-label {
     @apply graph-label text-xs fill-white;
   }
-  
+
   .graph-edge-label {
     @apply graph-label text-xs fill-gray-600;
   }
-  
+
   .graph-nib {
     @apply w-2 h-2 rounded-full bg-graph-node-500 border-2 border-white shadow-sm;
   }
-  
+
   .graph-nib:hover {
     @apply bg-graph-hover-500 scale-125;
   }
-  
+
   .graph-nib-active {
     @apply bg-graph-selected-500 scale-125;
   }
-  
+
   .graph-preview-line {
     @apply stroke-dashed stroke-graph-hover-500 stroke-2 fill-none;
   }
-  
+
   .graph-grid {
     @apply stroke-gray-200 stroke-1 fill-none;
   }
-  
+
   .graph-grid-major {
     @apply stroke-gray-300 stroke-1;
   }
-  
+
   .graph-grid-minor {
     @apply stroke-gray-100 stroke-0.5;
   }

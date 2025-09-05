@@ -19,7 +19,7 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
   width = 800,
   height = 600,
   onNodeClick,
-  onEdgeClick
+  onEdgeClick,
 }) => {
   const svgRef = useRef<SVGSVGElement>(null);
   const simulationRef = useRef<ForceSimulation | null>(null);
@@ -31,9 +31,7 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
     svg.selectAll('*').remove(); // Clear previous content
 
     // Create main group for zoom/pan
-    const container = svg
-      .append('g')
-      .attr('class', 'graph-group');
+    const container = svg.append('g').attr('class', 'graph-group');
 
     // Create zoom behavior
     const zoom = d3Utils.createZoom();
@@ -98,7 +96,10 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
         .attr('x2', (d: D3Edge) => (d.target as D3Node).x || 0)
         .attr('y2', (d: D3Edge) => (d.target as D3Node).y || 0);
 
-      nodes.attr('transform', (d: D3Node) => `translate(${d.x || 0},${d.y || 0})`);
+      nodes.attr(
+        'transform',
+        (d: D3Node) => `translate(${d.x || 0},${d.y || 0})`
+      );
     });
 
     // Cleanup function
@@ -109,12 +110,7 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
 
   return (
     <div className="graph-container">
-      <svg
-        ref={svgRef}
-        width={width}
-        height={height}
-        className="graph-svg"
-      />
+      <svg ref={svgRef} width={width} height={height} className="graph-svg" />
     </div>
   );
 };

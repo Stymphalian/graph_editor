@@ -16,22 +16,26 @@ describe('App', () => {
 
   it('renders the D3.js test section', () => {
     render(<App />);
-    expect(screen.getByText('D3.js Graph Visualization Test')).toBeInTheDocument();
+    expect(
+      screen.getByText('D3.js Graph Visualization Test')
+    ).toBeInTheDocument();
   });
 
   it('renders the help text', () => {
     render(<App />);
-    expect(screen.getByText(/Click and drag nodes to move them/)).toBeInTheDocument();
+    expect(
+      screen.getByText(/Click and drag nodes to move them/)
+    ).toBeInTheDocument();
   });
 
   it('has the correct layout structure', () => {
     render(<App />);
-    
+
     // Check for main layout classes
     const mainElement = screen.getByRole('main');
     expect(mainElement).toBeInTheDocument();
     expect(mainElement).toHaveClass('graph-editor-main');
-    
+
     // Check for header
     const header = screen.getByRole('banner');
     expect(header).toBeInTheDocument();
@@ -40,7 +44,7 @@ describe('App', () => {
 
   it('renders the graph viewer component', () => {
     render(<App />);
-    
+
     // Check for mocked graph viewer
     const graphViewer = screen.getByTestId('graph-viewer');
     expect(graphViewer).toBeInTheDocument();

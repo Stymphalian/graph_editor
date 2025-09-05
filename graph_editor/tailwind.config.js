@@ -1,9 +1,6 @@
 /** @type {import('tailwindcss').Config} */
 export default {
-  content: [
-    "./index.html",
-    "./src/**/*.{js,ts,jsx,tsx}",
-  ],
+  content: ['./index.html', './src/**/*.{js,ts,jsx,tsx}'],
   theme: {
     extend: {
       colors: {
@@ -55,12 +52,12 @@ export default {
           700: '#0369a1',
           800: '#075985',
           900: '#0c4a6e',
-        }
+        },
       },
       spacing: {
-        '18': '4.5rem',
-        '88': '22rem',
-        '128': '32rem',
+        18: '4.5rem',
+        88: '22rem',
+        128: '32rem',
       },
       animation: {
         'fade-in': 'fadeIn 0.2s ease-in-out',
@@ -75,64 +72,72 @@ export default {
         slideIn: {
           '0%': { transform: 'translateY(-10px)', opacity: '0' },
           '100%': { transform: 'translateY(0)', opacity: '1' },
-        }
+        },
       },
       fontFamily: {
-        'mono': ['JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', 'monospace'],
+        mono: [
+          'JetBrains Mono',
+          'Fira Code',
+          'Monaco',
+          'Consolas',
+          'monospace',
+        ],
       },
       boxShadow: {
-        'graph': '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
-        'graph-lg': '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
+        graph:
+          '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+        'graph-lg':
+          '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
       },
       borderRadius: {
-        'graph': '0.5rem',
-      }
+        graph: '0.5rem',
+      },
     },
   },
   plugins: [
     // Custom plugin for graph editor utilities
-    function({ addUtilities }) {
+    function ({ addUtilities }) {
       const newUtilities = {
         '.graph-container': {
-          'position': 'relative',
-          'width': '100%',
-          'height': '100%',
-          'overflow': 'hidden',
+          position: 'relative',
+          width: '100%',
+          height: '100%',
+          overflow: 'hidden',
         },
         '.graph-svg': {
-          'width': '100%',
-          'height': '100%',
-          'cursor': 'grab',
+          width: '100%',
+          height: '100%',
+          cursor: 'grab',
           '&:active': {
-            'cursor': 'grabbing',
-          }
+            cursor: 'grabbing',
+          },
         },
         '.graph-node': {
-          'cursor': 'pointer',
+          cursor: 'pointer',
           'user-select': 'none',
-          'transition': 'all 0.2s ease-in-out',
+          transition: 'all 0.2s ease-in-out',
           '&:hover': {
             'stroke-width': '3px',
-            'filter': 'drop-shadow(0 4px 8px rgba(0, 0, 0, 0.2))',
-          }
+            filter: 'drop-shadow(0 4px 8px rgba(0, 0, 0, 0.2))',
+          },
         },
         '.graph-node-selected': {
-          'stroke': '#ef4444',
+          stroke: '#ef4444',
           'stroke-width': '3px',
-          'filter': 'drop-shadow(0 4px 8px rgba(239, 68, 68, 0.3))',
+          filter: 'drop-shadow(0 4px 8px rgba(239, 68, 68, 0.3))',
         },
         '.graph-edge': {
-          'stroke': '#6b7280',
+          stroke: '#6b7280',
           'stroke-width': '2px',
-          'fill': 'none',
-          'transition': 'all 0.2s ease-in-out',
+          fill: 'none',
+          transition: 'all 0.2s ease-in-out',
           '&:hover': {
-            'stroke': '#0ea5e9',
+            stroke: '#0ea5e9',
             'stroke-width': '3px',
-          }
+          },
         },
         '.graph-edge-selected': {
-          'stroke': '#ef4444',
+          stroke: '#ef4444',
           'stroke-width': '3px',
         },
         '.graph-label': {
@@ -142,14 +147,14 @@ export default {
           'user-select': 'none',
         },
         '.graph-controls': {
-          'background': 'rgba(255, 255, 255, 0.95)',
+          background: 'rgba(255, 255, 255, 0.95)',
           'backdrop-filter': 'blur(8px)',
-          'border': '1px solid rgba(229, 231, 235, 0.8)',
+          border: '1px solid rgba(229, 231, 235, 0.8)',
           'border-radius': '0.5rem',
           'box-shadow': '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
-        }
-      }
-      addUtilities(newUtilities)
-    }
+        },
+      };
+      addUtilities(newUtilities);
+    },
   ],
-}
+};

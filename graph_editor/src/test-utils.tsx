@@ -43,10 +43,14 @@ export const createMockNode = (id: string, x = 0, y = 0): D3Node => ({
   fy: null,
 });
 
-export const createMockEdge = (source: string, target: string, weight?: string): D3Edge => ({
+export const createMockEdge = (
+  source: string,
+  target: string,
+  weight?: string
+): D3Edge => ({
   source,
   target,
-  weight,
+  ...(weight && { weight }),
 });
 
 export const createMockGraph = (nodeCount = 3, edgeCount = 2) => {
@@ -62,7 +66,11 @@ export const createMockGraph = (nodeCount = 3, edgeCount = 2) => {
   for (let i = 0; i < edgeCount; i++) {
     const sourceIndex = i % nodeCount;
     const targetIndex = (i + 1) % nodeCount;
-    edges.push(createMockEdge(nodes[sourceIndex].id, nodes[targetIndex].id));
+    const sourceNode = nodes[sourceIndex];
+    const targetNode = nodes[targetIndex];
+    if (sourceNode && targetNode) {
+      edges.push(createMockEdge(sourceNode.id, targetNode.id));
+    }
   }
 
   return { nodes, edges };
