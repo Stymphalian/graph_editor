@@ -1,23 +1,27 @@
 import React, { ReactElement } from 'react';
 import { render, RenderOptions } from '@testing-library/react';
-import { D3Node, D3Edge } from '@/utils/d3Config';
+import { D3Node } from '@/utils/d3Config';
+import { Node, Edge, GraphData } from '@/types/graph';
 
 // Mock data for testing
-export const mockNodes: D3Node[] = [
-  { id: 'A', x: 100, y: 100 },
-  { id: 'B', x: 200, y: 200 },
-  { id: 'C', x: 300, y: 100 },
+export const mockNodes: Node[] = [
+  { label: 'A', x: 100, y: 100 },
+  { label: 'B', x: 200, y: 200 },
+  { label: 'C', x: 300, y: 100 },
 ];
 
-export const mockEdges: D3Edge[] = [
-  { source: 'A', target: 'B' },
-  { source: 'B', target: 'C' },
-  { source: 'C', target: 'A' },
+export const mockEdges: Edge[] = [
+  { id: 'edge1', source: 'A', target: 'B' },
+  { id: 'edge2', source: 'B', target: 'C' },
+  { id: 'edge3', source: 'C', target: 'A' },
 ];
 
-export const mockGraphData = {
+export const mockGraphData: GraphData = {
   nodes: mockNodes,
   edges: mockEdges,
+  type: 'undirected',
+  nodeIndexingMode: '0-indexed',
+  maxNodes: 1000,
 };
 
 // Custom render function with providers
@@ -35,8 +39,14 @@ export * from '@testing-library/react';
 export { customRender as render };
 
 // Test helpers
-export const createMockNode = (id: string, x = 0, y = 0): D3Node => ({
-  id,
+export const createMockNode = (label: string, x = 0, y = 0): Node => ({
+  label,
+  x,
+  y,
+});
+
+export const createMockD3Node = (label: string, x = 0, y = 0): D3Node => ({
+  label,
   x,
   y,
   fx: null,
@@ -47,15 +57,16 @@ export const createMockEdge = (
   source: string,
   target: string,
   weight?: string
-): D3Edge => ({
+): Edge => ({
+  id: `edge_${Math.random().toString(36).substr(2, 9)}`,
   source,
   target,
   ...(weight && { weight }),
 });
 
 export const createMockGraph = (nodeCount = 3, edgeCount = 2) => {
-  const nodes: D3Node[] = [];
-  const edges: D3Edge[] = [];
+  const nodes: Node[] = [];
+  const edges: Edge[] = [];
 
   // Create nodes
   for (let i = 0; i < nodeCount; i++) {
@@ -69,7 +80,7 @@ export const createMockGraph = (nodeCount = 3, edgeCount = 2) => {
     const sourceNode = nodes[sourceIndex];
     const targetNode = nodes[targetIndex];
     if (sourceNode && targetNode) {
-      edges.push(createMockEdge(sourceNode.id, targetNode.id));
+      edges.push(createMockEdge(sourceNode.label, targetNode.label));
     }
   }
 

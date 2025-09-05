@@ -22,7 +22,7 @@ export {
 
 // Node and Edge interfaces for D3
 export interface D3Node extends d3.SimulationNodeDatum {
-  id: string;
+  label: string;
   x?: number;
   y?: number;
   fx?: number | null;
@@ -98,7 +98,7 @@ export const d3Utils = {
       .force(
         'link',
         forceLink<D3Node, D3Edge>()
-          .id((d: D3Node) => d.id)
+          .id((d: D3Node) => d.label)
           .distance(100)
       )
       .force('charge', forceManyBody<D3Node>().strength(-300))

@@ -9,8 +9,8 @@ interface GraphViewerProps {
   onNodeClick?: (node: Node) => void;
   onEdgeClick?: (edge: Edge) => void;
   onNodeCreate?: (x: number, y: number) => void;
-  onEdgeCreate?: (sourceId: string, targetId: string) => void;
-  selectedNodeId?: string | null;
+  onEdgeCreate?: (sourceLabel: string, targetLabel: string) => void;
+  selectedNodeLabel?: string | null;
   selectedEdgeId?: string | null;
   mode?: 'edit' | 'delete' | 'view-force';
 }
@@ -22,7 +22,7 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
   onNodeClick,
   onEdgeClick,
   onNodeCreate,
-  selectedNodeId,
+  selectedNodeLabel,
   selectedEdgeId,
   mode = 'edit',
 }) => {
@@ -33,7 +33,7 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
   // Convert Graph model data to D3 format
   const convertToD3Data = (graphData: GraphData) => {
     const d3Nodes: D3Node[] = graphData.nodes.map(node => ({
-      id: node.id,
+      label: node.label,
       x: node.x,
       y: node.y,
     }));
@@ -83,7 +83,7 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
       .enter()
       .append('line')
       .attr('class', 'graph-edge')
-      .attr('stroke', '#6b7280')
+      .attr('stroke', '#000000')
       .attr('stroke-width', 2)
       .on('click', (event, d) => {
         event.stopPropagation();
@@ -105,7 +105,7 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
         .attr('orient', 'auto')
         .append('path')
         .attr('d', 'M0,-5L10,0L0,5')
-        .attr('fill', '#6b7280');
+        .attr('fill', '#000000');
 
       edges.attr('marker-end', 'url(#arrowhead)');
     }
@@ -117,11 +117,11 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
       .enter()
       .append('g')
       .attr('class', 'node')
-      .attr('data-node-id', (d: D3Node) => d.id)
+      .attr('data-node-label', (d: D3Node) => d.label)
       .call(d3Utils.createDrag(simulation))
       .on('click', (event, d) => {
         event.stopPropagation();
-        const originalNode = data.nodes.find(n => n.id === d.id);
+        const originalNode = data.nodes.find(n => n.label === d.label);
         if (originalNode) onNodeClick?.(originalNode);
       });
 
@@ -129,12 +129,8 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
     nodes
       .append('circle')
       .attr('r', 20)
-      .attr('fill', (d: D3Node) => 
-        selectedNodeId === d.id ? '#ef4444' : '#3b82f6'
-      )
-      .attr('stroke', (d: D3Node) => 
-        selectedNodeId === d.id ? '#dc2626' : '#1e40af'
-      )
+      .attr('fill', 'white')
+      .attr('stroke', '#000000')
       .attr('stroke-width', 2)
       .attr('class', 'graph-node');
 
@@ -144,13 +140,10 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
       .attr('class', 'graph-node-label')
       .attr('text-anchor', 'middle')
       .attr('dy', '0.35em')
-      .attr('fill', 'white')
+      .attr('fill', '#000000')
       .attr('font-size', '12px')
       .attr('font-weight', 'bold')
-      .text((d: D3Node) => {
-        const originalNode = data.nodes.find(n => n.id === d.id);
-        return originalNode?.label || d.id;
-      });
+      .text((d: D3Node) => d.label);
 
     // Add click handler for empty space (node creation)
     if (mode === 'edit' && onNodeCreate) {
@@ -192,7 +185,7 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
     return () => {
       simulation.stop();
     };
-  }, [data, width, height, onNodeClick, onEdgeClick, onNodeCreate, selectedNodeId, selectedEdgeId, mode]);
+  }, [data, width, height, onNodeClick, onEdgeClick, onNodeCreate, selectedNodeLabel, selectedEdgeId, mode]);
 
   return (
     <div className="graph-container w-full h-full relative" data-testid="graph-viewer">

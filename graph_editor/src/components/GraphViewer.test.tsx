@@ -19,17 +19,17 @@ describe('GraphViewer', () => {
     expect(nodeGroups).toHaveLength(mockGraphData.nodes.length);
   });
 
-  it('renders node labels with correct IDs', () => {
+  it('renders node labels with correct labels', () => {
     render(<GraphViewer data={mockGraphData} />);
     
-    // Check that each node has a label with the correct ID
+    // Check that each node has a label with the correct label
     const nodeLabels = document.querySelectorAll('.graph-node-label');
     expect(nodeLabels).toHaveLength(mockGraphData.nodes.length);
     
-    // Check that the text content matches expected node IDs
+    // Check that the text content matches expected node labels
     const labelTexts = Array.from(nodeLabels).map(label => label.textContent);
     mockGraphData.nodes.forEach((node) => {
-      expect(labelTexts).toContain(node.id);
+      expect(labelTexts).toContain(node.label);
     });
   });
 

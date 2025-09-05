@@ -8,9 +8,7 @@ export type NodeIndexingMode = '0-indexed' | '1-indexed' | 'custom';
 export type GraphType = 'directed' | 'undirected';
 
 export interface Node {
-  /** Unique identifier for the node */
-  id: string;
-  /** Display label for the node */
+  /** Display label for the node (also serves as unique identifier) */
   label: string;
   /** X coordinate for rendering */
   x: number;
@@ -25,9 +23,9 @@ export interface Node {
 export interface Edge {
   /** Unique identifier for the edge */
   id: string;
-  /** Source node ID */
+  /** Source node label */
   source: string;
-  /** Target node ID */
+  /** Target node label */
   target: string;
   /** Edge weight as string value */
   weight?: string;
@@ -76,9 +74,9 @@ export interface NodeCreationData {
 }
 
 export interface EdgeCreationData {
-  /** Source node ID */
+  /** Source node label */
   source: string;
-  /** Target node ID */
+  /** Target node label */
   target: string;
   /** Edge weight */
   weight?: string;

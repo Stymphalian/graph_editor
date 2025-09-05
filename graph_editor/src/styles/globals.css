@@ -114,7 +114,7 @@
   }
 
   .graph-edge {
-    @apply stroke-graph-edge-500 stroke-2 fill-none transition-all duration-200;
+    @apply stroke-black stroke-2 fill-none transition-all duration-200;
   }
 
   .graph-edge:hover {
@@ -131,7 +131,7 @@
   }
 
   .graph-node-label {
-    @apply graph-label text-xs fill-white;
+    @apply graph-label text-xs fill-black;
   }
 
   .graph-edge-label {

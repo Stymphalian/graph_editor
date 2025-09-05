@@ -6,7 +6,7 @@ import { Node, Edge } from './types/graph';
 function App() {
   // Create a sample graph using the Graph model
   const graph = useMemo(() => {
-    const g = new Graph({ type: 'undirected' });
+    const g = new Graph({ type: 'directed' });
     
     // Add sample nodes and store their IDs
     const nodeA = g.addNode({ label: 'A', x: 100, y: 100 });
@@ -14,28 +14,28 @@ function App() {
     const nodeC = g.addNode({ label: 'C', x: 300, y: 300 });
     const nodeD = g.addNode({ label: 'D', x: 100, y: 300 });
     
-    // Add sample edges using the actual node IDs
-    if (nodeA && nodeB) g.addEdge({ source: nodeA.id, target: nodeB.id });
-    if (nodeB && nodeC) g.addEdge({ source: nodeB.id, target: nodeC.id });
-    if (nodeC && nodeD) g.addEdge({ source: nodeC.id, target: nodeD.id });
-    if (nodeD && nodeA) g.addEdge({ source: nodeD.id, target: nodeA.id });
+    // Add sample edges using the actual node labels
+    if (nodeA && nodeB) g.addEdge({ source: nodeA.label, target: nodeB.label });
+    if (nodeB && nodeC) g.addEdge({ source: nodeB.label, target: nodeC.label });
+    if (nodeC && nodeD) g.addEdge({ source: nodeC.label, target: nodeD.label });
+    if (nodeD && nodeA) g.addEdge({ source: nodeD.label, target: nodeA.label });
     
     return g;
   }, []);
 
-  const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
+  const [selectedNodeLabel, setSelectedNodeLabel] = useState<string | null>(null);
   const [selectedEdgeId, setSelectedEdgeId] = useState<string | null>(null);
 
   const handleNodeClick = (node: Node) => {
     console.log('Node clicked:', node);
-    setSelectedNodeId(node.id);
+    setSelectedNodeLabel(node.label);
     setSelectedEdgeId(null);
   };
 
   const handleEdgeClick = (edge: Edge) => {
     console.log('Edge clicked:', edge);
     setSelectedEdgeId(edge.id);
-    setSelectedNodeId(null);
+    setSelectedNodeLabel(null);
   };
 
   const handleNodeCreate = (x: number, y: number) => {
@@ -66,7 +66,7 @@ function App() {
               onNodeClick={handleNodeClick}
               onEdgeClick={handleEdgeClick}
               onNodeCreate={handleNodeCreate}
-              selectedNodeId={selectedNodeId}
+              selectedNodeLabel={selectedNodeLabel}
               selectedEdgeId={selectedEdgeId}
               mode="edit"
             />

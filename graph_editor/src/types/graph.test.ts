@@ -20,13 +20,11 @@ describe('Graph Types', () => {
   describe('Node interface', () => {
     it('should create a valid node with required properties', () => {
       const node: Node = {
-        id: 'node1',
         label: 'A',
         x: 100,
         y: 200,
       };
 
-      expect(node.id).toBe('node1');
       expect(node.label).toBe('A');
       expect(node.x).toBe(100);
       expect(node.y).toBe(200);
@@ -34,7 +32,6 @@ describe('Graph Types', () => {
 
     it('should create a node with optional properties', () => {
       const node: Node = {
-        id: 'node2',
         label: 'B',
         x: 150,
         y: 250,
@@ -51,20 +48,20 @@ describe('Graph Types', () => {
     it('should create a valid edge with required properties', () => {
       const edge: Edge = {
         id: 'edge1',
-        source: 'node1',
-        target: 'node2',
+        source: 'A',
+        target: 'B',
       };
 
       expect(edge.id).toBe('edge1');
-      expect(edge.source).toBe('node1');
-      expect(edge.target).toBe('node2');
+      expect(edge.source).toBe('A');
+      expect(edge.target).toBe('B');
     });
 
     it('should create an edge with optional properties', () => {
       const edge: Edge = {
         id: 'edge2',
-        source: 'node2',
-        target: 'node3',
+        source: 'B',
+        target: 'C',
         weight: '5',
         selected: false,
       };
@@ -78,11 +75,11 @@ describe('Graph Types', () => {
     it('should create a valid graph data structure', () => {
       const graphData: GraphData = {
         nodes: [
-          { id: 'node1', label: 'A', x: 0, y: 0 },
-          { id: 'node2', label: 'B', x: 100, y: 0 },
+          { label: 'A', x: 0, y: 0 },
+          { label: 'B', x: 100, y: 0 },
         ],
         edges: [
-          { id: 'edge1', source: 'node1', target: 'node2'},
+          { id: 'edge1', source: 'A', target: 'B'},
         ],
         type: 'directed',
         nodeIndexingMode: '0-indexed',
@@ -176,24 +173,24 @@ describe('Graph Types', () => {
   describe('EdgeCreationData interface', () => {
     it('should create valid edge creation data', () => {
       const edgeData: EdgeCreationData = {
-        source: 'node1',
-        target: 'node2',
+        source: 'A',
+        target: 'B',
         weight: '10',
       };
 
-      expect(edgeData.source).toBe('node1');
-      expect(edgeData.target).toBe('node2');
+      expect(edgeData.source).toBe('A');
+      expect(edgeData.target).toBe('B');
       expect(edgeData.weight).toBe('10');
     });
 
     it('should create edge creation data without weight', () => {
       const edgeData: EdgeCreationData = {
-        source: 'node1',
-        target: 'node2',
+        source: 'A',
+        target: 'B',
       };
 
-      expect(edgeData.source).toBe('node1');
-      expect(edgeData.target).toBe('node2');
+      expect(edgeData.source).toBe('A');
+      expect(edgeData.target).toBe('B');
       expect(edgeData.weight).toBeUndefined();
     });
   });
