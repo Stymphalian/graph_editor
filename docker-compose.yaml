@@ -1,0 +1,44 @@
+services:
+  dev:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: graph-editor-dev
+    ports:
+      - "5173:5173"  # Vite dev server
+      - "3000:3000"  # Alternative port if needed
+    volumes:
+      # Mount entire workspace for live development
+      - .:/workspace
+      # Exclude node_modules to avoid conflicts
+      - /workspace/graph_editor/node_modules
+      # Exclude dist and other build artifacts
+      - /workspace/graph_editor/.vite
+    environment:
+      - NODE_ENV=development
+      - CHOKIDAR_USEPOLLING=true  # Better file watching on Windows
+      - WATCHPACK_POLLING=true    # Better file watching on Windows
+    working_dir: /workspace
+    stdin_open: true
+    tty: true
+    # Enable hot reload and file watching
+    command: sh -c "cd graph_editor && npm run dev -- --host 0.0.0.0 --port 5173"
+    
+  # Optional: Add a shell service for running commands
+  shell:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: graph-editor-shell
+    volumes:
+      - .:/workspace
+      - /workspace/graph_editor/node_modules
+      - /workspace/graph_editor/.vite
+    environment:
+      - NODE_ENV=development
+    working_dir: /workspace
+    stdin_open: true
+    tty: true
+    command: /bin/bash
+    profiles:
+      - shell  # Only start when explicitly requested

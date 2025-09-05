@@ -1,0 +1,65 @@
+I want to create a web-based graph editor application.
+"graphs" being the computer science version of nodes and edges.
+
+Some of the functionality I want is:
+1. In the center of the screen should be the viewport/viewer which displays all the nodes and edges.
+Nodes are circles with the label/name of the nodes (can be either 0-indexed, or 1-indexed, or a custom string). 
+edges are line segments between the circles.
+Use SVG or an vector-based graphics library. D3 is reasonable too.
+
+2. Here some interactions I want to provide when interacting with the viewer.
+There should be three modes. Edit,Delete, View/Force mode. Provide buttons for switching between both.
+Edit Mode:
+  - Left clicking on an empty part of the screen should add a new node.
+  - Left clicking a node should "select" it. left clicking it again should deselect it.
+  - Every node should have a little "nib/bump". Left clicking on this nib will allow you to add an
+    edge. When you mouse over another node and you let-go it should add the edge between those two nodes and add it to the graph.
+  - double left-clicking on a node should allow you to change its label/name
+  - double left-clicking on an edge should allow you to edit it's weight/label
+  - left-click and dragging on a node should allow you to move it around.
+Delete mode.
+  - left-click and dragging on a node should allow you to move it around.
+  - left-clicking on a node should delete that node and all of it's connected edges
+  - left clicking on an edge should delete that edge.
+View/Force mode:
+  - it should run a simulation and try to organize the nodes. Use a force simluation to try to 
+  nodes and edges together but with some spacing.
+  - click-and-drag on nodes to move them around.
+  - If you know d3-force, something similar to that. Feel free to use libraries
+   for the implementation.
+
+3. I should support both directed and undirected graphs. Undirected edges should just be normal 
+line segments between nodes. Directed edges should have arrows between them.
+Provide a toggle button to switch between these two modes.
+
+4. There exists a left panel which provides text box which has all the data of the graph in the following format.
+It should sync up with any changes/edits to the main viewer.
+Also any edits to this graph format should also modify/sync up with the main viewer view.
+```Graph Data Format
+Node Count: 
+6        <--- this is the number of nodes
+Graph Data:
+0        <-- there are the node labels (default just index number)
+1
+2
+3
+4
+5
+0 2      <-- this is an edge connecting nodes 0 and 2
+0 4
+0 5 123  <-- this is an edge with a weight value
+1 4
+1 5
+2 3
+2 4
+4 5
+```
+
+7. Make an abstraction layer which holds the data of the underyling graph.
+The text data in the text-box should be ground-truth of the graph data. 
+but try to keep things abstracted and have the text-box and viewer be "views"
+into the underlying graph data.
+
+Tech Stack:
+React,typescript,html,tailwind,d3 or other svg based graphics
+any library you need to run the force-mode simulation (i.e d3-force)

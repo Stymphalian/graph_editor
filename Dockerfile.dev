@@ -1,0 +1,36 @@
+# Development Dockerfile for React + TypeScript + Vite project
+FROM node:24-alpine
+
+# Set working directory
+WORKDIR /workspace
+
+# Install system dependencies
+RUN apk add --no-cache \
+    git \
+    bash \
+    curl \
+    && rm -rf /var/cache/apk/*
+
+# Install global packages for development
+RUN npm install -g \
+    @vitejs/plugin-react \
+    typescript \
+    eslint \
+    prettier \
+    jest
+
+# Copy package files first for better caching
+COPY graph_editor/package*.json ./graph_editor/
+
+# Install dependencies
+WORKDIR /workspace/graph_editor
+RUN npm ci
+
+# Return to workspace root
+WORKDIR /workspace
+
+# Expose development port
+EXPOSE 5173
+
+# Default command (can be overridden in docker-compose)
+CMD ["sh", "-c", "cd graph_editor && npm run dev -- --host 0.0.0.0"]
