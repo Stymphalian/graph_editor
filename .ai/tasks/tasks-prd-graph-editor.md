@@ -55,17 +55,17 @@
   - [x] 1.7 Configure ESLint and Prettier for code quality and formatting
   - [x] 1.8 Set up package.json scripts for development, build, and testing
 
-- [ ] 2.0 Core Graph Data Model Implementation
-  - [ ] 2.1 Define TypeScript interfaces for Node, Edge, and Graph data structures
-  - [ ] 2.2 Implement Graph class as single source of truth for graph data
-  - [ ] 2.3 Add methods for node management (add, remove, update, get by id)
-  - [ ] 2.4 Add methods for edge management (add, remove, update, get by source/target)
-  - [ ] 2.5 Implement graph validation and constraint checking
-  - [ ] 2.6 Add support for both directed and undirected graph modes
-  - [ ] 2.7 Implement node labeling system (0-indexed, 1-indexed, custom strings)
-  - [ ] 2.8 Add edge weight support as string values
-  - [ ] 2.9 Create graph serialization methods for text format conversion
-  - [ ] 2.10 Implement graph parsing methods from text format
+- [x] 2.0 Core Graph Data Model Implementation
+  - [x] 2.1 Define TypeScript interfaces for Node, Edge, and Graph data structures
+  - [x] 2.2 Implement Graph class as single source of truth for graph data
+  - [x] 2.3 Add methods for node management (add, remove, update, get by id)
+  - [x] 2.4 Add methods for edge management (add, remove, update, get by source/target)
+  - [x] 2.5 Implement graph validation and constraint checking
+  - [x] 2.6 Add support for both directed and undirected graph modes
+  - [x] 2.7 Implement node labeling system (0-indexed, 1-indexed, custom strings)
+  - [x] 2.8 Add edge weight support as string values
+  - [x] 2.9 Create graph serialization methods for text format conversion
+  - [x] 2.10 Implement graph parsing methods from text format
 
 - [ ] 3.0 Graph Visualization System (D3.js Integration)
   - [ ] 3.1 Create GraphViewer component with SVG container setup

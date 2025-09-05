@@ -1,0 +1,2 @@
+- Have the AI write tests firsts
+- Make it explicit to only have the AI implement the NEEDED functions for MVP. No extraneous functions or tests are required.
