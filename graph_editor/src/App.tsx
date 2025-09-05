@@ -1,25 +1,46 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import GraphViewer from './components/GraphViewer';
-import { D3Node, D3Edge } from './utils/d3Config';
+import { Graph } from './models/Graph';
+import { Node, Edge } from './types/graph';
 
 function App() {
-  // Sample graph data for testing D3 integration
-  const [graphData] = useState({
-    nodes: [{ id: 'A' }, { id: 'B' }, { id: 'C' }, { id: 'D' }],
-    edges: [
-      { source: 'A', target: 'B' },
-      { source: 'B', target: 'C' },
-      { source: 'C', target: 'D' },
-      { source: 'D', target: 'A' },
-    ],
-  });
+  // Create a sample graph using the Graph model
+  const graph = useMemo(() => {
+    const g = new Graph({ type: 'undirected' });
+    
+    // Add sample nodes and store their IDs
+    const nodeA = g.addNode({ label: 'A', x: 100, y: 100 });
+    const nodeB = g.addNode({ label: 'B', x: 300, y: 100 });
+    const nodeC = g.addNode({ label: 'C', x: 300, y: 300 });
+    const nodeD = g.addNode({ label: 'D', x: 100, y: 300 });
+    
+    // Add sample edges using the actual node IDs
+    if (nodeA && nodeB) g.addEdge({ source: nodeA.id, target: nodeB.id });
+    if (nodeB && nodeC) g.addEdge({ source: nodeB.id, target: nodeC.id });
+    if (nodeC && nodeD) g.addEdge({ source: nodeC.id, target: nodeD.id });
+    if (nodeD && nodeA) g.addEdge({ source: nodeD.id, target: nodeA.id });
+    
+    return g;
+  }, []);
 
-  const handleNodeClick = (node: D3Node) => {
+  const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
+  const [selectedEdgeId, setSelectedEdgeId] = useState<string | null>(null);
+
+  const handleNodeClick = (node: Node) => {
     console.log('Node clicked:', node);
+    setSelectedNodeId(node.id);
+    setSelectedEdgeId(null);
   };
 
-  const handleEdgeClick = (edge: D3Edge) => {
+  const handleEdgeClick = (edge: Edge) => {
     console.log('Edge clicked:', edge);
+    setSelectedEdgeId(edge.id);
+    setSelectedNodeId(null);
+  };
+
+  const handleNodeCreate = (x: number, y: number) => {
+    console.log('Creating node at:', x, y);
+    // This will be implemented in the next tasks
   };
 
   return (
@@ -39,11 +60,15 @@ function App() {
           </h2>
           <div className="border border-gray-200 rounded-lg overflow-hidden bg-white">
             <GraphViewer
-              data={graphData}
+              data={graph.getData()}
               width={800}
               height={600}
               onNodeClick={handleNodeClick}
               onEdgeClick={handleEdgeClick}
+              onNodeCreate={handleNodeCreate}
+              selectedNodeId={selectedNodeId}
+              selectedEdgeId={selectedEdgeId}
+              mode="edit"
             />
           </div>
           <p className="graph-editor-help-text mt-4">

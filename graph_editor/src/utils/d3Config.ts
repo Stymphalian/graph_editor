@@ -30,6 +30,7 @@ export interface D3Node extends d3.SimulationNodeDatum {
 }
 
 export interface D3Edge extends d3.SimulationLinkDatum<D3Node> {
+  id: string;
   source: string | D3Node;
   target: string | D3Node;
   weight?: string;
