@@ -1,7 +1,11 @@
 export default {
-  preset: 'ts-jest',
+  preset: 'ts-jest/presets/default-esm',
   testEnvironment: 'jsdom',
   setupFilesAfterEnv: ['<rootDir>/src/setupTests.ts'],
+  extensionsToTreatAsEsm: ['.ts', '.tsx'],
+  testEnvironmentOptions: {
+    customExportConditions: ['node', 'node-addons'],
+  },
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
     '^@/components/(.*)$': '<rootDir>/src/components/$1',
@@ -11,12 +15,14 @@ export default {
     '^@/types/(.*)$': '<rootDir>/src/types/$1',
     '^@/context/(.*)$': '<rootDir>/src/context/$1',
     '^@/styles/(.*)$': '<rootDir>/src/styles/$1',
+    '^(\\.{1,2}/.*)\\.js$': '$1',
   },
   transform: {
     '^.+\\.(ts|tsx)$': [
       'ts-jest',
       {
         tsconfig: 'tsconfig.test.json',
+        useESM: true,
       },
     ],
   },
@@ -43,4 +49,5 @@ export default {
     },
   },
   testPathIgnorePatterns: ['/node_modules/', '/dist/'],
+  transformIgnorePatterns: ['node_modules/(?!(d3|d3-.*)/)'],
 };

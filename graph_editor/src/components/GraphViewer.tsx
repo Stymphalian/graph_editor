@@ -109,7 +109,7 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
   }, [data, width, height, onNodeClick, onEdgeClick]);
 
   return (
-    <div className="graph-container">
+    <div className="graph-container" data-testid="graph-viewer">
       <svg ref={svgRef} width={width} height={height} className="graph-svg" />
     </div>
   );

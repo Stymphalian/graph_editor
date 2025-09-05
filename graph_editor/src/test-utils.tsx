@@ -78,14 +78,14 @@ export const createMockGraph = (nodeCount = 3, edgeCount = 2) => {
 
 // Mock event handlers
 export const mockEventHandlers = {
-  onNodeClick: jest.fn(),
-  onEdgeClick: jest.fn(),
-  onNodeDrag: jest.fn(),
-  onNodeDragEnd: jest.fn(),
-  onZoom: jest.fn(),
+  onNodeClick: () => {},
+  onEdgeClick: () => {},
+  onNodeDrag: () => {},
+  onNodeDragEnd: () => {},
+  onZoom: () => {},
 };
 
 // Clean up mocks
 export const cleanupMocks = () => {
-  Object.values(mockEventHandlers).forEach(mock => mock.mockClear());
+  // No-op for now since we're not using jest.fn()
 };

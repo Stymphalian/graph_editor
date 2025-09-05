@@ -1,12 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import App from './App';
 
-// Mock the GraphViewer component to avoid D3 dependencies
-jest.mock('./components/GraphViewer', () => {
-  return function MockGraphViewer() {
-    return <div data-testid="graph-viewer">Mock Graph Viewer</div>;
-  };
-});
 
 describe('App', () => {
   it('renders the graph editor title', () => {
@@ -48,6 +42,5 @@ describe('App', () => {
     // Check for mocked graph viewer
     const graphViewer = screen.getByTestId('graph-viewer');
     expect(graphViewer).toBeInTheDocument();
-    expect(graphViewer).toHaveTextContent('Mock Graph Viewer');
   });
 });
