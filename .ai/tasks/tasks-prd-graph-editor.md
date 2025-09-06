@@ -92,8 +92,8 @@
   - [ ] 4.10 Implement proper text formatting and line break handling
 
 - [ ] 5.0 User Interaction System
-  - [ ] 5.1 Implement mouse event handlers for node creation (left-click on empty space)
-  - [ ] 5.2 Add node selection/deselection on left-click
+  - [x] 5.1 Implement mouse event handlers for node creation (left-click on empty space)
+  - [x] 5.2 Add node selection/deselection on left-click
   - [ ] 5.3 Implement node movement with click-and-drag functionality
   - [ ] 5.4 Add edge creation by dragging from node nib to another node
   - [ ] 5.5 Implement edge preview line during creation process

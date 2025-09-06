@@ -15,6 +15,8 @@ interface GraphViewerProps {
   selectedNodeLabel?: string | null;
   selectedEdgeId?: string | null;
   mode?: 'edit' | 'delete' | 'view-force';
+  newNodePosition?: { x: number; y: number } | null;
+  onNewNodePositioned?: () => void;
 }
 
 const GraphViewer: React.FC<GraphViewerProps> = ({
@@ -28,6 +30,8 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
   selectedNodeLabel,
   selectedEdgeId,
   mode = 'edit',
+  newNodePosition,
+  onNewNodePositioned,
 }) => {
   const svgRef = useRef<SVGSVGElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -37,7 +41,6 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
     simulation: ForceSimulation | null;
     edgeCreationSource: string | null;
     mousePosition: { x: number; y: number } | null;
-    zoom: any;
   } | null>(null);
   const [edgeCreationSource, setEdgeCreationSource] = useState<string | null>(null);
   const [mousePosition, setMousePosition] = useState<{ x: number; y: number } | null>(null);
@@ -65,22 +68,14 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
         
         // Update SVG dimensions without recreating the graph (if D3 instance exists)
         if (d3InstanceRef.current) {
-          const { svg, simulation, zoom } = d3InstanceRef.current;
+          const { svg, simulation } = d3InstanceRef.current;
           if (svg && simulation) {
-            // Preserve current zoom state
-            const currentTransform = d3.zoomTransform(svg.node());
-            
             svg.attr('width', newDimensions.width)
                .attr('height', newDimensions.height);
             
             // Update simulation center force for new dimensions
             simulation.force('center', d3.forceCenter(newDimensions.width / 2, newDimensions.height / 2).strength(0.05));
             simulation.alpha(0.3).restart(); // Gentle restart to adjust to new center
-            
-            // Restore zoom state after dimensions change
-            if (zoom && currentTransform) {
-              svg.call(zoom.transform, currentTransform);
-            }
           }
         }
         
@@ -114,20 +109,11 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
     const svg = d3.select(svgRef.current);
     svg.selectAll('*').remove(); // Clear previous content
 
-    // Create main group for zoom/pan
+    // Create main group for graph elements
     const container = svg
       .append('g')
       .attr('class', 'graph-group')
       .attr('data-testid', 'graph-container');
-
-    // Create enhanced zoom behavior with viewport management
-    const zoom = d3.zoom<SVGSVGElement, unknown>()
-      .scaleExtent([0.1, 10]) // Allow zoom from 0.1x to 10x
-      .on('zoom', (event) => {
-        container.attr('transform', event.transform);
-      });
-
-    svg.call(zoom);
 
     // Create force simulation with responsive dimensions
     const simulation = d3Utils.createForceSimulation(dimensions.width, dimensions.height);
@@ -139,7 +125,6 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
       simulation,
       edgeCreationSource: null,
       mousePosition: null,
-      zoom,
     };
 
     // Add mouse tracking for edge creation preview
@@ -166,7 +151,9 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
     if (mode === 'edit' && onNodeCreate) {
       svg.on('click', event => {
         if (event.target === svg.node()) {
+          // Get coordinates relative to the SVG
           const [x, y] = d3.pointer(event, svg.node());
+          console.log('SVG click at coordinates:', x, y);
           onNodeCreate(x, y);
         }
       });
@@ -242,7 +229,7 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
           const edgeEnter = enter
             .append('line')
             .attr('class', 'graph-edge')
-            .attr('opacity', 0);
+            .attr('opacity', 1);
 
           edgeEnter.each(function(this: any, d: D3Edge) {
             const edgeSelection = d3.select(this);
@@ -279,10 +266,6 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
               .on('mouseleave', eventHandlers.mouseleave);
           });
 
-          edgeEnter
-            .transition()
-            .duration(300)
-            .attr('opacity', 1);
 
           return edgeEnter;
         },
@@ -297,9 +280,6 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
         },
         (exit: any) => {
           return exit
-            .transition()
-            .duration(300)
-            .attr('opacity', 0)
             .remove();
         }
       );
@@ -315,7 +295,7 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
             .append('g')
             .attr('class', 'node')
             .attr('data-node-label', (d: D3Node) => d.label)
-            .attr('opacity', 0)
+            .attr('opacity', 1)
             .call(d3Utils.createDrag(simulation!));
 
           nodeEnter
@@ -337,7 +317,13 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
             const isSource = d3InstanceRef.current?.edgeCreationSource === d.label;
             
             applyNodeStyling(nodeSelection, isSelected, 20, isSource);
-            applyNodeNibs(nodeSelection, isEditMode && !isSource, 20);
+            applyNodeNibs(nodeSelection, isEditMode && !isSource, 20, (node) => {
+              // Nib click starts edge creation mode
+              if (mode === 'edit' && !d3InstanceRef.current?.edgeCreationSource) {
+                d3InstanceRef.current!.edgeCreationSource = node.label;
+                setEdgeCreationSource(node.label);
+              }
+            });
           });
 
           nodeEnter.each(function(this: any, d: D3Node) {
@@ -345,27 +331,43 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
             const eventHandlers = createNodeEventHandlers(d, {
               onNodeClick: (node) => {
                 if (mode === 'edit') {
-                  if (!d3InstanceRef.current?.edgeCreationSource) {
-                    d3InstanceRef.current!.edgeCreationSource = node.label;
-                    setEdgeCreationSource(node.label);
-                  } else if (d3InstanceRef.current.edgeCreationSource === node.label) {
-                    d3InstanceRef.current.edgeCreationSource = null;
-                    d3InstanceRef.current.mousePosition = null;
-                    setEdgeCreationSource(null);
-                    setMousePosition(null);
+                  // Check if we're in edge creation mode
+                  if (d3InstanceRef.current?.edgeCreationSource) {
+                    // Handle edge creation
+                    if (d3InstanceRef.current.edgeCreationSource === node.label) {
+                      // Cancel edge creation if clicking the same node
+                      d3InstanceRef.current.edgeCreationSource = null;
+                      d3InstanceRef.current.mousePosition = null;
+                      setEdgeCreationSource(null);
+                      setMousePosition(null);
+                    } else {
+                      // Complete edge creation
+                      onEdgeCreate?.(d3InstanceRef.current.edgeCreationSource, node.label);
+                      d3InstanceRef.current.edgeCreationSource = null;
+                      d3InstanceRef.current.mousePosition = null;
+                      setEdgeCreationSource(null);
+                      setMousePosition(null);
+                    }
                   } else {
-                    onEdgeCreate?.(d3InstanceRef.current.edgeCreationSource, node.label);
-                    d3InstanceRef.current.edgeCreationSource = null;
-                    d3InstanceRef.current.mousePosition = null;
-                    setEdgeCreationSource(null);
-                    setMousePosition(null);
+                    // Handle node selection/deselection
+                    const originalNode = data.nodes.find(n => n.label === node.label);
+                    if (originalNode) onNodeClick?.(originalNode);
                   }
                 } else {
+                  // Handle node selection/deselection in non-edit modes
                   const originalNode = data.nodes.find(n => n.label === node.label);
                   if (originalNode) onNodeClick?.(originalNode);
                 }
               },
-              onNodeDoubleClick: () => {},
+              onNodeDoubleClick: (node) => {
+                if (mode === 'edit') {
+                  // Double-click starts edge creation mode
+                  if (!d3InstanceRef.current?.edgeCreationSource) {
+                    d3InstanceRef.current!.edgeCreationSource = node.label;
+                    setEdgeCreationSource(node.label);
+                  }
+                }
+              },
               onNodeMouseEnter: (node) => {
                 const nodeElement = d3.select(`[data-node-label="${node.label}"]`);
                 applyNodeStyling(nodeElement, true, 20);
@@ -384,10 +386,6 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
               .on('mouseleave', eventHandlers.mouseleave);
           });
 
-          nodeEnter
-            .transition()
-            .duration(300)
-            .attr('opacity', 1);
 
           return nodeEnter;
         },
@@ -399,15 +397,18 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
             const isSource = d3InstanceRef.current?.edgeCreationSource === d.label;
             
             applyNodeStyling(nodeSelection, isSelected, 20, isSource);
-            applyNodeNibs(nodeSelection, isEditMode && !isSource, 20);
+            applyNodeNibs(nodeSelection, isEditMode && !isSource, 20, (node) => {
+              // Nib click starts edge creation mode
+              if (mode === 'edit' && !d3InstanceRef.current?.edgeCreationSource) {
+                d3InstanceRef.current!.edgeCreationSource = node.label;
+                setEdgeCreationSource(node.label);
+              }
+            });
           });
           return update;
         },
         (exit: any) => {
           return exit
-            .transition()
-            .duration(300)
-            .attr('opacity', 0)
             .remove();
         }
       );
@@ -451,12 +452,41 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
 
   // Convert Graph model data to D3 format
   const convertToD3Data = (graphData: GraphData) => {
-    const d3Nodes: D3Node[] = graphData.nodes.map((node, index) => ({
-      id: node.label, // Use label as ID for D3
-      label: node.label,
-      x: 100 + (index % 4) * 200, // Generate default positions in a grid
-      y: 100 + Math.floor(index / 4) * 200,
-    }));
+    // Get existing node positions from the simulation if it exists
+    const existingNodes = d3InstanceRef.current?.simulation?.nodes() || [];
+    const existingNodeMap = new Map(existingNodes.map((node: any) => [node.label, { x: node.x, y: node.y }]));
+
+    const d3Nodes: D3Node[] = graphData.nodes.map((node, index) => {
+      // Preserve existing position if available
+      const existingPos = existingNodeMap.get(node.label);
+      if (existingPos && existingPos.x !== undefined && existingPos.y !== undefined) {
+        return {
+          id: node.label,
+          label: node.label,
+          x: existingPos.x,
+          y: existingPos.y,
+        };
+      } else {
+        // Check if this is the newest node and we have a position for it
+        const isNewestNode = index === graphData.nodes.length - 1;
+        if (isNewestNode && newNodePosition) {
+          return {
+            id: node.label,
+            label: node.label,
+            x: newNodePosition.x,
+            y: newNodePosition.y,
+          };
+        } else {
+          // Generate new position for other new nodes
+          return {
+            id: node.label,
+            label: node.label,
+            x: 100 + (index % 4) * 200,
+            y: 100 + Math.floor(index / 4) * 200,
+          };
+        }
+      }
+    });
 
     const d3Edges: D3Edge[] = graphData.edges.map(edge => ({
       id: edge.id,
@@ -476,7 +506,7 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
   // Update data when it changes (excluding dimensions to avoid recreating graph on resize)
   useEffect(() => {
     updateD3Data();
-  }, [data, selectedNodeLabel, selectedEdgeId, mode]);
+  }, [data, selectedNodeLabel, selectedEdgeId, mode, newNodePosition]);
 
   // Update edge creation state in D3 instance
   useEffect(() => {
@@ -486,6 +516,18 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
       updatePreviewLine();
     }
   }, [edgeCreationSource, mousePosition]);
+
+  // Call onNewNodePositioned after a new node has been positioned
+  useEffect(() => {
+    if (newNodePosition && onNewNodePositioned) {
+      // Use a small delay to ensure the node has been positioned in the simulation
+      const timer = setTimeout(() => {
+        onNewNodePositioned();
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+    return undefined;
+  }, [newNodePosition, onNewNodePositioned]);
 
   // Cleanup on unmount
   useEffect(() => {

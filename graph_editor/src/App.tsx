@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react';
 import GraphViewer from './components/GraphViewer';
 import TextPanel from './components/TextPanel';
 import { Graph } from './models/Graph';
-import { Node, Edge } from './types/graph';
+import { Node, Edge, GraphData } from './types/graph';
 
 function App() {
   // Create a sample graph using the Graph model
@@ -24,32 +24,78 @@ function App() {
     return g;
   }, []);
 
-  const [selectedNodeLabel] = useState<string | null>(null);
-  const [selectedEdgeId] = useState<string | null>(null);
+  const [selectedNodeLabel, setSelectedNodeLabel] = useState<string | null>(null);
+  const [selectedEdgeId, setSelectedEdgeId] = useState<string | null>(null);
   const [currentGraph] = useState<Graph>(graph);
+  const [graphData, setGraphData] = useState<GraphData>(graph.getData());
+  const [newNodePosition, setNewNodePosition] = useState<{ x: number; y: number } | null>(null);
 
   const handleNodeClick = (node: Node) => {
     console.log('Node clicked', node);
-    // setSelectedNodeLabel(node.label);
-    // setSelectedEdgeId(null);
+    
+    // Toggle selection: if the same node is clicked, deselect it
+    if (selectedNodeLabel === node.label) {
+      setSelectedNodeLabel(null);
+    } else {
+      // Select the clicked node and deselect any edge
+      setSelectedNodeLabel(node.label);
+      setSelectedEdgeId(null);
+    }
   };
 
   const handleEdgeClick = (edge: Edge) => {
     console.log('Edge clicked:', edge);
-    // setSelectedEdgeId(edge.id);
-    // setSelectedNodeLabel(null);
+    
+    // Toggle selection: if the same edge is clicked, deselect it
+    if (selectedEdgeId === edge.id) {
+      setSelectedEdgeId(null);
+    } else {
+      // Select the clicked edge and deselect any node
+      setSelectedEdgeId(edge.id);
+      setSelectedNodeLabel(null);
+    }
   };
 
   const handleNodeCreate = (x: number, y: number) => {
     console.log('Creating node at:', x, y);
-    // graph.addNodeWithAutoLabel(x, y);
-    // This will be implemented in the next tasks
+    
+    // Store the click coordinates for the new node
+    setNewNodePosition({ x, y });
+    
+    // Create a new node with auto-generated label
+    const newNode = currentGraph.addNodeWithAutoLabel();
+    
+    if (newNode) {
+      console.log('Node created:', newNode);
+      // Update the graph data state to trigger re-render without recreating the graph
+      setGraphData(currentGraph.getData());
+      // Clear any selections
+      setSelectedNodeLabel(null);
+      setSelectedEdgeId(null);
+    } else {
+      console.error('Failed to create node:', currentGraph.getError());
+    }
   };
 
   const handleEdgeCreate = (sourceLabel: string, targetLabel: string) => {
     console.log('Creating edge:', sourceLabel, '->', targetLabel);
-    // graph.addEdge({ source: sourceLabel, target: targetLabel });
-    // This will be implemented in the next tasks
+    
+    // Create a new edge between the source and target nodes
+    const newEdge = currentGraph.addEdge({ 
+      source: sourceLabel, 
+      target: targetLabel 
+    });
+    
+    if (newEdge) {
+      console.log('Edge created:', newEdge);
+      // Update the graph data state to trigger re-render without recreating the graph
+      setGraphData(currentGraph.getData());
+      // Clear any selections
+      setSelectedNodeLabel(null);
+      setSelectedEdgeId(null);
+    } else {
+      console.error('Failed to create edge:', currentGraph.getError());
+    }
   };
 
   const handleGraphDataChange = (newData: any) => {
@@ -73,7 +119,7 @@ function App() {
             {/* Text Panel - 1/3 width */}
             <div className="w-1/3">
               <TextPanel
-                data={currentGraph.getData()}
+                data={graphData}
                 onDataChange={handleGraphDataChange}
                 className="h-[600px]"
               />
@@ -87,7 +133,7 @@ function App() {
                 </h2>
                 <div className="h-[600px]">
                   <GraphViewer
-                    data={currentGraph.getData()}
+                    data={graphData}
                     width={800}
                     height={600}
                     onNodeClick={handleNodeClick}
@@ -97,6 +143,8 @@ function App() {
                     selectedNodeLabel={selectedNodeLabel}
                     selectedEdgeId={selectedEdgeId}
                     mode="edit"
+                    newNodePosition={newNodePosition}
+                    onNewNodePositioned={() => setNewNodePosition(null)}
                   />
                 </div>
                 <p className="graph-editor-help-text mt-4">

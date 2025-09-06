@@ -98,14 +98,14 @@ export const applyNodeStyling = (
 /**
  * Apply nibs to an existing D3 node selection
  */
-export const applyNodeNibs = (nodeSelection: any, showNibs: boolean, radius: number = 20) => {
+export const applyNodeNibs = (nodeSelection: any, showNibs: boolean, radius: number = 20, onNibClick?: (node: any) => void) => {
   // Remove existing nibs
   nodeSelection.selectAll('.node-nib').remove();
   
   if (showNibs) {
     const nibRadius = 3; // Smaller nib
     
-    nodeSelection
+    const nib = nodeSelection
       .append('circle')
       .attr('class', 'node-nib')
       .attr('cx', radius + nibRadius) // Position at right edge of main circle
@@ -113,8 +113,18 @@ export const applyNodeNibs = (nodeSelection: any, showNibs: boolean, radius: num
       .attr('r', nibRadius)
       .attr('fill', '#000000') // Black color
       .attr('stroke', 'none')
-      .style('pointer-events', 'none')
+      .style('pointer-events', 'all')
+      .style('cursor', 'pointer')
       .style('transition', 'all 0.2s ease-in-out');
+    
+    // Add click handler for the nib
+    if (onNibClick) {
+      nib.on('click', (event: Event) => {
+        event.stopPropagation();
+        const nodeData = nodeSelection.datum();
+        onNibClick(nodeData);
+      });
+    }
   }
 };
 
