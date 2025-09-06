@@ -85,6 +85,62 @@
     @apply text-xs text-gray-500 mt-1;
   }
 
+  .text-panel {
+    @apply bg-white/95 backdrop-blur-sm border border-gray-200/80 rounded-lg shadow-sm flex flex-col h-full p-4;
+  }
+
+  .text-panel-header {
+    @apply flex justify-between items-center mb-3;
+  }
+
+  .text-panel-title {
+    @apply text-sm font-medium text-gray-700;
+  }
+
+  .text-panel-status {
+    @apply flex gap-2;
+  }
+
+  .text-panel-editing-indicator {
+    @apply text-xs text-blue-600 font-medium;
+  }
+
+  .text-panel-error-indicator {
+    @apply text-xs text-red-600 font-medium;
+  }
+
+  .text-panel-content {
+    @apply flex-1;
+  }
+
+  .text-panel-editor {
+    @apply flex border border-gray-300 rounded-md overflow-hidden flex-1;
+  }
+
+  .text-panel-line-numbers {
+    @apply bg-gray-50 text-gray-500 font-mono px-2 py-2 border-r border-gray-300 overflow-hidden;
+    font-size: 0.875rem;
+    line-height: 1.5;
+    white-space: pre;
+    user-select: none;
+    min-width: 2.5rem;
+    text-align: right;
+  }
+
+  .text-panel-textarea {
+    @apply flex-1 resize-none border-0 focus:ring-0 focus:outline-none font-mono;
+    font-size: 0.875rem;
+    line-height: 1.5;
+  }
+
+  .text-panel-textarea-error {
+    @apply border-red-300 focus:border-red-500 focus:ring-red-500;
+  }
+
+  .text-panel-footer {
+    @apply mt-3;
+  }
+
   .graph-editor-error {
     @apply text-sm text-red-600 mt-1;
   }

@@ -451,11 +451,11 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
 
   // Convert Graph model data to D3 format
   const convertToD3Data = (graphData: GraphData) => {
-    const d3Nodes: D3Node[] = graphData.nodes.map(node => ({
+    const d3Nodes: D3Node[] = graphData.nodes.map((node, index) => ({
       id: node.label, // Use label as ID for D3
       label: node.label,
-      x: node.x,
-      y: node.y,
+      x: 100 + (index % 4) * 200, // Generate default positions in a grid
+      y: 100 + Math.floor(index / 4) * 200,
     }));
 
     const d3Edges: D3Edge[] = graphData.edges.map(edge => ({

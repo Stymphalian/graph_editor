@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
 import GraphViewer from './components/GraphViewer';
+import TextPanel from './components/TextPanel';
 import { Graph } from './models/Graph';
 import { Node, Edge } from './types/graph';
 
@@ -9,10 +10,10 @@ function App() {
     const g = new Graph({ type: 'directed' });
 
     // Add sample nodes and store their IDs
-    const nodeA = g.addNode({ label: 'A', x: 100, y: 100 });
-    const nodeB = g.addNode({ label: 'B', x: 300, y: 100 });
-    const nodeC = g.addNode({ label: 'C', x: 300, y: 300 });
-    const nodeD = g.addNode({ label: 'D', x: 100, y: 300 });
+    const nodeA = g.addNode({ label: 'A' });
+    const nodeB = g.addNode({ label: 'B' });
+    const nodeC = g.addNode({ label: 'C' });
+    const nodeD = g.addNode({ label: 'D' });
 
     // Add sample edges using the actual node labels
     if (nodeA && nodeB) g.addEdge({ source: nodeA.label, target: nodeB.label });
@@ -25,6 +26,7 @@ function App() {
 
   const [selectedNodeLabel] = useState<string | null>(null);
   const [selectedEdgeId] = useState<string | null>(null);
+  const [currentGraph] = useState<Graph>(graph);
 
   const handleNodeClick = (node: Node) => {
     console.log('Node clicked', node);
@@ -50,6 +52,11 @@ function App() {
     // This will be implemented in the next tasks
   };
 
+  const handleGraphDataChange = (newData: any) => {
+    console.log('Graph data changed:', newData);
+    // TODO: Implement graph data parsing and updating (Task 4.4)
+  };
+
   return (
     <div className="graph-editor-layout">
       <header className="graph-editor-header">
@@ -61,28 +68,44 @@ function App() {
       </header>
 
       <main className="graph-editor-main">
-        <div className="graph-editor-panel p-6">
-          <h2 className="text-lg font-semibold text-gray-800 mb-4">
-            D3.js Graph Visualization Test
-          </h2>
-          <div className="h-[600px]">
-            <GraphViewer
-              data={graph.getData()}
-              width={800}
-              height={600}
-              onNodeClick={handleNodeClick}
-              onEdgeClick={handleEdgeClick}
-              onNodeCreate={handleNodeCreate}
-              onEdgeCreate={handleEdgeCreate}
-              selectedNodeLabel={selectedNodeLabel}
-              selectedEdgeId={selectedEdgeId}
-              mode="edit"
-            />
+        <div className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
+          <div className="flex gap-6">
+            {/* Text Panel - 1/3 width */}
+            <div className="w-1/3">
+              <TextPanel
+                data={currentGraph.getData()}
+                onDataChange={handleGraphDataChange}
+                className="h-[600px]"
+              />
+            </div>
+
+            {/* Graph Visualization Panel - 2/3 width */}
+            <div className="w-2/3">
+              <div className="graph-editor-panel p-6">
+                <h2 className="text-lg font-semibold text-gray-800 mb-4">
+                  Graph Visualization
+                </h2>
+                <div className="h-[600px]">
+                  <GraphViewer
+                    data={currentGraph.getData()}
+                    width={800}
+                    height={600}
+                    onNodeClick={handleNodeClick}
+                    onEdgeClick={handleEdgeClick}
+                    onNodeCreate={handleNodeCreate}
+                    onEdgeCreate={handleEdgeCreate}
+                    selectedNodeLabel={selectedNodeLabel}
+                    selectedEdgeId={selectedEdgeId}
+                    mode="edit"
+                  />
+                </div>
+                <p className="graph-editor-help-text mt-4">
+                  Click and drag nodes to move them. The force simulation will
+                  automatically adjust the layout.
+                </p>
+              </div>
+            </div>
           </div>
-          <p className="graph-editor-help-text mt-4">
-            Click and drag nodes to move them. The force simulation will
-            automatically adjust the layout.
-          </p>
         </div>
       </main>
     </div>

@@ -21,26 +21,9 @@ describe('Graph Types', () => {
     it('should create a valid node with required properties', () => {
       const node: Node = {
         label: 'A',
-        x: 100,
-        y: 200,
       };
 
       expect(node.label).toBe('A');
-      expect(node.x).toBe(100);
-      expect(node.y).toBe(200);
-    });
-
-    it('should create a node with optional properties', () => {
-      const node: Node = {
-        label: 'B',
-        x: 150,
-        y: 250,
-        selected: true,
-        dragging: false,
-      };
-
-      expect(node.selected).toBe(true);
-      expect(node.dragging).toBe(false);
     });
   });
 
@@ -63,11 +46,9 @@ describe('Graph Types', () => {
         source: 'B',
         target: 'C',
         weight: '5',
-        selected: false,
       };
 
       expect(edge.weight).toBe('5');
-      expect(edge.selected).toBe(false);
     });
   });
 
@@ -75,8 +56,8 @@ describe('Graph Types', () => {
     it('should create a valid graph data structure', () => {
       const graphData: GraphData = {
         nodes: [
-          { label: 'A', x: 0, y: 0 },
-          { label: 'B', x: 100, y: 0 },
+          { label: 'A' },
+          { label: 'B' },
         ],
         edges: [{ id: 'edge1', source: 'A', target: 'B' }],
         type: 'directed',
@@ -158,13 +139,9 @@ describe('Graph Types', () => {
     it('should create valid node creation data', () => {
       const nodeData: NodeCreationData = {
         label: 'New Node',
-        x: 300,
-        y: 400,
       };
 
       expect(nodeData.label).toBe('New Node');
-      expect(nodeData.x).toBe(300);
-      expect(nodeData.y).toBe(400);
     });
   });
 

@@ -10,14 +10,6 @@ export type GraphType = 'directed' | 'undirected';
 export interface Node {
   /** Display label for the node (also serves as unique identifier) */
   label: string;
-  /** X coordinate for rendering */
-  x: number;
-  /** Y coordinate for rendering */
-  y: number;
-  /** Whether the node is selected */
-  selected?: boolean;
-  /** Whether the node is being dragged */
-  dragging?: boolean;
 }
 
 export interface Edge {
@@ -29,8 +21,6 @@ export interface Edge {
   target: string;
   /** Edge weight as string value */
   weight?: string;
-  /** Whether the edge is selected */
-  selected?: boolean;
 }
 
 export interface GraphData {
@@ -67,10 +57,6 @@ export interface GraphValidationResult {
 export interface NodeCreationData {
   /** Label for the new node */
   label: string;
-  /** X coordinate for the new node */
-  x: number;
-  /** Y coordinate for the new node */
-  y: number;
 }
 
 export interface EdgeCreationData {

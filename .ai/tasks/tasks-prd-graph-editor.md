@@ -74,14 +74,14 @@
   - [x] 3.4 Create Edge component with line rendering and arrow support for directed graphs
   - [x] 3.5 Implement node selection visual feedback and highlighting
   - [x] 3.6 Add node "nibs/bumps" visual indicators for edge creation (integrated into edit mode)
-  - [ ] 3.7 Implement responsive SVG scaling and viewport management
+  - [x] 3.7 Implement responsive SVG scaling and viewport management
   - [x] 3.8 Add visual feedback for edge creation preview line
   - [x] 3.9 Implement proper cleanup and memory management for D3 selections
   - [ ] 3.10 Add support for rendering up to 1000 nodes with performance optimization
 
 - [ ] 4.0 Text Panel and Data Synchronization
-  - [ ] 4.1 Create TextPanel component with textarea for graph data display
-  - [ ] 4.2 Implement text format generation from graph data (Node Count, Graph Data, edges)
+  - [x] 4.1 Create TextPanel component with textarea for graph data display
+  - [x] 4.2 Implement text format generation from graph data (Node Count, Graph Data, edges)
   - [ ] 4.3 Add real-time text panel updates when graph is modified visually
   - [ ] 4.4 Implement text panel parsing to update graph when text is modified
   - [ ] 4.5 Add validation and error handling for malformed text input

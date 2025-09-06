@@ -7,10 +7,17 @@ describe('App', () => {
     expect(screen.getByText('Graph Editor')).toBeInTheDocument();
   });
 
-  it('renders the D3.js test section', () => {
+  it('renders the graph visualization section', () => {
     render(<App />);
     expect(
-      screen.getByText('D3.js Graph Visualization Test')
+      screen.getByText('Graph Visualization')
+    ).toBeInTheDocument();
+  });
+
+  it('renders the text panel', () => {
+    render(<App />);
+    expect(
+      screen.getByRole('textbox')
     ).toBeInTheDocument();
   });
 

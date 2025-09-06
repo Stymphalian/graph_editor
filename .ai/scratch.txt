@@ -63,3 +63,21 @@ into the underlying graph data.
 Tech Stack:
 React,typescript,html,tailwind,d3 or other svg based graphics
 any library you need to run the force-mode simulation (i.e d3-force)
+
+
+The text panel should be simple text-areas with line numbers. Something like this.
+6        <--- this is the number of nodes
+0        <-- there are the node labels (default just index number)
+1
+2
+3
+4
+5
+0 2      <-- this is an edge connecting nodes 0 and 2
+0 4
+0 5 123  <-- this is an edge with a weight value
+1 4
+1 5
+2 3
+2 4
+4 5
