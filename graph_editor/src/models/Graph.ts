@@ -113,9 +113,9 @@ export class Graph {
   setType(type: GraphType): void {
     if (this.state.data.type !== type) {
       this.state.data.type = type;
-      
+
       // No need to update edges - graph type is handled at the top level
-      
+
       this.state.isModified = true;
       this.clearError();
     }
@@ -149,9 +149,10 @@ export class Graph {
 
     for (const edge of this.state.data.edges) {
       // Create a canonical key for undirected edges (smaller ID first)
-      const canonicalKey = edge.source < edge.target 
-        ? `${edge.source}-${edge.target}` 
-        : `${edge.target}-${edge.source}`;
+      const canonicalKey =
+        edge.source < edge.target
+          ? `${edge.source}-${edge.target}`
+          : `${edge.target}-${edge.source}`;
 
       if (!processedEdges.has(canonicalKey)) {
         // Keep the edge with the smaller source ID
@@ -159,7 +160,7 @@ export class Graph {
           ...edge,
           id: this.generateEdgeId(),
           source: edge.source < edge.target ? edge.source : edge.target,
-          target: edge.source < edge.target ? edge.target : edge.source
+          target: edge.source < edge.target ? edge.target : edge.source,
         };
         newEdges.push(newEdge);
         processedEdges.add(canonicalKey);
@@ -202,7 +203,7 @@ export class Graph {
     const isDirected = this.isDirected();
     const isUndirected = this.isUndirected();
     const totalEdges = this.state.data.edges.length;
-    
+
     let uniqueConnections = 0;
     let bidirectionalEdges = 0;
     let selfLoops = 0;
@@ -228,7 +229,7 @@ export class Graph {
           // Check for bidirectional connections
           const reverseKey = `${edge.target}-${edge.source}`;
           const forwardKey = `${edge.source}-${edge.target}`;
-          
+
           if (bidirectionalPairs.has(reverseKey)) {
             bidirectionalEdges++;
           } else {
@@ -238,13 +239,13 @@ export class Graph {
       }
 
       uniqueConnections = bidirectionalPairs.size;
-      
+
       // Calculate degrees
       for (const node of this.state.data.nodes) {
         const inDegree = this.getNodeInDegree(node.label);
         const outDegree = this.getNodeOutDegree(node.label);
         const degree = this.getNodeDegree(node.label);
-        
+
         maxInDegree = Math.max(maxInDegree, inDegree);
         maxOutDegree = Math.max(maxOutDegree, outDegree);
         maxDegree = Math.max(maxDegree, degree);
@@ -252,28 +253,29 @@ export class Graph {
     } else {
       // For undirected graphs, count unique connections
       const connectionSet = new Set<string>();
-      
+
       for (const edge of this.state.data.edges) {
         if (edge.source === edge.target) {
           selfLoops++;
         } else {
           // Create canonical key for undirected edges
-          const canonicalKey = edge.source < edge.target 
-            ? `${edge.source}-${edge.target}` 
-            : `${edge.target}-${edge.source}`;
+          const canonicalKey =
+            edge.source < edge.target
+              ? `${edge.source}-${edge.target}`
+              : `${edge.target}-${edge.source}`;
           connectionSet.add(canonicalKey);
         }
       }
 
       uniqueConnections = connectionSet.size;
       bidirectionalEdges = 0; // Not applicable for undirected graphs
-      
+
       // Calculate degrees
       for (const node of this.state.data.nodes) {
         const degree = this.getNodeDegree(node.label);
         maxDegree = Math.max(maxDegree, degree);
       }
-      
+
       maxInDegree = maxDegree; // For undirected graphs, in-degree = out-degree = degree
       maxOutDegree = maxDegree;
     }
@@ -287,7 +289,7 @@ export class Graph {
       selfLoops,
       maxInDegree,
       maxOutDegree,
-      maxDegree
+      maxDegree,
     };
   }
 
@@ -388,13 +390,13 @@ export class Graph {
     const queue: string[] = [sourceId];
     const visited = new Set<string>();
     const parent = new Map<string, string>();
-    
+
     visited.add(sourceId);
 
     while (queue.length > 0) {
       const current = queue.shift()!;
-      
-      const neighbors = this.isDirected() 
+
+      const neighbors = this.isDirected()
         ? this.getOutgoingNeighbors(current)
         : this.getNeighbors(current);
 
@@ -424,7 +426,11 @@ export class Graph {
   /**
    * Get all paths between two nodes (DFS-based)
    */
-  getAllPaths(sourceId: string, targetId: string, maxPaths: number = 10): string[][] {
+  getAllPaths(
+    sourceId: string,
+    targetId: string,
+    maxPaths: number = 10
+  ): string[][] {
     if (sourceId === targetId) {
       return [[sourceId]];
     }
@@ -434,14 +440,14 @@ export class Graph {
 
     const dfs = (current: string, path: string[]) => {
       if (paths.length >= maxPaths) return;
-      
+
       if (current === targetId) {
         paths.push([...path, current]);
         return;
       }
 
       visited.add(current);
-      const neighbors = this.isDirected() 
+      const neighbors = this.isDirected()
         ? this.getOutgoingNeighbors(current)
         : this.getNeighbors(current);
 
@@ -476,7 +482,7 @@ export class Graph {
   regenerateAllNodeLabels(): void {
     this.state.data.nodes = this.state.data.nodes.map((node, index) => ({
       ...node,
-      label: this.generateNodeLabel(index)
+      label: this.generateNodeLabel(index),
     }));
   }
 
@@ -491,7 +497,6 @@ export class Graph {
     }
   }
 
-
   /**
    * Generate a unique edge ID
    */
@@ -504,7 +509,7 @@ export class Graph {
    */
   private generateNodeLabel(index: number): string {
     const { nodeIndexingMode } = this.state.data;
-    
+
     switch (nodeIndexingMode) {
       case '0-indexed':
         return index.toString();
@@ -535,9 +540,12 @@ export class Graph {
    * Find edges by source and target nodes
    */
   private findEdgesByNodes(sourceId: string, targetId: string): Edge[] {
-    return this.state.data.edges.filter(edge => 
-      (edge.source === sourceId && edge.target === targetId) ||
-      (this.state.data.type === 'undirected' && edge.source === targetId && edge.target === sourceId)
+    return this.state.data.edges.filter(
+      edge =>
+        (edge.source === sourceId && edge.target === targetId) ||
+        (this.state.data.type === 'undirected' &&
+          edge.source === targetId &&
+          edge.target === sourceId)
     );
   }
 
@@ -565,16 +573,16 @@ export class Graph {
 
     // Basic structure validation
     this.validateBasicStructure(errors, warnings);
-    
+
     // Node validation
     this.validateNodes(errors, warnings);
-    
+
     // Edge validation
     this.validateEdges(errors, warnings);
-    
+
     // Graph topology validation
     this.validateGraphTopology(errors, warnings);
-    
+
     // Graph constraints validation
     this.validateGraphConstraints(errors, warnings);
 
@@ -591,18 +599,25 @@ export class Graph {
   private validateBasicStructure(errors: string[], warnings: string[]): void {
     // Check node count
     if (this.state.data.nodes.length > this.state.data.maxNodes) {
-      errors.push(`Graph exceeds maximum node count of ${this.state.data.maxNodes}`);
+      errors.push(
+        `Graph exceeds maximum node count of ${this.state.data.maxNodes}`
+      );
     }
 
     // Check for empty graph
-    if (this.state.data.nodes.length === 0 && this.state.data.edges.length > 0) {
+    if (
+      this.state.data.nodes.length === 0 &&
+      this.state.data.edges.length > 0
+    ) {
       errors.push('Graph has edges but no nodes');
     }
 
     // Check for negative coordinates
     for (const node of this.state.data.nodes) {
       if (node.x < 0 || node.y < 0) {
-        warnings.push(`Node ${node.label} has negative coordinates: (${node.x}, ${node.y})`);
+        warnings.push(
+          `Node ${node.label} has negative coordinates: (${node.x}, ${node.y})`
+        );
       }
     }
   }
@@ -627,12 +642,16 @@ export class Graph {
 
       // Check for extremely large coordinates
       if (Math.abs(node.x) > 10000 || Math.abs(node.y) > 10000) {
-        warnings.push(`Node ${node.label} has very large coordinates: (${node.x}, ${node.y})`);
+        warnings.push(
+          `Node ${node.label} has very large coordinates: (${node.x}, ${node.y})`
+        );
       }
 
       // Check for NaN coordinates
       if (isNaN(node.x) || isNaN(node.y)) {
-        errors.push(`Node ${node.label} has invalid coordinates: (${node.x}, ${node.y})`);
+        errors.push(
+          `Node ${node.label} has invalid coordinates: (${node.x}, ${node.y})`
+        );
       }
     }
   }
@@ -653,24 +672,32 @@ export class Graph {
 
       // Check for invalid edge references
       if (!this.findNodeById(edge.source)) {
-        errors.push(`Edge ${edge.id} references non-existent source node: ${edge.source}`);
+        errors.push(
+          `Edge ${edge.id} references non-existent source node: ${edge.source}`
+        );
       }
       if (!this.findNodeById(edge.target)) {
-        errors.push(`Edge ${edge.id} references non-existent target node: ${edge.target}`);
+        errors.push(
+          `Edge ${edge.id} references non-existent target node: ${edge.target}`
+        );
       }
 
       // Check for self-loops in undirected graphs
-      if (this.state.data.type === 'undirected' && edge.source === edge.target) {
+      if (
+        this.state.data.type === 'undirected' &&
+        edge.source === edge.target
+      ) {
         errors.push(`Self-loop not allowed in undirected graph: ${edge.id}`);
       }
 
       // Check for duplicate edges (considering direction)
-      const edgeKey = this.state.data.type === 'directed' 
-        ? `${edge.source}->${edge.target}`
-        : edge.source < edge.target 
-          ? `${edge.source}-${edge.target}`
-          : `${edge.target}-${edge.source}`;
-      
+      const edgeKey =
+        this.state.data.type === 'directed'
+          ? `${edge.source}->${edge.target}`
+          : edge.source < edge.target
+            ? `${edge.source}-${edge.target}`
+            : `${edge.target}-${edge.source}`;
+
       if (edgePairs.has(edgeKey)) {
         errors.push(`Duplicate edge between ${edge.source} and ${edge.target}`);
       }
@@ -679,7 +706,9 @@ export class Graph {
       // Check for invalid weight format
       if (edge.weight !== undefined && edge.weight !== null) {
         if (typeof edge.weight !== 'string') {
-          errors.push(`Edge ${edge.id} has invalid weight type: ${typeof edge.weight}`);
+          errors.push(
+            `Edge ${edge.id} has invalid weight type: ${typeof edge.weight}`
+          );
         } else if (edge.weight.trim().length === 0) {
           warnings.push(`Edge ${edge.id} has empty weight`);
         }
@@ -699,7 +728,7 @@ export class Graph {
       connectedNodes.add(edge.source);
       connectedNodes.add(edge.target);
     }
-    
+
     for (const node of this.state.data.nodes) {
       if (!connectedNodes.has(node.label)) {
         warnings.push(`Isolated node detected: ${node.label}`);
@@ -724,23 +753,34 @@ export class Graph {
   /**
    * Validate graph constraints
    */
-  private validateGraphConstraints(_errors: string[], warnings: string[]): void {
+  private validateGraphConstraints(
+    _errors: string[],
+    warnings: string[]
+  ): void {
     // Check for maximum degree constraints
-    const maxDegree = Math.max(...this.state.data.nodes.map(node => this.getNodeDegree(node.label)));
+    const maxDegree = Math.max(
+      ...this.state.data.nodes.map(node => this.getNodeDegree(node.label))
+    );
     if (maxDegree > 50) {
       warnings.push(`Node with high degree detected: ${maxDegree} connections`);
     }
 
     // Check for graph density
-    const maxPossibleEdges = this.state.data.type === 'directed' 
-      ? this.state.data.nodes.length * (this.state.data.nodes.length - 1)
-      : (this.state.data.nodes.length * (this.state.data.nodes.length - 1)) / 2;
-    
+    const maxPossibleEdges =
+      this.state.data.type === 'directed'
+        ? this.state.data.nodes.length * (this.state.data.nodes.length - 1)
+        : (this.state.data.nodes.length * (this.state.data.nodes.length - 1)) /
+          2;
+
     const density = this.state.data.edges.length / maxPossibleEdges;
     if (density > 0.8) {
-      warnings.push(`Graph is very dense: ${(density * 100).toFixed(1)}% of possible edges present`);
+      warnings.push(
+        `Graph is very dense: ${(density * 100).toFixed(1)}% of possible edges present`
+      );
     } else if (density < 0.1 && this.state.data.nodes.length > 5) {
-      warnings.push(`Graph is very sparse: ${(density * 100).toFixed(1)}% of possible edges present`);
+      warnings.push(
+        `Graph is very sparse: ${(density * 100).toFixed(1)}% of possible edges present`
+      );
     }
 
     // Check for node positioning constraints
@@ -752,12 +792,14 @@ export class Graph {
    */
   private validateNodePositions(warnings: string[]): void {
     const positions = new Map<string, string>();
-    
+
     for (const node of this.state.data.nodes) {
       const posKey = `${node.x},${node.y}`;
       if (positions.has(posKey)) {
         const existingNodeLabel = positions.get(posKey)!;
-        warnings.push(`Nodes ${node.label} and ${existingNodeLabel} are positioned at the same coordinates: (${node.x}, ${node.y})`);
+        warnings.push(
+          `Nodes ${node.label} and ${existingNodeLabel} are positioned at the same coordinates: (${node.x}, ${node.y})`
+        );
       }
       positions.set(posKey, node.label);
     }
@@ -767,10 +809,14 @@ export class Graph {
       for (let j = i + 1; j < this.state.data.nodes.length; j++) {
         const node1 = this.state.data.nodes[i]!;
         const node2 = this.state.data.nodes[j]!;
-        const distance = Math.sqrt((node1.x - node2.x) ** 2 + (node1.y - node2.y) ** 2);
-        
+        const distance = Math.sqrt(
+          (node1.x - node2.x) ** 2 + (node1.y - node2.y) ** 2
+        );
+
         if (distance < 10) {
-          warnings.push(`Nodes ${node1.label} and ${node2.label} are very close together: distance ${distance.toFixed(1)}`);
+          warnings.push(
+            `Nodes ${node1.label} and ${node2.label} are very close together: distance ${distance.toFixed(1)}`
+          );
         }
       }
     }
@@ -797,13 +843,18 @@ export class Graph {
   /**
    * Depth-first search to find connected component
    */
-  private dfsComponent(nodeLabel: string, visited: Set<string>, component: string[]): void {
+  private dfsComponent(
+    nodeLabel: string,
+    visited: Set<string>,
+    component: string[]
+  ): void {
     visited.add(nodeLabel);
     component.push(nodeLabel);
 
     const edges = this.getEdgesByNode(nodeLabel);
     for (const edge of edges) {
-      const neighborLabel = edge.source === nodeLabel ? edge.target : edge.source;
+      const neighborLabel =
+        edge.source === nodeLabel ? edge.target : edge.source;
       if (!visited.has(neighborLabel)) {
         this.dfsComponent(neighborLabel, visited, component);
       }
@@ -831,7 +882,11 @@ export class Graph {
   /**
    * DFS helper to detect cycles
    */
-  private hasCycleDFS(nodeLabel: string, visited: Set<string>, recursionStack: Set<string>): boolean {
+  private hasCycleDFS(
+    nodeLabel: string,
+    visited: Set<string>,
+    recursionStack: Set<string>
+  ): boolean {
     visited.add(nodeLabel);
     recursionStack.add(nodeLabel);
 
@@ -853,14 +908,19 @@ export class Graph {
   /**
    * Validate a specific operation before performing it
    */
-  validateOperation(operation: 'addNode' | 'addEdge' | 'removeNode' | 'removeEdge', data?: any): GraphValidationResult {
+  validateOperation(
+    operation: 'addNode' | 'addEdge' | 'removeNode' | 'removeEdge',
+    data?: any
+  ): GraphValidationResult {
     const errors: string[] = [];
     const warnings: string[] = [];
 
     switch (operation) {
       case 'addNode':
         if (this.state.data.nodes.length >= this.state.data.maxNodes) {
-          errors.push(`Cannot add node: maximum node limit of ${this.state.data.maxNodes} reached`);
+          errors.push(
+            `Cannot add node: maximum node limit of ${this.state.data.maxNodes} reached`
+          );
         }
         if (data?.label && this.hasNodeWithLabel(data.label)) {
           errors.push(`Cannot add node: label '${data.label}' already exists`);
@@ -869,16 +929,31 @@ export class Graph {
 
       case 'addEdge':
         if (data?.source && !this.findNodeById(data.source)) {
-          errors.push(`Cannot add edge: source node '${data.source}' not found`);
+          errors.push(
+            `Cannot add edge: source node '${data.source}' not found`
+          );
         }
         if (data?.target && !this.findNodeById(data.target)) {
-          errors.push(`Cannot add edge: target node '${data.target}' not found`);
+          errors.push(
+            `Cannot add edge: target node '${data.target}' not found`
+          );
         }
-        if (data?.source === data?.target && this.state.data.type === 'undirected') {
-          errors.push('Cannot add edge: self-loops are not allowed in undirected graphs');
+        if (
+          data?.source === data?.target &&
+          this.state.data.type === 'undirected'
+        ) {
+          errors.push(
+            'Cannot add edge: self-loops are not allowed in undirected graphs'
+          );
         }
-        if (data?.source && data?.target && this.hasEdgeBetween(data.source, data.target)) {
-          errors.push(`Cannot add edge: edge between '${data.source}' and '${data.target}' already exists`);
+        if (
+          data?.source &&
+          data?.target &&
+          this.hasEdgeBetween(data.source, data.target)
+        ) {
+          errors.push(
+            `Cannot add edge: edge between '${data.source}' and '${data.target}' already exists`
+          );
         }
         break;
 
@@ -950,13 +1025,17 @@ export class Graph {
   addNode(nodeData: NodeCreationData): Node | null {
     // Check if we've reached the maximum node limit
     if (this.state.data.nodes.length >= this.state.data.maxNodes) {
-      this.setError(`Cannot add node: maximum node limit of ${this.state.data.maxNodes} reached`);
+      this.setError(
+        `Cannot add node: maximum node limit of ${this.state.data.maxNodes} reached`
+      );
       return null;
     }
 
     // Check if label already exists
     if (this.findNodeByLabel(nodeData.label)) {
-      this.setError(`Cannot add node: label '${nodeData.label}' already exists`);
+      this.setError(
+        `Cannot add node: label '${nodeData.label}' already exists`
+      );
       return null;
     }
 
@@ -993,22 +1072,32 @@ export class Graph {
   /**
    * Update multiple node labels based on current indexing mode
    */
-  updateNodeLabels(nodeIds: string[]): { success: boolean; updated: number; errors: string[] } {
+  updateNodeLabels(nodeIds: string[]): {
+    success: boolean;
+    updated: number;
+    errors: string[];
+  } {
     const errors: string[] = [];
     let updated = 0;
 
     for (const nodeLabel of nodeIds) {
-      const nodeIndex = this.state.data.nodes.findIndex(node => node.label === nodeLabel);
+      const nodeIndex = this.state.data.nodes.findIndex(
+        node => node.label === nodeLabel
+      );
       if (nodeIndex === -1) {
         errors.push(`Node with label '${nodeLabel}' not found`);
         continue;
       }
 
       const newLabel = this.generateNodeLabel(nodeIndex);
-      const existingNode = this.state.data.nodes.find(n => n.label === newLabel && n.label !== nodeLabel);
-      
+      const existingNode = this.state.data.nodes.find(
+        n => n.label === newLabel && n.label !== nodeLabel
+      );
+
       if (existingNode) {
-        errors.push(`Label '${newLabel}' already exists for node '${existingNode.label}'`);
+        errors.push(
+          `Label '${newLabel}' already exists for node '${existingNode.label}'`
+        );
         continue;
       }
 
@@ -1016,7 +1105,7 @@ export class Graph {
       if (node) {
         this.state.data.nodes[nodeIndex] = {
           ...node,
-          label: newLabel
+          label: newLabel,
         };
       }
       updated++;
@@ -1030,7 +1119,7 @@ export class Graph {
     return {
       success: errors.length === 0,
       updated,
-      errors
+      errors,
     };
   }
 
@@ -1040,11 +1129,11 @@ export class Graph {
   getAvailableNodeLabels(count: number = 10): string[] {
     const labels: string[] = [];
     const startIndex = this.state.data.nodes.length;
-    
+
     for (let i = 0; i < count; i++) {
       labels.push(this.generateNodeLabel(startIndex + i));
     }
-    
+
     return labels;
   }
 
@@ -1053,7 +1142,7 @@ export class Graph {
    */
   isValidNodeLabel(label: string): boolean {
     const { nodeIndexingMode } = this.state.data;
-    
+
     switch (nodeIndexingMode) {
       case '0-indexed':
         return /^\d+$/.test(label) && parseInt(label) >= 0;
@@ -1071,7 +1160,7 @@ export class Graph {
    */
   getLabelFormat(): string {
     const { nodeIndexingMode } = this.state.data;
-    
+
     switch (nodeIndexingMode) {
       case '0-indexed':
         return 'Numeric (0, 1, 2, ...)';
@@ -1088,9 +1177,13 @@ export class Graph {
    * Remove a node by label
    */
   removeNode(nodeLabel: string): boolean {
-    const nodeIndex = this.state.data.nodes.findIndex(node => node.label === nodeLabel);
+    const nodeIndex = this.state.data.nodes.findIndex(
+      node => node.label === nodeLabel
+    );
     if (nodeIndex === -1) {
-      this.setError(`Cannot remove node: node with label '${nodeLabel}' not found`);
+      this.setError(
+        `Cannot remove node: node with label '${nodeLabel}' not found`
+      );
       return false;
     }
 
@@ -1111,16 +1204,25 @@ export class Graph {
    * Update a node by label
    */
   updateNode(nodeLabel: string, updates: Partial<Node>): Node | null {
-    const nodeIndex = this.state.data.nodes.findIndex(node => node.label === nodeLabel);
+    const nodeIndex = this.state.data.nodes.findIndex(
+      node => node.label === nodeLabel
+    );
     if (nodeIndex === -1) {
-      this.setError(`Cannot update node: node with label '${nodeLabel}' not found`);
+      this.setError(
+        `Cannot update node: node with label '${nodeLabel}' not found`
+      );
       return null;
     }
 
     // Check if label update would create a duplicate
-    if (updates.label && updates.label !== this.state.data.nodes[nodeIndex]!.label) {
+    if (
+      updates.label &&
+      updates.label !== this.state.data.nodes[nodeIndex]!.label
+    ) {
       if (this.findNodeByLabel(updates.label)) {
-        this.setError(`Cannot update node: label '${updates.label}' already exists`);
+        this.setError(
+          `Cannot update node: label '${updates.label}' already exists`
+        );
         return null;
       }
     }
@@ -1156,7 +1258,8 @@ export class Graph {
    * Get all nodes with a specific label pattern
    */
   getNodesByLabelPattern(pattern: string | RegExp): Node[] {
-    const regex = pattern instanceof RegExp ? pattern : new RegExp(pattern, 'i');
+    const regex =
+      pattern instanceof RegExp ? pattern : new RegExp(pattern, 'i');
     return this.state.data.nodes
       .filter(node => regex.test(node.label))
       .map(node => ({ ...node }));
@@ -1196,7 +1299,9 @@ export class Graph {
   selectNode(nodeLabel: string): boolean {
     const node = this.findNodeById(nodeLabel);
     if (!node) {
-      this.setError(`Cannot select node: node with label '${nodeLabel}' not found`);
+      this.setError(
+        `Cannot select node: node with label '${nodeLabel}' not found`
+      );
       return false;
     }
 
@@ -1212,7 +1317,9 @@ export class Graph {
   deselectNode(nodeLabel: string): boolean {
     const node = this.findNodeById(nodeLabel);
     if (!node) {
-      this.setError(`Cannot deselect node: node with label '${nodeLabel}' not found`);
+      this.setError(
+        `Cannot deselect node: node with label '${nodeLabel}' not found`
+      );
       return false;
     }
 
@@ -1228,7 +1335,9 @@ export class Graph {
   toggleNodeSelection(nodeLabel: string): boolean {
     const node = this.findNodeById(nodeLabel);
     if (!node) {
-      this.setError(`Cannot toggle node selection: node with label '${nodeLabel}' not found`);
+      this.setError(
+        `Cannot toggle node selection: node with label '${nodeLabel}' not found`
+      );
       return false;
     }
 
@@ -1263,7 +1372,9 @@ export class Graph {
   setNodeDragging(nodeLabel: string, dragging: boolean): boolean {
     const node = this.findNodeById(nodeLabel);
     if (!node) {
-      this.setError(`Cannot set dragging state: node with label '${nodeLabel}' not found`);
+      this.setError(
+        `Cannot set dragging state: node with label '${nodeLabel}' not found`
+      );
       return false;
     }
 
@@ -1289,25 +1400,39 @@ export class Graph {
   addEdge(edgeData: EdgeCreationData): Edge | null {
     // Validate source and target nodes exist
     if (!this.findNodeById(edgeData.source)) {
-      this.setError(`Cannot add edge: source node '${edgeData.source}' not found`);
+      this.setError(
+        `Cannot add edge: source node '${edgeData.source}' not found`
+      );
       return null;
     }
 
     if (!this.findNodeById(edgeData.target)) {
-      this.setError(`Cannot add edge: target node '${edgeData.target}' not found`);
+      this.setError(
+        `Cannot add edge: target node '${edgeData.target}' not found`
+      );
       return null;
     }
 
     // Check for self-loops in undirected graphs
-    if (this.state.data.type === 'undirected' && edgeData.source === edgeData.target) {
-      this.setError('Cannot add edge: self-loops are not allowed in undirected graphs');
+    if (
+      this.state.data.type === 'undirected' &&
+      edgeData.source === edgeData.target
+    ) {
+      this.setError(
+        'Cannot add edge: self-loops are not allowed in undirected graphs'
+      );
       return null;
     }
 
     // Check for duplicate edges
-    const existingEdges = this.findEdgesByNodes(edgeData.source, edgeData.target);
+    const existingEdges = this.findEdgesByNodes(
+      edgeData.source,
+      edgeData.target
+    );
     if (existingEdges.length > 0) {
-      this.setError(`Cannot add edge: edge between '${edgeData.source}' and '${edgeData.target}' already exists`);
+      this.setError(
+        `Cannot add edge: edge between '${edgeData.source}' and '${edgeData.target}' already exists`
+      );
       return null;
     }
 
@@ -1329,11 +1454,15 @@ export class Graph {
   /**
    * Add an edge with auto-generated weight
    */
-  addEdgeWithWeight(sourceId: string, targetId: string, weight?: string): Edge | null {
-    return this.addEdge({ 
-      source: sourceId, 
-      target: targetId, 
-      ...(weight && { weight }) 
+  addEdgeWithWeight(
+    sourceId: string,
+    targetId: string,
+    weight?: string
+  ): Edge | null {
+    return this.addEdge({
+      source: sourceId,
+      target: targetId,
+      ...(weight && { weight }),
     });
   }
 
@@ -1341,7 +1470,9 @@ export class Graph {
    * Remove an edge by ID
    */
   removeEdge(edgeId: string): boolean {
-    const edgeIndex = this.state.data.edges.findIndex(edge => edge.id === edgeId);
+    const edgeIndex = this.state.data.edges.findIndex(
+      edge => edge.id === edgeId
+    );
     if (edgeIndex === -1) {
       this.setError(`Cannot remove edge: edge with ID '${edgeId}' not found`);
       return false;
@@ -1359,10 +1490,15 @@ export class Graph {
    */
   removeEdgesBetweenNodes(sourceId: string, targetId: string): number {
     const initialCount = this.state.data.edges.length;
-    
-    this.state.data.edges = this.state.data.edges.filter(edge => 
-      !(edge.source === sourceId && edge.target === targetId) &&
-      !(edge.source === targetId && edge.target === sourceId && this.state.data.type === 'undirected')
+
+    this.state.data.edges = this.state.data.edges.filter(
+      edge =>
+        !(edge.source === sourceId && edge.target === targetId) &&
+        !(
+          edge.source === targetId &&
+          edge.target === sourceId &&
+          this.state.data.type === 'undirected'
+        )
     );
 
     const removedCount = initialCount - this.state.data.edges.length;
@@ -1377,8 +1513,13 @@ export class Graph {
   /**
    * Update an edge by ID
    */
-  updateEdge(edgeId: string, updates: Partial<Omit<Edge, 'id' | 'source' | 'target'>>): Edge | null {
-    const edgeIndex = this.state.data.edges.findIndex(edge => edge.id === edgeId);
+  updateEdge(
+    edgeId: string,
+    updates: Partial<Omit<Edge, 'id' | 'source' | 'target'>>
+  ): Edge | null {
+    const edgeIndex = this.state.data.edges.findIndex(
+      edge => edge.id === edgeId
+    );
     if (edgeIndex === -1) {
       this.setError(`Cannot update edge: edge with ID '${edgeId}' not found`);
       return null;
@@ -1511,7 +1652,9 @@ export class Graph {
   toggleEdgeSelection(edgeId: string): boolean {
     const edge = this.findEdgeById(edgeId);
     if (!edge) {
-      this.setError(`Cannot toggle edge selection: edge with ID '${edgeId}' not found`);
+      this.setError(
+        `Cannot toggle edge selection: edge with ID '${edgeId}' not found`
+      );
       return false;
     }
 
@@ -1553,7 +1696,8 @@ export class Graph {
    * Get edges with weights matching a pattern
    */
   getEdgesByWeightPattern(pattern: string | RegExp): Edge[] {
-    const regex = pattern instanceof RegExp ? pattern : new RegExp(pattern, 'i');
+    const regex =
+      pattern instanceof RegExp ? pattern : new RegExp(pattern, 'i');
     return this.state.data.edges
       .filter(edge => edge.weight && regex.test(edge.weight))
       .map(edge => ({ ...edge }));
@@ -1580,7 +1724,6 @@ export class Graph {
     return result !== null;
   }
 
-
   /**
    * Check if a weight is valid for the current graph
    */
@@ -1588,19 +1731,21 @@ export class Graph {
     if (typeof weight !== 'string') {
       return { valid: false, reason: 'Weight must be a string' };
     }
-    
+
     if (weight.trim().length === 0) {
       return { valid: false, reason: 'Weight cannot be empty' };
     }
-    
+
     // Check for reasonable length
     if (weight.length > 100) {
-      return { valid: false, reason: 'Weight is too long (max 100 characters)' };
+      return {
+        valid: false,
+        reason: 'Weight is too long (max 100 characters)',
+      };
     }
-    
+
     return { valid: true };
   }
-
 
   /**
    * Remove weight from an edge
@@ -1611,7 +1756,7 @@ export class Graph {
       this.setError(`Cannot remove weight: edge with ID '${edgeId}' not found`);
       return false;
     }
-    
+
     const result = this.updateEdge(edgeId, { weight: undefined as any });
     return result !== null;
   }
@@ -1619,26 +1764,29 @@ export class Graph {
   /**
    * Set weight for multiple edges
    */
-  setEdgeWeights(edgeIds: string[], weight: string): { success: boolean; updated: number; errors: string[] } {
+  setEdgeWeights(
+    edgeIds: string[],
+    weight: string
+  ): { success: boolean; updated: number; errors: string[] } {
     const errors: string[] = [];
     let updated = 0;
-    
+
     const validation = this.isValidEdgeWeight(weight);
     if (!validation.valid) {
       return {
         success: false,
         updated: 0,
-        errors: [validation.reason!]
+        errors: [validation.reason!],
       };
     }
-    
+
     for (const edgeId of edgeIds) {
       const edge = this.findEdgeById(edgeId);
       if (!edge) {
         errors.push(`Edge with ID '${edgeId}' not found`);
         continue;
       }
-      
+
       const result = this.updateEdge(edgeId, { weight });
       if (result) {
         updated++;
@@ -1646,16 +1794,16 @@ export class Graph {
         errors.push(`Failed to update edge '${edgeId}'`);
       }
     }
-    
+
     if (updated > 0) {
       this.markModified();
       this.clearError();
     }
-    
+
     return {
       success: errors.length === 0,
       updated,
-      errors
+      errors,
     };
   }
 
@@ -1699,26 +1847,26 @@ export class Graph {
     const edges = this.state.data.edges;
 
     let result = '';
-    
+
     // Number of nodes
     result += `${nodes.length}\n`;
-    
+
     // Node labels (one per line)
     for (const node of nodes) {
       result += `${node.label}\n`;
     }
-    
+
     // Edges (source target weight)
     for (const edge of edges) {
       const sourceLabel = edge.source;
       const targetLabel = edge.target;
-      
+
       let edgeLine = `${sourceLabel} ${targetLabel}`;
-      
+
       if (edge.weight) {
         edgeLine += ` ${edge.weight}`;
       }
-      
+
       result += `${edgeLine}\n`;
     }
 
@@ -1729,10 +1877,17 @@ export class Graph {
    * Parse graph from simple text format
    * Format: number of nodes, then node labels, then edges
    */
-  static parseFromText(text: string): { success: boolean; graph?: Graph; error?: string } {
+  static parseFromText(text: string): {
+    success: boolean;
+    graph?: Graph;
+    error?: string;
+  } {
     try {
-      const lines = text.trim().split('\n').filter(line => line.length > 0);
-      
+      const lines = text
+        .trim()
+        .split('\n')
+        .filter(line => line.length > 0);
+
       if (lines.length === 0) {
         return { success: true, graph: new Graph() };
       }
@@ -1770,17 +1925,20 @@ export class Graph {
       // Create graph and add nodes
       const graph = new Graph();
       graph.setType('directed'); // Allow self-loops and directed edges
-      
+
       // Add nodes with default positions
       for (let i = 0; i < nodeLabels.length; i++) {
         const success = graph.addNode({
           label: nodeLabels[i]!,
           x: i * 100, // Default spacing
-          y: 0
+          y: 0,
         });
-        
+
         if (!success) {
-          return { success: false, error: `Failed to add node: ${nodeLabels[i]}` };
+          return {
+            success: false,
+            error: `Failed to add node: ${nodeLabels[i]}`,
+          };
         }
       }
 
@@ -1792,7 +1950,10 @@ export class Graph {
 
         const parts = line.split(/\s+/);
         if (parts.length < 2) {
-          return { success: false, error: `Invalid edge format at line ${nodeCount + 2 + i}: ${line}` };
+          return {
+            success: false,
+            error: `Invalid edge format at line ${nodeCount + 2 + i}: ${line}`,
+          };
         }
 
         const sourceLabel = parts[0]!;
@@ -1804,16 +1965,22 @@ export class Graph {
         const targetNode = graph.getNodes().find(n => n.label === targetLabel);
 
         if (!sourceNode) {
-          return { success: false, error: `Source node not found: ${sourceLabel}` };
+          return {
+            success: false,
+            error: `Source node not found: ${sourceLabel}`,
+          };
         }
         if (!targetNode) {
-          return { success: false, error: `Target node not found: ${targetLabel}` };
+          return {
+            success: false,
+            error: `Target node not found: ${targetLabel}`,
+          };
         }
 
         // Add edge
         const edgeData: EdgeCreationData = {
           source: sourceNode.label,
-          target: targetNode.label
+          target: targetNode.label,
         };
 
         if (weight !== undefined) {
@@ -1822,15 +1989,18 @@ export class Graph {
 
         const success = graph.addEdge(edgeData);
         if (!success) {
-          return { success: false, error: `Failed to add edge: ${sourceLabel} -> ${targetLabel}` };
+          return {
+            success: false,
+            error: `Failed to add edge: ${sourceLabel} -> ${targetLabel}`,
+          };
         }
       }
 
       return { success: true, graph };
     } catch (error) {
-      return { 
-        success: false, 
-        error: `Parse error: ${error instanceof Error ? error.message : 'Unknown error'}` 
+      return {
+        success: false,
+        error: `Parse error: ${error instanceof Error ? error.message : 'Unknown error'}`,
       };
     }
   }

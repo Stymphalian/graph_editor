@@ -147,7 +147,7 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
 
     // Add click handler for empty space (node creation)
     if (mode === 'edit' && onNodeCreate) {
-      svg.on('click', (event) => {
+      svg.on('click', event => {
         if (event.target === svg.node()) {
           const [x, y] = d3.pointer(event, svg.node());
           onNodeCreate(x, y);
@@ -185,16 +185,37 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
     return () => {
       simulation.stop();
     };
-  }, [data, width, height, onNodeClick, onEdgeClick, onNodeCreate, selectedNodeLabel, selectedEdgeId, mode]);
+  }, [
+    data,
+    width,
+    height,
+    onNodeClick,
+    onEdgeClick,
+    onNodeCreate,
+    selectedNodeLabel,
+    selectedEdgeId,
+    mode,
+  ]);
 
   return (
-    <div className="graph-container w-full h-full relative" data-testid="graph-viewer">
-      <svg 
-        ref={svgRef} 
-        width={width} 
-        height={height} 
-        className="graph-svg w-full h-full border border-gray-200 rounded-lg bg-white"
-        style={{ cursor: mode === 'edit' ? 'crosshair' : 'default' }}
+    <div
+      className="graph-container"
+      style={{ width: '100%', height: '100%', position: 'relative' }}
+      data-testid="graph-viewer"
+    >
+      <svg
+        ref={svgRef}
+        width={width}
+        height={height}
+        className="graph-svg"
+        style={{ 
+          width: '100%', 
+          height: '100%', 
+          border: '1px solid #e5e7eb', 
+          borderRadius: '0.5rem', 
+          backgroundColor: 'white',
+          cursor: mode === 'edit' ? 'crosshair' : 'default' 
+        }}
       />
     </div>
   );

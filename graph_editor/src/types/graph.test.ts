@@ -78,9 +78,7 @@ describe('Graph Types', () => {
           { label: 'A', x: 0, y: 0 },
           { label: 'B', x: 100, y: 0 },
         ],
-        edges: [
-          { id: 'edge1', source: 'A', target: 'B'},
-        ],
+        edges: [{ id: 'edge1', source: 'A', target: 'B' }],
         type: 'directed',
         nodeIndexingMode: '0-indexed',
         maxNodes: 1000,
@@ -252,7 +250,7 @@ describe('Graph Types', () => {
   describe('Type unions', () => {
     it('should support all NodeIndexingMode values', () => {
       const modes: NodeIndexingMode[] = ['0-indexed', '1-indexed', 'custom'];
-      
+
       expect(modes).toContain('0-indexed');
       expect(modes).toContain('1-indexed');
       expect(modes).toContain('custom');
@@ -260,7 +258,7 @@ describe('Graph Types', () => {
 
     it('should support all GraphType values', () => {
       const types: GraphType[] = ['directed', 'undirected'];
-      
+
       expect(types).toContain('directed');
       expect(types).toContain('undirected');
     });

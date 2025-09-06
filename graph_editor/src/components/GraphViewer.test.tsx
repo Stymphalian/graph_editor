@@ -13,7 +13,7 @@ describe('GraphViewer', () => {
 
   it('renders the correct number of nodes', () => {
     render(<GraphViewer data={mockGraphData} />);
-    
+
     // Check that all nodes are rendered
     const nodeGroups = document.querySelectorAll('.node');
     expect(nodeGroups).toHaveLength(mockGraphData.nodes.length);
@@ -21,21 +21,21 @@ describe('GraphViewer', () => {
 
   it('renders node labels with correct labels', () => {
     render(<GraphViewer data={mockGraphData} />);
-    
+
     // Check that each node has a label with the correct label
     const nodeLabels = document.querySelectorAll('.graph-node-label');
     expect(nodeLabels).toHaveLength(mockGraphData.nodes.length);
-    
+
     // Check that the text content matches expected node labels
     const labelTexts = Array.from(nodeLabels).map(label => label.textContent);
-    mockGraphData.nodes.forEach((node) => {
+    mockGraphData.nodes.forEach(node => {
       expect(labelTexts).toContain(node.label);
     });
   });
 
   it('renders the correct number of edges', () => {
     render(<GraphViewer data={mockGraphData} />);
-    
+
     // Check that all edges are rendered
     const edgeLines = document.querySelectorAll('.graph-edge');
     expect(edgeLines).toHaveLength(mockGraphData.edges.length);
@@ -43,7 +43,7 @@ describe('GraphViewer', () => {
 
   it('renders edges with correct structure', () => {
     render(<GraphViewer data={mockGraphData} />);
-    
+
     // Check that edges are SVG line elements
     const edgeLines = document.querySelectorAll('.graph-edge');
     edgeLines.forEach(edge => {

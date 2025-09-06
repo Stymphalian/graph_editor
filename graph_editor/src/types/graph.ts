@@ -52,7 +52,7 @@ export interface GraphState {
   /** Whether the graph has been modified since last save */
   isModified: boolean;
   /** Current error message, if any */
-  error?: string|undefined;
+  error?: string | undefined;
 }
 
 export interface GraphValidationResult {

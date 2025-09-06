@@ -1,168 +1,345 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-
 /* Custom base styles for graph editor */
-@layer base {
-  html {
-    font-family:
-      'Inter',
-      system-ui,
-      -apple-system,
-      BlinkMacSystemFont,
-      'Segoe UI',
-      Roboto,
-      sans-serif;
-  }
+html {
+  font-family:
+    'Inter',
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    Roboto,
+    sans-serif;
+}
 
-  body {
-    @apply bg-gray-50 text-gray-900;
-  }
+body {
+  background-color: #f9fafb;
+  color: #111827;
 }
 
 /* Custom component styles for graph editor */
-@layer components {
-  .graph-editor-layout {
-    @apply min-h-screen bg-gradient-to-br from-gray-50 to-gray-100;
-  }
+.graph-editor-layout {
+  min-height: 100vh;
+  background: linear-gradient(to bottom right, #f9fafb, #f3f4f6);
+}
 
-  .graph-editor-header {
-    @apply bg-white/80 backdrop-blur-sm shadow-sm border-b border-gray-200;
-  }
+.graph-editor-header {
+  background-color: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(8px);
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+  border-bottom: 1px solid #e5e7eb;
+}
 
+.graph-editor-main {
+  max-width: 80rem;
+  margin: 0 auto;
+  padding: 2rem 1rem;
+}
+
+@media (min-width: 640px) {
   .graph-editor-main {
-    @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8;
-  }
-
-  .graph-editor-panel {
-    @apply bg-white/90 backdrop-blur-sm rounded-lg shadow-graph border border-gray-200/50;
-  }
-
-  .graph-editor-controls {
-    @apply graph-controls p-4 space-y-4;
-  }
-
-  .graph-editor-button {
-    @apply px-4 py-2 text-sm font-medium rounded-md transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2;
-  }
-
-  .graph-editor-button-primary {
-    @apply graph-editor-button bg-graph-node-500 text-white hover:bg-graph-node-600 focus:ring-graph-node-500;
-  }
-
-  .graph-editor-button-secondary {
-    @apply graph-editor-button bg-gray-200 text-gray-900 hover:bg-gray-300 focus:ring-gray-500;
-  }
-
-  .graph-editor-button-danger {
-    @apply graph-editor-button bg-graph-selected-500 text-white hover:bg-graph-selected-600 focus:ring-graph-selected-500;
-  }
-
-  .graph-editor-input {
-    @apply block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-graph-node-500 focus:border-graph-node-500;
-  }
-
-  .graph-editor-textarea {
-    @apply graph-editor-input resize-none font-mono text-sm;
-  }
-
-  .graph-editor-select {
-    @apply graph-editor-input pr-10;
-  }
-
-  .graph-editor-label {
-    @apply block text-sm font-medium text-gray-700 mb-1;
-  }
-
-  .graph-editor-help-text {
-    @apply text-xs text-gray-500 mt-1;
-  }
-
-  .graph-editor-error {
-    @apply text-sm text-graph-selected-600 mt-1;
-  }
-
-  .graph-editor-success {
-    @apply text-sm text-green-600 mt-1;
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
   }
 }
 
+@media (min-width: 1024px) {
+  .graph-editor-main {
+    padding-left: 2rem;
+    padding-right: 2rem;
+  }
+}
+
+.graph-editor-panel {
+  background-color: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(8px);
+  border-radius: 0.5rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(229, 231, 235, 0.5);
+}
+
+.graph-editor-controls {
+  background-color: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(229, 231, 235, 0.8);
+  border-radius: 0.5rem;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.graph-editor-button {
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  border-radius: 0.375rem;
+  transition: all 0.2s;
+  outline: none;
+}
+
+.graph-editor-button:focus {
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.5);
+}
+
+.graph-editor-button-primary {
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  border-radius: 0.375rem;
+  transition: all 0.2s;
+  outline: none;
+  background-color: #3b82f6;
+  color: white;
+}
+
+.graph-editor-button-primary:hover {
+  background-color: #2563eb;
+}
+
+.graph-editor-button-primary:focus {
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.5);
+}
+
+.graph-editor-button-secondary {
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  border-radius: 0.375rem;
+  transition: all 0.2s;
+  outline: none;
+  background-color: #e5e7eb;
+  color: #111827;
+}
+
+.graph-editor-button-secondary:hover {
+  background-color: #d1d5db;
+}
+
+.graph-editor-button-secondary:focus {
+  box-shadow: 0 0 0 2px rgba(107, 114, 128, 0.5);
+}
+
+.graph-editor-button-danger {
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  border-radius: 0.375rem;
+  transition: all 0.2s;
+  outline: none;
+  background-color: #ef4444;
+  color: white;
+}
+
+.graph-editor-button-danger:hover {
+  background-color: #dc2626;
+}
+
+.graph-editor-button-danger:focus {
+  box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.5);
+}
+
+.graph-editor-input {
+  display: block;
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0.375rem;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  outline: none;
+}
+
+.graph-editor-input::placeholder {
+  color: #9ca3af;
+}
+
+.graph-editor-input:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 1px #3b82f6;
+}
+
+.graph-editor-textarea {
+  display: block;
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0.375rem;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  outline: none;
+  resize: none;
+  font-family: 'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', monospace;
+  font-size: 0.875rem;
+}
+
+.graph-editor-textarea::placeholder {
+  color: #9ca3af;
+}
+
+.graph-editor-textarea:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 1px #3b82f6;
+}
+
+.graph-editor-select {
+  display: block;
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0.375rem;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  outline: none;
+  padding-right: 2.5rem;
+}
+
+.graph-editor-select::placeholder {
+  color: #9ca3af;
+}
+
+.graph-editor-select:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 1px #3b82f6;
+}
+
+.graph-editor-label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #374151;
+  margin-bottom: 0.25rem;
+}
+
+.graph-editor-help-text {
+  font-size: 0.75rem;
+  color: #6b7280;
+  margin-top: 0.25rem;
+}
+
+.graph-editor-error {
+  font-size: 0.875rem;
+  color: #dc2626;
+  margin-top: 0.25rem;
+}
+
+.graph-editor-success {
+  font-size: 0.875rem;
+  color: #16a34a;
+  margin-top: 0.25rem;
+}
+
 /* Custom utility styles for graph editor */
-@layer utilities {
-  .graph-container {
-    @apply relative w-full h-full overflow-hidden;
-  }
+.graph-container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
 
-  .graph-svg {
-    @apply w-full h-full cursor-grab;
-  }
+.graph-svg {
+  width: 100%;
+  height: 100%;
+  cursor: grab;
+}
 
-  .graph-svg:active {
-    @apply cursor-grabbing;
-  }
+.graph-svg:active {
+  cursor: grabbing;
+}
 
-  .graph-node {
-    @apply cursor-pointer select-none transition-all duration-200;
-  }
+.graph-node {
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.2s;
+}
 
-  .graph-node:hover {
-    @apply stroke-2 drop-shadow-md;
-  }
+.graph-node:hover {
+  stroke-width: 2px;
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.2));
+}
 
-  .graph-node-selected {
-    @apply stroke-graph-selected-500 stroke-2 drop-shadow-lg;
-  }
+.graph-node-selected {
+  stroke: #ef4444;
+  stroke-width: 2px;
+  filter: drop-shadow(0 4px 8px rgba(239, 68, 68, 0.3));
+}
 
-  .graph-edge {
-    @apply stroke-black stroke-2 fill-none transition-all duration-200;
-  }
+.graph-edge {
+  stroke: #6b7280;
+  stroke-width: 2px;
+  fill: none;
+  transition: all 0.2s;
+}
 
-  .graph-edge:hover {
-    @apply stroke-graph-hover-500 stroke-2;
-  }
+.graph-edge:hover {
+  stroke: #0ea5e9;
+  stroke-width: 2px;
+}
 
-  .graph-edge-selected {
-    @apply stroke-graph-selected-500 stroke-2;
-  }
+.graph-edge-selected {
+  stroke: #ef4444;
+  stroke-width: 2px;
+}
 
-  .graph-label {
-    @apply font-sans pointer-events-none select-none;
-    text-anchor: middle;
-  }
+.graph-label {
+  font-family: Arial, sans-serif;
+  pointer-events: none;
+  user-select: none;
+  text-anchor: middle;
+}
 
-  .graph-node-label {
-    @apply graph-label text-xs fill-black;
-  }
+.graph-node-label {
+  font-family: Arial, sans-serif;
+  pointer-events: none;
+  user-select: none;
+  font-size: 0.75rem;
+  fill: black;
+  text-anchor: middle;
+}
 
-  .graph-edge-label {
-    @apply graph-label text-xs fill-gray-600;
-  }
+.graph-edge-label {
+  font-family: Arial, sans-serif;
+  pointer-events: none;
+  user-select: none;
+  font-size: 0.75rem;
+  fill: #6b7280;
+  text-anchor: middle;
+}
 
-  .graph-nib {
-    @apply w-2 h-2 rounded-full bg-graph-node-500 border-2 border-white shadow-sm;
-  }
+.graph-nib {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  background-color: #3b82f6;
+  border: 2px solid white;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+}
 
-  .graph-nib:hover {
-    @apply bg-graph-hover-500 scale-125;
-  }
+.graph-nib:hover {
+  background-color: #60a5fa;
+  transform: scale(1.25);
+}
 
-  .graph-nib-active {
-    @apply bg-graph-selected-500 scale-125;
-  }
+.graph-nib-active {
+  background-color: #ef4444;
+  transform: scale(1.25);
+}
 
-  .graph-preview-line {
-    @apply stroke-dashed stroke-graph-hover-500 stroke-2 fill-none;
-  }
+.graph-preview-line {
+  stroke: #3b82f6;
+  stroke-width: 2px;
+  fill: none;
+  stroke-dasharray: 5, 5;
+}
 
-  .graph-grid {
-    @apply stroke-gray-200 stroke-1 fill-none;
-  }
+.graph-grid {
+  stroke: #e5e7eb;
+  stroke-width: 1px;
+  fill: none;
+}
 
-  .graph-grid-major {
-    @apply stroke-gray-300 stroke-1;
-  }
+.graph-grid-major {
+  stroke: #d1d5db;
+  stroke-width: 1px;
+}
 
-  .graph-grid-minor {
-    @apply stroke-gray-100 stroke-0.5;
-  }
+.graph-grid-minor {
+  stroke: #f3f4f6;
+  stroke-width: 0.5px;
 }
