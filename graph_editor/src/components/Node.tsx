@@ -104,7 +104,7 @@ export const applyNodeNibs = (nodeSelection: any, showNibs: boolean, radius: num
   nodeSelection.selectAll('.node-nib').remove();
   
   if (showNibs) {
-    const nibRadius = 3; // Smaller nib
+    const nibRadius = 6; // Larger nib for easier selection
     
     const nib = nodeSelection
       .append('circle')

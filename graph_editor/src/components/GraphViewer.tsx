@@ -165,6 +165,20 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
           const y = event.clientY - rect.top;
           d3InstanceRef.current.mousePosition = { x, y };
           updatePreviewLine();
+          
+          // Update cursor based on whether we're over a valid target
+          const targetNode = d3InstanceRef.current.container
+            .selectAll('.node')
+            .data()
+            .find((d: D3Node) => {
+              if (d.label === d3InstanceRef.current?.edgeCreationSource) return false;
+              const dx = (d.x || 0) - x;
+              const dy = (d.y || 0) - y;
+              const distance = Math.sqrt(dx * dx + dy * dy);
+              return distance <= 30;
+            });
+          
+          svg.style('cursor', targetNode ? 'crosshair' : 'not-allowed');
         }
       }
     });
@@ -173,6 +187,8 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
       if (d3InstanceRef.current) {
         d3InstanceRef.current.mousePosition = null;
         updatePreviewLine();
+        // Reset cursor when mouse leaves
+        svg.style('cursor', mode === 'edit' ? 'crosshair' : 'default');
       }
     });
 
@@ -186,6 +202,8 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
             d3InstanceRef.current.mousePosition = null;
             setEdgeCreationSource(null);
             setMousePosition(null);
+            // Reset cursor
+            svg.style('cursor', mode === 'edit' ? 'crosshair' : 'default');
             return;
           }
           
@@ -215,6 +233,22 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
         .find((d: D3Node) => d.label === edgeCreationSource);
       
       if (sourceNode) {
+        // Check if mouse is over a valid target node
+        const targetNode = d3InstanceRef.current.container
+          .selectAll('.node')
+          .data()
+          .find((d: D3Node) => {
+            if (d.label === edgeCreationSource) return false; // Can't connect to self
+            const dx = (d.x || 0) - mousePosition.x;
+            const dy = (d.y || 0) - mousePosition.y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            return distance <= 30; // Within 30px of a node
+          });
+
+        // Determine line color based on whether we're over a valid target
+        const lineColor = targetNode ? '#4caf50' : '#1976d2'; // Green for valid target, blue otherwise
+        const lineOpacity = targetNode ? 0.9 : 0.7;
+        
         // Add new preview line
         svg.append('line')
           .attr('class', 'preview-line')
@@ -222,11 +256,12 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
           .attr('y1', sourceNode.y || 0)
           .attr('x2', mousePosition.x)
           .attr('y2', mousePosition.y)
-          .attr('stroke', '#1976d2')
+          .attr('stroke', lineColor)
           .attr('stroke-width', 2)
           .attr('stroke-dasharray', '5,5')
-          .attr('opacity', 0.7)
-          .style('pointer-events', 'none');
+          .attr('opacity', lineOpacity)
+          .style('pointer-events', 'none')
+          .style('transition', 'stroke 0.2s ease-in-out, opacity 0.2s ease-in-out');
       }
     }
   };
@@ -250,6 +285,10 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
           d3InstanceRef.current.mousePosition = null;
           setEdgeCreationSource(null);
           setMousePosition(null);
+          // Reset cursor
+          if (d3InstanceRef.current?.svg) {
+            d3InstanceRef.current.svg.style('cursor', mode === 'edit' ? 'crosshair' : 'default');
+          }
         } else {
           console.log(`${section}: Completing edge creation`);
           // Complete edge creation and continue from target node

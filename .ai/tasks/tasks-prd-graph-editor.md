@@ -96,7 +96,7 @@
   - [x] 5.2 Add node selection/deselection on left-click
   - [x] 5.3 Implement node movement with click-and-drag functionality
   - [x] 5.4 Add edge creation by dragging from node nib to another node
-  - [ ] 5.5 Implement edge preview line during creation process
+  - [x] 5.5 Implement edge preview line during creation process
   - [ ] 5.6 Add double-click handlers for node label editing
   - [ ] 5.7 Add double-click handlers for edge weight editing
   - [ ] 5.8 Implement node deletion on click in Delete mode

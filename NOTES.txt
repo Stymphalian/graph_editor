@@ -2,3 +2,4 @@
   Only the viewer needs to know about that information.
 - selectedNode/selectedEdge causes the GraphViewer component to refresh which kills/recreates the entire SVG screen. don't do this.
 - preview line does not work with zooming
+- clicking on selected node does not cause deselection.
