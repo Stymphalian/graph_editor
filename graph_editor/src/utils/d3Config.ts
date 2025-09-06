@@ -66,11 +66,19 @@ export const d3Utils = {
 
 
   // Drag behavior for nodes
-  createDrag: (simulation?: ForceSimulation) =>
+  createDrag: (simulation?: ForceSimulation, mode?: string) =>
     d3
       .drag<SVGGElement, D3Node, unknown>()
       .on('start', (event, d) => {
-        if (!event.active && simulation) simulation.alphaTarget(0.1).restart(); // Reduced from 0.3 to 0.1 for less movement
+        if (!event.active && simulation) {
+          if (mode === 'view-force') {
+            // In view-force mode, temporarily disable force simulation during drag
+            simulation.alphaTarget(0.1).restart();
+          } else {
+            // In edit/delete modes, increase alpha target for more responsive movement
+            simulation.alphaTarget(0.3).restart();
+          }
+        }
         d.fx = d.x ?? null;
         d.fy = d.y ?? null;
       })
@@ -79,7 +87,15 @@ export const d3Utils = {
         d.fy = event.y;
       })
       .on('end', (event, d) => {
-        if (!event.active && simulation) simulation.alphaTarget(0);
+        if (!event.active && simulation) {
+          if (mode === 'view-force') {
+            // In view-force mode, restart force simulation after drag
+            simulation.alphaTarget(0.1).restart();
+          } else {
+            // In other modes, let simulation settle naturally
+            simulation.alphaTarget(0);
+          }
+        }
         d.fx = null;
         d.fy = null;
       }),
@@ -87,10 +103,10 @@ export const d3Utils = {
   // Force simulation configuration
   createForceSimulation: (width: number, height: number) => {
     return forceSimulation<D3Node, D3Edge>()
-      .force('link', forceLink<D3Node, D3Edge>().id((d: D3Node) => d.id).distance(80)) // Link distance configuration
-      .force('charge', forceManyBody<D3Node>().strength(40)) // Charge strength configuration
-      .force('collision', forceCollide<D3Node>().radius(40)) // Collision force configuration
-      .force('center', forceCenter<D3Node>(width / 2, height / 2).strength(0.05)) // Center force configuration
+      .force('link', forceLink<D3Node, D3Edge>().id((d: D3Node) => d.id).distance(80).strength(0.8)) // Stronger link force for better connectivity
+      .force('charge', forceManyBody<D3Node>().strength(40)) // Gentle charge strength to minimize repulsion on new nodes
+      .force('collision', forceCollide<D3Node>().radius(25)) // Smaller collision radius to reduce repulsion
+      .force('center', forceCenter<D3Node>(width / 2, height / 2).strength(0.02)) // Reduced center force to minimize disruption
       // .force('x', forceX<D3Node>(width / 2).strength(0.05)) // X position force configuration
       // .force('y', forceY<D3Node>(height / 2).strength(0.05)); // Y position force configuration
   },

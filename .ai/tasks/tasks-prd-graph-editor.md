@@ -94,8 +94,8 @@
 - [ ] 5.0 User Interaction System
   - [x] 5.1 Implement mouse event handlers for node creation (left-click on empty space)
   - [x] 5.2 Add node selection/deselection on left-click
-  - [ ] 5.3 Implement node movement with click-and-drag functionality
-  - [ ] 5.4 Add edge creation by dragging from node nib to another node
+  - [x] 5.3 Implement node movement with click-and-drag functionality
+  - [x] 5.4 Add edge creation by dragging from node nib to another node
   - [ ] 5.5 Implement edge preview line during creation process
   - [ ] 5.6 Add double-click handlers for node label editing
   - [ ] 5.7 Add double-click handlers for edge weight editing

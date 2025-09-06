@@ -66,6 +66,7 @@ any library you need to run the force-mode simulation (i.e d3-force)
 
 
 The text panel should be simple text-areas with line numbers. Something like this.
+Also it should be on the left of the graph viewer and thinner taking up less horizontal space (1/3)
 6        <--- this is the number of nodes
 0        <-- there are the node labels (default just index number)
 1
@@ -81,3 +82,17 @@ The text panel should be simple text-areas with line numbers. Something like thi
 2 3
 2 4
 4 5
+
+
+start the next sub-task.
+One improvement I want with node dragging/movement. The entire connected graph
+should follow the moving/dragging node more closely.
+
+For edge creation I'd like an update to the behavior and interface.
+Nodes should not have the node-nibs visible by default. 
+Only when a node is selected should the node-nib be visible.
+The user can then click the node nib to go into an edge creation mode and add edges
+between nodes.
+If the user select's empty space it should cancel the edge creation.
+If the user selects a node and create the new edge, we should continue edge creation
+from the newly selected node.

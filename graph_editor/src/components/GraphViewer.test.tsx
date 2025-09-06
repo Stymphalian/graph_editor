@@ -51,4 +51,49 @@ describe('GraphViewer', () => {
       expect(edge).toHaveClass('graph-edge');
     });
   });
+
+  it('handles node selection and deselection correctly', () => {
+    const mockOnNodeClick = jest.fn();
+    const { rerender } = render(
+      <GraphViewer 
+        data={mockGraphData} 
+        onNodeClick={mockOnNodeClick}
+        selectedNodeLabel={null}
+        mode="edit"
+      />
+    );
+
+    // Get the first node
+    const firstNode = document.querySelector('[data-node-label="A"]');
+    expect(firstNode).toBeInTheDocument();
+
+    // Simulate clicking the first node
+    firstNode?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    
+    // Should call onNodeClick with the node
+    expect(mockOnNodeClick).toHaveBeenCalledWith(
+      expect.objectContaining({ label: 'A' })
+    );
+
+    // Clear the mock
+    mockOnNodeClick.mockClear();
+
+    // Now render with the node selected
+    rerender(
+      <GraphViewer 
+        data={mockGraphData} 
+        onNodeClick={mockOnNodeClick}
+        selectedNodeLabel="A"
+        mode="edit"
+      />
+    );
+
+    // Click the same node again (should deselect)
+    firstNode?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    
+    // Should call onNodeClick again (for deselection)
+    expect(mockOnNodeClick).toHaveBeenCalledWith(
+      expect.objectContaining({ label: 'A' })
+    );
+  });
 });

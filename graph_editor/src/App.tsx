@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react';
 import GraphViewer from './components/GraphViewer';
 import TextPanel from './components/TextPanel';
 import { Graph } from './models/Graph';
-import { Node, Edge, GraphData } from './types/graph';
+import { GraphData } from './types/graph';
 
 function App() {
   // Create a sample graph using the Graph model
@@ -24,37 +24,9 @@ function App() {
     return g;
   }, []);
 
-  const [selectedNodeLabel, setSelectedNodeLabel] = useState<string | null>(null);
-  const [selectedEdgeId, setSelectedEdgeId] = useState<string | null>(null);
   const [currentGraph] = useState<Graph>(graph);
   const [graphData, setGraphData] = useState<GraphData>(graph.getData());
   const [newNodePosition, setNewNodePosition] = useState<{ x: number; y: number } | null>(null);
-
-  const handleNodeClick = (node: Node) => {
-    console.log('Node clicked', node);
-    
-    // Toggle selection: if the same node is clicked, deselect it
-    if (selectedNodeLabel === node.label) {
-      setSelectedNodeLabel(null);
-    } else {
-      // Select the clicked node and deselect any edge
-      setSelectedNodeLabel(node.label);
-      setSelectedEdgeId(null);
-    }
-  };
-
-  const handleEdgeClick = (edge: Edge) => {
-    console.log('Edge clicked:', edge);
-    
-    // Toggle selection: if the same edge is clicked, deselect it
-    if (selectedEdgeId === edge.id) {
-      setSelectedEdgeId(null);
-    } else {
-      // Select the clicked edge and deselect any node
-      setSelectedEdgeId(edge.id);
-      setSelectedNodeLabel(null);
-    }
-  };
 
   const handleNodeCreate = (x: number, y: number) => {
     console.log('Creating node at:', x, y);
@@ -69,9 +41,6 @@ function App() {
       console.log('Node created:', newNode);
       // Update the graph data state to trigger re-render without recreating the graph
       setGraphData(currentGraph.getData());
-      // Clear any selections
-      setSelectedNodeLabel(null);
-      setSelectedEdgeId(null);
     } else {
       console.error('Failed to create node:', currentGraph.getError());
     }
@@ -90,9 +59,6 @@ function App() {
       console.log('Edge created:', newEdge);
       // Update the graph data state to trigger re-render without recreating the graph
       setGraphData(currentGraph.getData());
-      // Clear any selections
-      setSelectedNodeLabel(null);
-      setSelectedEdgeId(null);
     } else {
       console.error('Failed to create edge:', currentGraph.getError());
     }
@@ -136,12 +102,8 @@ function App() {
                     data={graphData}
                     width={800}
                     height={600}
-                    onNodeClick={handleNodeClick}
-                    onEdgeClick={handleEdgeClick}
                     onNodeCreate={handleNodeCreate}
                     onEdgeCreate={handleEdgeCreate}
-                    selectedNodeLabel={selectedNodeLabel}
-                    selectedEdgeId={selectedEdgeId}
                     mode="edit"
                     newNodePosition={newNodePosition}
                     onNewNodePositioned={() => setNewNodePosition(null)}

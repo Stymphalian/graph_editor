@@ -31,7 +31,7 @@ export const getNodeStyling = (isSelected: boolean, isEdgeCreationSource: boolea
   return {
     fill: isSelected ? '#e3f2fd' : 'white',
     stroke: isSelected ? '#1976d2' : '#000000',
-    strokeWidth: isSelected ? 3 : 2,
+    strokeWidth: isSelected ? 4 : 2,
     labelFill: isSelected ? '#1976d2' : '#000000',
   };
 };
@@ -82,7 +82,8 @@ export const applyNodeStyling = (
     .attr('stroke', styling.stroke)
     .attr('stroke-width', styling.strokeWidth)
     .style('cursor', 'pointer')
-    .style('transition', 'all 0.2s ease-in-out');
+    .style('transition', 'all 0.2s ease-in-out')
+    .style('filter', isSelected ? 'drop-shadow(0 0 6px rgba(25, 118, 210, 0.4))' : 'none');
 
   // Style the text
   nodeSelection
