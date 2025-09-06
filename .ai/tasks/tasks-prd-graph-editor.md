@@ -69,14 +69,14 @@
 
 - [ ] 3.0 Graph Visualization System (D3.js Integration)
   - [x] 3.1 Create GraphViewer component with SVG container setup
-  - [ ] 3.2 Implement D3 data binding for nodes and edges rendering
-  - [ ] 3.3 Create Node component with circle rendering and label display
-  - [ ] 3.4 Create Edge component with line rendering and arrow support for directed graphs
-  - [ ] 3.5 Implement node selection visual feedback and highlighting
-  - [ ] 3.6 Add node "nibs/bumps" visual indicators for edge creation
+  - [x] 3.2 Implement D3 data binding for nodes and edges rendering
+  - [x] 3.3 Create Node component with circle rendering and label display
+  - [x] 3.4 Create Edge component with line rendering and arrow support for directed graphs
+  - [x] 3.5 Implement node selection visual feedback and highlighting
+  - [x] 3.6 Add node "nibs/bumps" visual indicators for edge creation (integrated into edit mode)
   - [ ] 3.7 Implement responsive SVG scaling and viewport management
-  - [ ] 3.8 Add visual feedback for edge creation preview line
-  - [ ] 3.9 Implement proper cleanup and memory management for D3 selections
+  - [x] 3.8 Add visual feedback for edge creation preview line
+  - [x] 3.9 Implement proper cleanup and memory management for D3 selections
   - [ ] 3.10 Add support for rendering up to 1000 nodes with performance optimization
 
 - [ ] 4.0 Text Panel and Data Synchronization

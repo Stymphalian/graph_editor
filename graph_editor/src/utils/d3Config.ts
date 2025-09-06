@@ -7,6 +7,7 @@ import {
   forceCenter,
   forceX,
   forceY,
+  forceCollide,
 } from 'd3-force';
 
 // Re-export commonly used D3 modules
@@ -18,10 +19,12 @@ export {
   forceCenter,
   forceX,
   forceY,
+  forceCollide,
 };
 
 // Node and Edge interfaces for D3
 export interface D3Node extends d3.SimulationNodeDatum {
+  id: string;
   label: string;
   x?: number;
   y?: number;
@@ -78,7 +81,7 @@ export const d3Utils = {
     d3
       .drag<SVGGElement, D3Node, unknown>()
       .on('start', (event, d) => {
-        if (!event.active && simulation) simulation.alphaTarget(0.3).restart();
+        if (!event.active && simulation) simulation.alphaTarget(0.1).restart(); // Reduced from 0.3 to 0.1 for less movement
         d.fx = d.x ?? null;
         d.fy = d.y ?? null;
       })
@@ -95,15 +98,11 @@ export const d3Utils = {
   // Force simulation configuration
   createForceSimulation: (width: number, height: number) => {
     return forceSimulation<D3Node, D3Edge>()
-      .force(
-        'link',
-        forceLink<D3Node, D3Edge>()
-          .id((d: D3Node) => d.label)
-          .distance(100)
-      )
-      .force('charge', forceManyBody<D3Node>().strength(-300))
-      .force('center', forceCenter<D3Node>(width / 2, height / 2))
-      .force('x', forceX<D3Node>(width / 2).strength(0.1))
-      .force('y', forceY<D3Node>(height / 2).strength(0.1));
+      .force('link', forceLink<D3Node, D3Edge>().id((d: D3Node) => d.id).distance(80)) // Link distance configuration
+      .force('charge', forceManyBody<D3Node>().strength(40)) // Charge strength configuration
+      .force('collision', forceCollide<D3Node>().radius(40)) // Collision force configuration
+      .force('center', forceCenter<D3Node>(width / 2, height / 2).strength(0.05)) // Center force configuration
+      // .force('x', forceX<D3Node>(width / 2).strength(0.05)) // X position force configuration
+      // .force('y', forceY<D3Node>(height / 2).strength(0.05)); // Y position force configuration
   },
 };

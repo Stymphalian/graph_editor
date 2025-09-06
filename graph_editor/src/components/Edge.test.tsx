@@ -15,12 +15,14 @@ const mockEdge: D3Edge = {
 };
 
 const mockSourceNode: D3Node = {
+  id: 'A',
   label: 'A',
   x: 100,
   y: 100,
 };
 
 const mockTargetNode: D3Node = {
+  id: 'B',
   label: 'B',
   x: 200,
   y: 200,
@@ -116,23 +118,23 @@ describe('Edge Utility Functions', () => {
       
       // Check line element
       const line = element.children[0];
-      expect(line.tag).toBe('line');
-      expect(line.attributes.class).toBe('graph-edge');
-      expect(line.attributes.x1).toBe(100);
-      expect(line.attributes.y1).toBe(100);
-      expect(line.attributes.x2).toBe(200);
-      expect(line.attributes.y2).toBe(200);
-      expect(line.attributes.stroke).toBe('#000000');
-      expect(line.attributes['stroke-width']).toBe(2);
-      expect(line.attributes['marker-end']).toBeUndefined();
+      expect(line?.tag).toBe('line');
+      expect(line?.attributes['class']).toBe('graph-edge');
+      expect(line?.attributes['x1']).toBe(100);
+      expect(line?.attributes['y1']).toBe(100);
+      expect(line?.attributes['x2']).toBe(200);
+      expect(line?.attributes['y2']).toBe(200);
+      expect(line?.attributes['stroke']).toBe('#000000');
+      expect(line?.attributes['stroke-width']).toBe(2);
+      expect(line?.attributes['marker-end']).toBeUndefined();
       
       // Check weight text element
       const text = element.children[1];
-      expect(text.tag).toBe('text');
-      expect(text.attributes.class).toBe('graph-edge-weight');
-      expect(text.text).toBe('5');
-      expect(text.attributes.x).toBe(150); // (100 + 200) / 2
-      expect(text.attributes.y).toBe(150); // (100 + 200) / 2
+      expect(text?.tag).toBe('text');
+      expect(text?.attributes['class']).toBe('graph-edge-weight');
+      expect(text?.text).toBe('5');
+      expect(text?.attributes['x']).toBe(150); // (100 + 200) / 2
+      expect(text?.attributes['y']).toBe(150); // (100 + 200) / 2
     });
 
     it('creates edge element with custom configuration', () => {
@@ -149,9 +151,9 @@ describe('Edge Utility Functions', () => {
       expect(element.attributes.class).toBe('edge custom-edge');
       
       const line = element.children[0];
-      expect(line.attributes.stroke).toBe('#1976d2'); // selected color overrides custom
-      expect(line.attributes['stroke-width']).toBe(5); // selected width overrides custom
-      expect(line.attributes['marker-end']).toBe('url(#arrowhead)');
+      expect(line?.attributes['stroke']).toBe('#1976d2'); // selected color overrides custom
+      expect(line?.attributes['stroke-width']).toBe(5); // selected width overrides custom
+      expect(line?.attributes['marker-end']).toBe('url(#arrowhead)');
     });
 
     it('creates edge element without weight when not present', () => {
@@ -164,7 +166,7 @@ describe('Edge Utility Functions', () => {
       const element = createEdgeElement(edgeWithoutWeight, mockSourceNode, mockTargetNode);
       
       expect(element.children).toHaveLength(1); // only line, no weight text
-      expect(element.children[0].tag).toBe('line');
+      expect(element.children[0]?.tag).toBe('line');
     });
   });
 

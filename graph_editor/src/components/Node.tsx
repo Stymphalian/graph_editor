@@ -4,6 +4,8 @@ export interface NodeConfig {
   isSelected?: boolean;
   radius?: number;
   className?: string;
+  showNibs?: boolean;
+  isEdgeCreationSource?: boolean;
 }
 
 export interface NodeEventHandlers {
@@ -16,7 +18,16 @@ export interface NodeEventHandlers {
 /**
  * Get node styling based on selection state
  */
-export const getNodeStyling = (isSelected: boolean) => {
+export const getNodeStyling = (isSelected: boolean, isEdgeCreationSource: boolean = false) => {
+  if (isEdgeCreationSource) {
+    return {
+      fill: '#fff3e0',
+      stroke: '#ff9800',
+      strokeWidth: 3,
+      labelFill: '#ff9800',
+    };
+  }
+  
   return {
     fill: isSelected ? '#e3f2fd' : 'white',
     stroke: isSelected ? '#1976d2' : '#000000',
@@ -58,9 +69,10 @@ export const createNodeEventHandlers = (
 export const applyNodeStyling = (
   nodeSelection: any,
   isSelected: boolean,
-  radius: number = 20
+  radius: number = 20,
+  isEdgeCreationSource: boolean = false
 ) => {
-  const styling = getNodeStyling(isSelected);
+  const styling = getNodeStyling(isSelected, isEdgeCreationSource);
   
   // Style the circle
   nodeSelection
@@ -84,10 +96,53 @@ export const applyNodeStyling = (
 };
 
 /**
+ * Apply nibs to an existing D3 node selection
+ */
+export const applyNodeNibs = (nodeSelection: any, showNibs: boolean, radius: number = 20) => {
+  // Remove existing nibs
+  nodeSelection.selectAll('.node-nib').remove();
+  
+  if (showNibs) {
+    const nibRadius = 3; // Smaller nib
+    
+    nodeSelection
+      .append('circle')
+      .attr('class', 'node-nib')
+      .attr('cx', radius + nibRadius) // Position at right edge of main circle
+      .attr('cy', 0) // Center vertically
+      .attr('r', nibRadius)
+      .attr('fill', '#000000') // Black color
+      .attr('stroke', 'none')
+      .style('pointer-events', 'none')
+      .style('transition', 'all 0.2s ease-in-out');
+  }
+};
+
+/**
+ * Create node nibs for edge creation mode
+ */
+export const createNodeNibs = (_node: D3Node, radius: number = 20) => {
+  const nibRadius = 3; // Smaller nib
+  
+  return [{
+    tag: 'circle',
+    attributes: {
+      class: 'node-nib',
+      cx: radius + nibRadius, // Position at right edge of main circle
+      cy: 0, // Center vertically
+      r: nibRadius,
+      fill: '#000000', // Black color
+      stroke: 'none',
+      style: 'pointer-events: none; transition: all 0.2s ease-in-out;',
+    },
+  }];
+};
+
+/**
  * Create a node group element with circle and text
  */
 export const createNodeElement = (node: D3Node, config: NodeConfig = {}) => {
-  const { isSelected = false, radius = 20, className = '' } = config;
+  const { isSelected = false, radius = 20, className = '', showNibs = false } = config;
   const styling = getNodeStyling(isSelected);
 
   return {
@@ -122,6 +177,8 @@ export const createNodeElement = (node: D3Node, config: NodeConfig = {}) => {
         },
         text: node.label,
       },
+      // Add nibs for edge creation mode
+      ...(showNibs ? createNodeNibs(node, radius) : []),
     ],
   };
 };

@@ -46,6 +46,7 @@ export const createMockNode = (label: string, x = 0, y = 0): Node => ({
 });
 
 export const createMockD3Node = (label: string, x = 0, y = 0): D3Node => ({
+  id: label,
   label,
   x,
   y,

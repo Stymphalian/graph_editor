@@ -8,6 +8,7 @@ import { D3Node } from '@/utils/d3Config';
 
 // Mock D3Node for testing
 const mockNode: D3Node = {
+  id: 'A',
   label: 'A',
   x: 100,
   y: 100,
@@ -93,19 +94,19 @@ describe('Node Utility Functions', () => {
       
       // Check circle element
       const circle = element.children[0];
-      expect(circle.tag).toBe('circle');
-      expect(circle.attributes.class).toBe('graph-node');
-      expect(circle.attributes.r).toBe(20);
-      expect(circle.attributes.fill).toBe('white');
-      expect(circle.attributes.stroke).toBe('#000000');
-      expect(circle.attributes['stroke-width']).toBe(2);
+      expect(circle?.tag).toBe('circle');
+      expect(circle?.attributes.class).toBe('graph-node');
+      expect(circle?.attributes.r).toBe(20);
+      expect(circle?.attributes.fill).toBe('white');
+      expect(circle?.attributes.stroke).toBe('#000000');
+      expect((circle?.attributes as any)['stroke-width']).toBe(2);
       
       // Check text element
       const text = element.children[1];
-      expect(text.tag).toBe('text');
-      expect(text.attributes.class).toBe('graph-node-label');
-      expect(text.text).toBe('A');
-      expect(text.attributes.fill).toBe('#000000');
+      expect(text?.tag).toBe('text');
+      expect(text?.attributes.class).toBe('graph-node-label');
+      expect((text as any)?.text).toBe('A');
+      expect(text?.attributes.fill).toBe('#000000');
     });
 
     it('creates node element with custom configuration', () => {
@@ -120,20 +121,20 @@ describe('Node Utility Functions', () => {
       expect(element.attributes.class).toBe('node custom-node');
       
       const circle = element.children[0];
-      expect(circle.attributes.r).toBe(30);
-      expect(circle.attributes.fill).toBe('#e3f2fd');
-      expect(circle.attributes.stroke).toBe('#1976d2');
-      expect(circle.attributes['stroke-width']).toBe(3);
+      expect(circle?.attributes.r).toBe(30);
+      expect(circle?.attributes.fill).toBe('#e3f2fd');
+      expect(circle?.attributes.stroke).toBe('#1976d2');
+      expect((circle?.attributes as any)['stroke-width']).toBe(3);
       
       const text = element.children[1];
-      expect(text.attributes.fill).toBe('#1976d2');
+      expect(text?.attributes.fill).toBe('#1976d2');
     });
   });
 
   describe('applyNodeStyling', () => {
     it('applies styling to a mock D3 selection', () => {
       // Mock D3 selection
-      const mockSelection = {
+      const mockSelection: any = {
         select: () => mockSelection,
         attr: () => mockSelection,
         style: () => mockSelection,
@@ -141,9 +142,6 @@ describe('Node Utility Functions', () => {
 
       // Track calls
       const calls: any[] = [];
-      const originalSelect = mockSelection.select;
-      const originalAttr = mockSelection.attr;
-      const originalStyle = mockSelection.style;
 
       mockSelection.select = (selector: string) => {
         calls.push({ method: 'select', args: [selector] });

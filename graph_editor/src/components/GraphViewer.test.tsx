@@ -3,7 +3,7 @@ import GraphViewer from './GraphViewer';
 
 describe('GraphViewer', () => {
   it('renders without crashing', () => {
-    render(<GraphViewer data={mockGraphData} />);
+    render(<GraphViewer data={mockGraphData} onEdgeCreate={() => {}} />);
 
     // Check that the SVG container is rendered
     const svgElement = document.querySelector('.graph-svg');
@@ -12,7 +12,7 @@ describe('GraphViewer', () => {
   });
 
   it('renders the correct number of nodes', () => {
-    render(<GraphViewer data={mockGraphData} />);
+    render(<GraphViewer data={mockGraphData} onEdgeCreate={() => {}} />);
 
     // Check that all nodes are rendered
     const nodeGroups = document.querySelectorAll('.node');
@@ -20,7 +20,7 @@ describe('GraphViewer', () => {
   });
 
   it('renders node labels with correct labels', () => {
-    render(<GraphViewer data={mockGraphData} />);
+    render(<GraphViewer data={mockGraphData} onEdgeCreate={() => {}} />);
 
     // Check that each node has a label with the correct label
     const nodeLabels = document.querySelectorAll('.graph-node-label');
@@ -34,7 +34,7 @@ describe('GraphViewer', () => {
   });
 
   it('renders the correct number of edges', () => {
-    render(<GraphViewer data={mockGraphData} />);
+    render(<GraphViewer data={mockGraphData} onEdgeCreate={() => {}} />);
 
     // Check that all edges are rendered
     const edgeLines = document.querySelectorAll('.graph-edge');
@@ -42,7 +42,7 @@ describe('GraphViewer', () => {
   });
 
   it('renders edges with correct structure', () => {
-    render(<GraphViewer data={mockGraphData} />);
+    render(<GraphViewer data={mockGraphData} onEdgeCreate={() => {}} />);
 
     // Check that edges are SVG line elements
     const edgeLines = document.querySelectorAll('.graph-edge');

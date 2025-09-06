@@ -18,31 +18,35 @@ function App() {
     if (nodeA && nodeB) g.addEdge({ source: nodeA.label, target: nodeB.label });
     if (nodeB && nodeC) g.addEdge({ source: nodeB.label, target: nodeC.label });
     if (nodeC && nodeD) g.addEdge({ source: nodeC.label, target: nodeD.label });
-    if (nodeD && nodeA) g.addEdge({ source: nodeD.label, target: nodeA.label });
+    // if (nodeD && nodeA) g.addEdge({ source: nodeD.label, target: nodeA.label });
 
     return g;
   }, []);
 
-  const [selectedNodeLabel, setSelectedNodeLabel] = useState<string | null>(
-    null
-  );
-  const [selectedEdgeId, setSelectedEdgeId] = useState<string | null>(null);
+  const [selectedNodeLabel] = useState<string | null>(null);
+  const [selectedEdgeId] = useState<string | null>(null);
 
   const handleNodeClick = (node: Node) => {
-    console.log('Node clicked:', node);
-    setSelectedNodeLabel(node.label);
-    setSelectedEdgeId(null);
+    console.log('Node clicked', node);
+    // setSelectedNodeLabel(node.label);
+    // setSelectedEdgeId(null);
   };
 
   const handleEdgeClick = (edge: Edge) => {
     console.log('Edge clicked:', edge);
-    setSelectedEdgeId(edge.id);
-    setSelectedNodeLabel(null);
+    // setSelectedEdgeId(edge.id);
+    // setSelectedNodeLabel(null);
   };
 
   const handleNodeCreate = (x: number, y: number) => {
     console.log('Creating node at:', x, y);
     // graph.addNodeWithAutoLabel(x, y);
+    // This will be implemented in the next tasks
+  };
+
+  const handleEdgeCreate = (sourceLabel: string, targetLabel: string) => {
+    console.log('Creating edge:', sourceLabel, '->', targetLabel);
+    // graph.addEdge({ source: sourceLabel, target: targetLabel });
     // This will be implemented in the next tasks
   };
 
@@ -69,6 +73,7 @@ function App() {
               onNodeClick={handleNodeClick}
               onEdgeClick={handleEdgeClick}
               onNodeCreate={handleNodeCreate}
+              onEdgeCreate={handleEdgeCreate}
               selectedNodeLabel={selectedNodeLabel}
               selectedEdgeId={selectedEdgeId}
               mode="edit"

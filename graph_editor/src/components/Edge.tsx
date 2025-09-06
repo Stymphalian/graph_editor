@@ -118,7 +118,11 @@ export const createEdgeElement = (
   const x2 = targetNode.x || 0;
   const y2 = targetNode.y || 0;
 
-  const children = [
+  const children: Array<{
+    tag: string;
+    attributes: Record<string, any>;
+    text?: string;
+  }> = [
     {
       tag: 'line',
       attributes: {
