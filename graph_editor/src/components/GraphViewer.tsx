@@ -30,15 +30,82 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
   mode = 'edit',
 }) => {
   const svgRef = useRef<SVGSVGElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const d3InstanceRef = useRef<{
     svg: any;
     container: any;
     simulation: ForceSimulation | null;
     edgeCreationSource: string | null;
     mousePosition: { x: number; y: number } | null;
+    zoom: any;
   } | null>(null);
   const [edgeCreationSource, setEdgeCreationSource] = useState<string | null>(null);
   const [mousePosition, setMousePosition] = useState<{ x: number; y: number } | null>(null);
+  const [dimensions, setDimensions] = useState({ 
+    width: Math.min(width, height), 
+    height: Math.min(width, height) 
+  });
+
+  // Handle responsive resizing without destroying the graph
+  useEffect(() => {
+    const handleResize = () => {
+      if (containerRef.current) {
+        const rect = containerRef.current.getBoundingClientRect();
+        // Ensure container has minimum dimensions
+        const containerWidth = Math.max(300, rect.width);
+        const containerHeight = Math.max(300, rect.height);
+        
+        // Calculate square dimensions based on the smaller dimension
+        const minDimension = Math.min(containerWidth, containerHeight);
+        const squareSize = Math.max(300, minDimension); // Minimum size of 300px
+        const newDimensions = {
+          width: squareSize,
+          height: squareSize,
+        };
+        
+        // Update SVG dimensions without recreating the graph (if D3 instance exists)
+        if (d3InstanceRef.current) {
+          const { svg, simulation, zoom } = d3InstanceRef.current;
+          if (svg && simulation) {
+            // Preserve current zoom state
+            const currentTransform = d3.zoomTransform(svg.node());
+            
+            svg.attr('width', newDimensions.width)
+               .attr('height', newDimensions.height);
+            
+            // Update simulation center force for new dimensions
+            simulation.force('center', d3.forceCenter(newDimensions.width / 2, newDimensions.height / 2).strength(0.05));
+            simulation.alpha(0.3).restart(); // Gentle restart to adjust to new center
+            
+            // Restore zoom state after dimensions change
+            if (zoom && currentTransform) {
+              svg.call(zoom.transform, currentTransform);
+            }
+          }
+        }
+        
+        setDimensions(newDimensions);
+      }
+    };
+
+    // Initial size calculation
+    handleResize();
+
+    // Add resize observer for responsive behavior (with fallback for test environment)
+    if (typeof ResizeObserver !== 'undefined') {
+      const resizeObserver = new ResizeObserver(handleResize);
+      if (containerRef.current) {
+        resizeObserver.observe(containerRef.current);
+      }
+    }
+
+    // Also listen to window resize as fallback
+    window.addEventListener('resize', handleResize);
+
+    return () => {
+      window.removeEventListener('resize', handleResize);
+    };
+  }, []);
 
   // Initialize D3 instance (runs only once)
   const initializeD3Instance = () => {
@@ -53,12 +120,17 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
       .attr('class', 'graph-group')
       .attr('data-testid', 'graph-container');
 
-    // Create zoom behavior
-    const zoom = d3Utils.createZoom();
+    // Create enhanced zoom behavior with viewport management
+    const zoom = d3.zoom<SVGSVGElement, unknown>()
+      .scaleExtent([0.1, 10]) // Allow zoom from 0.1x to 10x
+      .on('zoom', (event) => {
+        container.attr('transform', event.transform);
+      });
+
     svg.call(zoom);
 
-    // Create force simulation
-    const simulation = d3Utils.createForceSimulation(width, height);
+    // Create force simulation with responsive dimensions
+    const simulation = d3Utils.createForceSimulation(dimensions.width, dimensions.height);
 
     // Store D3 instance
     d3InstanceRef.current = {
@@ -67,6 +139,7 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
       simulation,
       edgeCreationSource: null,
       mousePosition: null,
+      zoom,
     };
 
     // Add mouse tracking for edge creation preview
@@ -400,7 +473,7 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
     initializeD3Instance();
   }, []);
 
-  // Update data when it changes
+  // Update data when it changes (excluding dimensions to avoid recreating graph on resize)
   useEffect(() => {
     updateD3Data();
   }, [data, selectedNodeLabel, selectedEdgeId, mode]);
@@ -426,16 +499,21 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
 
   return (
     <div
-      className="graph-container"
+      ref={containerRef}
+      className="graph-container w-full h-full min-w-[300px] min-h-[300px] flex items-center justify-center"
       data-testid="graph-viewer"
     >
       <svg
         ref={svgRef}
-        width={width}
-        height={height}
+        width={dimensions.width}
+        height={dimensions.height}
         className={`graph-svg border border-gray-200 rounded-lg bg-white ${
           mode === 'edit' ? 'cursor-crosshair' : 'cursor-default'
         }`}
+        style={{ 
+          width: `${dimensions.width}px`, 
+          height: `${dimensions.height}px`
+        }}
       />
     </div>
   );

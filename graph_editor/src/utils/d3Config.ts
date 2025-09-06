@@ -1,5 +1,6 @@
 // D3 configuration and re-exports for better tree-shaking and TypeScript support
 import * as d3 from 'd3';
+import { zoomIdentity } from 'd3-zoom';
 import {
   forceSimulation,
   forceLink,
@@ -62,19 +63,7 @@ export type ForceCenter = d3.ForceCenter<D3Node>;
 
 // Common D3 utilities for graph visualization
 export const d3Utils = {
-  // Color scales
-  getColorScale: (domain: string[]) =>
-    d3.scaleOrdinal(d3.schemeCategory10).domain(domain),
 
-  // Zoom behavior
-  createZoom: () =>
-    d3
-      .zoom<SVGSVGElement, unknown>()
-      .scaleExtent([0.1, 10])
-      .on('zoom', event => {
-        const { transform } = event;
-        d3.selectAll('.graph-group').attr('transform', transform);
-      }),
 
   // Drag behavior for nodes
   createDrag: (simulation?: ForceSimulation) =>
@@ -104,5 +93,34 @@ export const d3Utils = {
       .force('center', forceCenter<D3Node>(width / 2, height / 2).strength(0.05)) // Center force configuration
       // .force('x', forceX<D3Node>(width / 2).strength(0.05)) // X position force configuration
       // .force('y', forceY<D3Node>(height / 2).strength(0.05)); // Y position force configuration
+  },
+
+  // Viewport management utilities
+  fitToViewport: (svg: any, container: any, padding = 20) => {
+    const bounds = container.node().getBBox();
+    const fullWidth = svg.node().clientWidth || 800;
+    const fullHeight = svg.node().clientHeight || 600;
+    const width = bounds.width;
+    const height = bounds.height;
+    const midX = bounds.x + width / 2;
+    const midY = bounds.y + height / 2;
+    
+    if (width === 0 || height === 0) return;
+    
+    const scale = Math.min((fullWidth - padding * 2) / width, (fullHeight - padding * 2) / height);
+    const translateX = fullWidth / 2 - scale * midX;
+    const translateY = fullHeight / 2 - scale * midY;
+    
+    svg.transition().duration(750).call(
+      d3.zoom().transform,
+      zoomIdentity.translate(translateX, translateY).scale(scale)
+    );
+  },
+
+  resetViewport: (svg: any) => {
+    svg.transition().duration(750).call(
+      d3.zoom().transform,
+      zoomIdentity
+    );
   },
 };

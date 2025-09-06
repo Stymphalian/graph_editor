@@ -65,7 +65,7 @@ function App() {
           <h2 className="text-lg font-semibold text-gray-800 mb-4">
             D3.js Graph Visualization Test
           </h2>
-          <div className="border border-gray-200 rounded-lg overflow-hidden bg-white">
+          <div className="h-[600px]">
             <GraphViewer
               data={graph.getData()}
               width={800}
