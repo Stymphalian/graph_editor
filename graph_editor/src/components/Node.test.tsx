@@ -1,26 +1,10 @@
-import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react';
-import Node from './Node';
+import { 
+  getNodeStyling, 
+  createNodeEventHandlers, 
+  applyNodeStyling, 
+  createNodeElement 
+} from './Node';
 import { D3Node } from '@/utils/d3Config';
-
-// Mock jest functions
-const mockFn = () => {
-  const fn = (...args: any[]) => {
-    fn.calls.push(args);
-    return fn;
-  };
-  fn.calls = [] as any[][];
-  fn.mockReturnValue = (value: any) => {
-    fn.returnValue = value;
-    return fn;
-  };
-  return fn;
-};
-
-// Mock jest
-(global as any).jest = {
-  fn: mockFn,
-};
 
 // Mock D3Node for testing
 const mockNode: D3Node = {
@@ -29,114 +13,165 @@ const mockNode: D3Node = {
   y: 100,
 };
 
-describe('Node Component', () => {
-  it('renders node with correct label', () => {
-    render(<Node node={mockNode} />);
-    
-    expect(screen.getByText('A')).toBeInTheDocument();
-    expect(screen.getByTestId('node-A')).toBeInTheDocument();
+describe('Node Utility Functions', () => {
+  describe('getNodeStyling', () => {
+    it('returns default styling for unselected node', () => {
+      const styling = getNodeStyling(false);
+      
+      expect(styling.fill).toBe('white');
+      expect(styling.stroke).toBe('#000000');
+      expect(styling.strokeWidth).toBe(2);
+      expect(styling.labelFill).toBe('#000000');
+    });
+
+    it('returns selected styling for selected node', () => {
+      const styling = getNodeStyling(true);
+      
+      expect(styling.fill).toBe('#e3f2fd');
+      expect(styling.stroke).toBe('#1976d2');
+      expect(styling.strokeWidth).toBe(3);
+      expect(styling.labelFill).toBe('#1976d2');
+    });
   });
 
-  it('renders node circle with default styling', () => {
-    render(<Node node={mockNode} />);
-    
-    const circle = screen.getByTestId('node-A').querySelector('circle');
-    expect(circle).toHaveAttribute('r', '20');
-    expect(circle).toHaveAttribute('fill', 'white');
-    expect(circle).toHaveAttribute('stroke', '#000000');
-    expect(circle).toHaveAttribute('stroke-width', '2');
+  describe('createNodeEventHandlers', () => {
+    it('creates event handlers that call the provided functions', () => {
+      let clickedNode: D3Node | undefined;
+      let doubleClickedNode: D3Node | undefined;
+      let mouseEnteredNode: D3Node | undefined;
+      let mouseLeftNode: D3Node | undefined;
+
+      const handlers = {
+        onNodeClick: (node: D3Node) => { clickedNode = node; },
+        onNodeDoubleClick: (node: D3Node) => { doubleClickedNode = node; },
+        onNodeMouseEnter: (node: D3Node) => { mouseEnteredNode = node; },
+        onNodeMouseLeave: (node: D3Node) => { mouseLeftNode = node; },
+      };
+
+      const eventHandlers = createNodeEventHandlers(mockNode, handlers);
+      
+      // Test click handler
+      eventHandlers.click(new Event('click'));
+      expect(clickedNode).toEqual(mockNode);
+
+      // Test double click handler
+      eventHandlers.dblclick(new Event('dblclick'));
+      expect(doubleClickedNode).toEqual(mockNode);
+
+      // Test mouse enter handler
+      eventHandlers.mouseenter(new Event('mouseenter'));
+      expect(mouseEnteredNode).toEqual(mockNode);
+
+      // Test mouse leave handler
+      eventHandlers.mouseleave(new Event('mouseleave'));
+      expect(mouseLeftNode).toEqual(mockNode);
+    });
+
+    it('handles missing event handlers gracefully', () => {
+      const handlers = {};
+      const eventHandlers = createNodeEventHandlers(mockNode, handlers);
+      
+      // Should not throw errors
+      expect(() => {
+        eventHandlers.click(new Event('click'));
+        eventHandlers.dblclick(new Event('dblclick'));
+        eventHandlers.mouseenter(new Event('mouseenter'));
+        eventHandlers.mouseleave(new Event('mouseleave'));
+      }).not.toThrow();
+    });
   });
 
-  it('renders selected node with different styling', () => {
-    render(<Node node={mockNode} isSelected={true} />);
-    
-    const circle = screen.getByTestId('node-A').querySelector('circle');
-    const text = screen.getByTestId('node-A').querySelector('text');
-    
-    expect(circle).toHaveAttribute('fill', '#e3f2fd');
-    expect(circle).toHaveAttribute('stroke', '#1976d2');
-    expect(circle).toHaveAttribute('stroke-width', '3');
-    expect(text).toHaveAttribute('fill', '#1976d2');
+  describe('createNodeElement', () => {
+    it('creates node element with default configuration', () => {
+      const element = createNodeElement(mockNode);
+      
+      expect(element.tag).toBe('g');
+      expect(element.attributes.class).toBe('node ');
+      expect(element.attributes['data-node-label']).toBe('A');
+      expect(element.attributes['data-testid']).toBe('node-A');
+      expect(element.children).toHaveLength(2);
+      
+      // Check circle element
+      const circle = element.children[0];
+      expect(circle.tag).toBe('circle');
+      expect(circle.attributes.class).toBe('graph-node');
+      expect(circle.attributes.r).toBe(20);
+      expect(circle.attributes.fill).toBe('white');
+      expect(circle.attributes.stroke).toBe('#000000');
+      expect(circle.attributes['stroke-width']).toBe(2);
+      
+      // Check text element
+      const text = element.children[1];
+      expect(text.tag).toBe('text');
+      expect(text.attributes.class).toBe('graph-node-label');
+      expect(text.text).toBe('A');
+      expect(text.attributes.fill).toBe('#000000');
+    });
+
+    it('creates node element with custom configuration', () => {
+      const config = {
+        isSelected: true,
+        radius: 30,
+        className: 'custom-node',
+      };
+      
+      const element = createNodeElement(mockNode, config);
+      
+      expect(element.attributes.class).toBe('node custom-node');
+      
+      const circle = element.children[0];
+      expect(circle.attributes.r).toBe(30);
+      expect(circle.attributes.fill).toBe('#e3f2fd');
+      expect(circle.attributes.stroke).toBe('#1976d2');
+      expect(circle.attributes['stroke-width']).toBe(3);
+      
+      const text = element.children[1];
+      expect(text.attributes.fill).toBe('#1976d2');
+    });
   });
 
-  it('renders with custom radius', () => {
-    render(<Node node={mockNode} radius={30} />);
-    
-    const circle = screen.getByTestId('node-A').querySelector('circle');
-    expect(circle).toHaveAttribute('r', '30');
-  });
+  describe('applyNodeStyling', () => {
+    it('applies styling to a mock D3 selection', () => {
+      // Mock D3 selection
+      const mockSelection = {
+        select: () => mockSelection,
+        attr: () => mockSelection,
+        style: () => mockSelection,
+      };
 
-  it('calls onNodeClick when clicked', () => {
-    const handleClick = mockFn();
-    render(<Node node={mockNode} onNodeClick={handleClick} />);
-    
-    fireEvent.click(screen.getByTestId('node-A'));
-    expect(handleClick.calls.length).toBe(1);
-    expect(handleClick.calls[0][0]).toEqual(mockNode);
-  });
+      // Track calls
+      const calls: any[] = [];
+      const originalSelect = mockSelection.select;
+      const originalAttr = mockSelection.attr;
+      const originalStyle = mockSelection.style;
 
-  it('calls onNodeDoubleClick when double-clicked', () => {
-    const handleDoubleClick = mockFn();
-    render(<Node node={mockNode} onNodeDoubleClick={handleDoubleClick} />);
-    
-    fireEvent.doubleClick(screen.getByTestId('node-A'));
-    expect(handleDoubleClick.calls.length).toBe(1);
-    expect(handleDoubleClick.calls[0][0]).toEqual(mockNode);
-  });
+      mockSelection.select = (selector: string) => {
+        calls.push({ method: 'select', args: [selector] });
+        return mockSelection;
+      };
 
-  it('calls onNodeMouseEnter when mouse enters', () => {
-    const handleMouseEnter = mockFn();
-    render(<Node node={mockNode} onNodeMouseEnter={handleMouseEnter} />);
-    
-    fireEvent.mouseEnter(screen.getByTestId('node-A'));
-    expect(handleMouseEnter.calls.length).toBe(1);
-    expect(handleMouseEnter.calls[0][0]).toEqual(mockNode);
-  });
+      mockSelection.attr = (attr: string, value: any) => {
+        calls.push({ method: 'attr', args: [attr, value] });
+        return mockSelection;
+      };
 
-  it('calls onNodeMouseLeave when mouse leaves', () => {
-    const handleMouseLeave = mockFn();
-    render(<Node node={mockNode} onNodeMouseLeave={handleMouseLeave} />);
-    
-    fireEvent.mouseLeave(screen.getByTestId('node-A'));
-    expect(handleMouseLeave.calls.length).toBe(1);
-    expect(handleMouseLeave.calls[0][0]).toEqual(mockNode);
-  });
+      mockSelection.style = (prop: string, value: any) => {
+        calls.push({ method: 'style', args: [prop, value] });
+        return mockSelection;
+      };
 
-  it('stops event propagation on click', () => {
-    const handleClick = mockFn();
-    const parentClick = mockFn();
-    
-    render(
-      <div onClick={parentClick}>
-        <Node node={mockNode} onNodeClick={handleClick} />
-      </div>
-    );
-    
-    fireEvent.click(screen.getByTestId('node-A'));
-    expect(handleClick.calls.length).toBe(1);
-    expect(parentClick.calls.length).toBe(0);
-  });
+      applyNodeStyling(mockSelection, true, 25);
 
-  it('applies custom className', () => {
-    render(<Node node={mockNode} className="custom-node" />);
-    
-    const nodeElement = screen.getByTestId('node-A');
-    expect(nodeElement).toHaveClass('node', 'custom-node');
-  });
+      // Verify circle styling was applied
+      expect(calls.some(call => call.method === 'select' && call.args[0] === 'circle')).toBe(true);
+      expect(calls.some(call => call.method === 'attr' && call.args[0] === 'r' && call.args[1] === 25)).toBe(true);
+      expect(calls.some(call => call.method === 'attr' && call.args[0] === 'fill' && call.args[1] === '#e3f2fd')).toBe(true);
+      expect(calls.some(call => call.method === 'attr' && call.args[0] === 'stroke' && call.args[1] === '#1976d2')).toBe(true);
+      expect(calls.some(call => call.method === 'attr' && call.args[0] === 'stroke-width' && call.args[1] === 3)).toBe(true);
 
-  it('applies custom style', () => {
-    const customStyle = { opacity: 0.5 };
-    render(<Node node={mockNode} style={customStyle} />);
-    
-    const nodeElement = screen.getByTestId('node-A');
-    expect(nodeElement).toHaveStyle('opacity: 0.5');
-  });
-
-  it('renders with different node labels', () => {
-    const nodeB: D3Node = { label: 'B', x: 200, y: 200 };
-    render(<Node node={nodeB} />);
-    
-    expect(screen.getByText('B')).toBeInTheDocument();
-    expect(screen.getByTestId('node-B')).toBeInTheDocument();
+      // Verify text styling was applied
+      expect(calls.some(call => call.method === 'select' && call.args[0] === 'text')).toBe(true);
+      expect(calls.some(call => call.method === 'attr' && call.args[0] === 'fill' && call.args[1] === '#1976d2')).toBe(true);
+    });
   });
 });
