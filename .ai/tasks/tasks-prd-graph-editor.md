@@ -68,7 +68,7 @@
   - [x] 2.10 Implement graph parsing methods from text format
 
 - [ ] 3.0 Graph Visualization System (D3.js Integration)
-  - [ ] 3.1 Create GraphViewer component with SVG container setup
+  - [x] 3.1 Create GraphViewer component with SVG container setup
   - [ ] 3.2 Implement D3 data binding for nodes and edges rendering
   - [ ] 3.3 Create Node component with circle rendering and label display
   - [ ] 3.4 Create Edge component with line rendering and arrow support for directed graphs

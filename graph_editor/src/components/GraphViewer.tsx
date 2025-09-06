@@ -200,22 +200,15 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
   return (
     <div
       className="graph-container"
-      style={{ width: '100%', height: '100%', position: 'relative' }}
       data-testid="graph-viewer"
     >
       <svg
         ref={svgRef}
         width={width}
         height={height}
-        className="graph-svg"
-        style={{ 
-          width: '100%', 
-          height: '100%', 
-          border: '1px solid #e5e7eb', 
-          borderRadius: '0.5rem', 
-          backgroundColor: 'white',
-          cursor: mode === 'edit' ? 'crosshair' : 'default' 
-        }}
+        className={`graph-svg border border-gray-200 rounded-lg bg-white ${
+          mode === 'edit' ? 'cursor-crosshair' : 'cursor-default'
+        }`}
       />
     </div>
   );

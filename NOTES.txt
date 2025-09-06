@@ -1,0 +1,3 @@
+- The Graph.Node should not have x,y information. It is not apart of the structure.
+  Only the viewer needs to know about that information.
+- selectedNode/selectedEdge causes the GraphViewer component to refresh which kills/recreates the entire SVG screen. don't do this.

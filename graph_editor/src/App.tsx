@@ -48,19 +48,19 @@ function App() {
   return (
     <div className="graph-editor-layout">
       <header className="graph-editor-header">
-        <div style={{ maxWidth: '80rem', margin: '0 auto', padding: '0 1rem' }}>
-          <h1 style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#111827', padding: '1rem 0' }}>
+        <div className="max-w-7xl mx-auto px-4">
+          <h1 className="text-2xl font-bold text-gray-900 py-4">
             Graph Editor
           </h1>
         </div>
       </header>
 
       <main className="graph-editor-main">
-        <div className="graph-editor-panel" style={{ padding: '1.5rem' }}>
-          <h2 style={{ fontSize: '1.125rem', fontWeight: '600', color: '#1f2937', marginBottom: '1rem' }}>
+        <div className="graph-editor-panel p-6">
+          <h2 className="text-lg font-semibold text-gray-800 mb-4">
             D3.js Graph Visualization Test
           </h2>
-          <div style={{ border: '1px solid #e5e7eb', borderRadius: '0.5rem', overflow: 'hidden', backgroundColor: 'white' }}>
+          <div className="border border-gray-200 rounded-lg overflow-hidden bg-white">
             <GraphViewer
               data={graph.getData()}
               width={800}
@@ -73,7 +73,7 @@ function App() {
               mode="edit"
             />
           </div>
-          <p className="graph-editor-help-text" style={{ marginTop: '1rem' }}>
+          <p className="graph-editor-help-text mt-4">
             Click and drag nodes to move them. The force simulation will
             automatically adjust the layout.
           </p>
