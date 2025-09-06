@@ -76,22 +76,7 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
     simulation.nodes(d3Data.nodes);
     (simulation.force('link') as any)?.links(d3Data.edges);
 
-    // Create edges
-    const edges = container
-      .selectAll('.edge')
-      .data(d3Data.edges)
-      .enter()
-      .append('line')
-      .attr('class', 'graph-edge')
-      .attr('stroke', '#000000')
-      .attr('stroke-width', 2)
-      .on('click', (event, d) => {
-        event.stopPropagation();
-        const originalEdge = data.edges.find(e => e.id === d.id);
-        if (originalEdge) onEdgeClick?.(originalEdge);
-      });
-
-    // Add arrows for directed graphs
+    // Create arrow markers for directed graphs
     if (data.type === 'directed') {
       const defs = svg.append('defs');
       defs
@@ -106,44 +91,141 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
         .append('path')
         .attr('d', 'M0,-5L10,0L0,5')
         .attr('fill', '#000000');
-
-      edges.attr('marker-end', 'url(#arrowhead)');
     }
 
-    // Create nodes
-    const nodes = container
+    // Enhanced D3 data binding for edges
+    const edgeGroup = container.append('g').attr('class', 'edges-group');
+    
+    const edges = edgeGroup
+      .selectAll('.edge')
+      .data(d3Data.edges, (d: any) => d.id) // Use ID as key for proper data binding
+      .join(
+        // Enter selection - new edges
+        (enter) => {
+          const edgeEnter = enter
+            .append('line')
+            .attr('class', 'graph-edge')
+            .attr('stroke', '#000000')
+            .attr('stroke-width', 2)
+            .attr('opacity', 0)
+            .on('click', (event, d) => {
+              event.stopPropagation();
+              const originalEdge = data.edges.find(e => e.id === d.id);
+              if (originalEdge) onEdgeClick?.(originalEdge);
+            });
+
+          // Add arrow markers for directed graphs
+          if (data.type === 'directed') {
+            edgeEnter.attr('marker-end', 'url(#arrowhead)');
+          }
+
+          // Animate in
+          edgeEnter
+            .transition()
+            .duration(300)
+            .attr('opacity', 1);
+
+          return edgeEnter;
+        },
+        // Update selection - existing edges
+        (update) => {
+          return update
+            .attr('stroke', '#000000')
+            .attr('stroke-width', 2);
+        },
+        // Exit selection - removed edges
+        (exit) => {
+          return exit
+            .transition()
+            .duration(300)
+            .attr('opacity', 0)
+            .remove();
+        }
+      );
+
+    // Enhanced D3 data binding for nodes
+    const nodeGroup = container.append('g').attr('class', 'nodes-group');
+    
+    const nodes = nodeGroup
       .selectAll('.node')
-      .data(d3Data.nodes)
-      .enter()
-      .append('g')
-      .attr('class', 'node')
-      .attr('data-node-label', (d: D3Node) => d.label)
-      .call(d3Utils.createDrag(simulation))
-      .on('click', (event, d) => {
-        event.stopPropagation();
-        const originalNode = data.nodes.find(n => n.label === d.label);
-        if (originalNode) onNodeClick?.(originalNode);
-      });
+      .data(d3Data.nodes, (d: any) => d.label) // Use label as key for proper data binding
+      .join(
+        // Enter selection - new nodes
+        (enter) => {
+          const nodeEnter = enter
+            .append('g')
+            .attr('class', 'node')
+            .attr('data-node-label', (d: D3Node) => d.label)
+            .attr('opacity', 0)
+            .call(d3Utils.createDrag(simulation))
+            .on('click', (event, d) => {
+              event.stopPropagation();
+              const originalNode = data.nodes.find(n => n.label === d.label);
+              if (originalNode) onNodeClick?.(originalNode);
+            });
 
-    // Add circles to nodes
-    nodes
-      .append('circle')
-      .attr('r', 20)
-      .attr('fill', 'white')
-      .attr('stroke', '#000000')
-      .attr('stroke-width', 2)
-      .attr('class', 'graph-node');
+          // Add circle to nodes
+          nodeEnter
+            .append('circle')
+            .attr('r', 20)
+            .attr('fill', 'white')
+            .attr('stroke', '#000000')
+            .attr('stroke-width', 2)
+            .attr('class', 'graph-node');
 
-    // Add labels to nodes
-    nodes
-      .append('text')
-      .attr('class', 'graph-node-label')
-      .attr('text-anchor', 'middle')
-      .attr('dy', '0.35em')
-      .attr('fill', '#000000')
-      .attr('font-size', '12px')
-      .attr('font-weight', 'bold')
-      .text((d: D3Node) => d.label);
+          // Add labels to nodes
+          nodeEnter
+            .append('text')
+            .attr('class', 'graph-node-label')
+            .attr('text-anchor', 'middle')
+            .attr('dy', '0.35em')
+            .attr('fill', '#000000')
+            .attr('font-size', '12px')
+            .attr('font-weight', 'bold')
+            .text((d: D3Node) => d.label);
+
+          // Animate in
+          nodeEnter
+            .transition()
+            .duration(300)
+            .attr('opacity', 1);
+
+          return nodeEnter;
+        },
+        // Update selection - existing nodes
+        (update) => {
+          // Update node styling based on selection state
+          update.select('circle')
+            .attr('fill', (d: D3Node) => 
+              selectedNodeLabel === d.label ? '#e3f2fd' : 'white'
+            )
+            .attr('stroke', (d: D3Node) => 
+              selectedNodeLabel === d.label ? '#1976d2' : '#000000'
+            )
+            .attr('stroke-width', (d: D3Node) => 
+              selectedNodeLabel === d.label ? 3 : 2
+            );
+
+          // Update label styling
+          update.select('text')
+            .attr('fill', (d: D3Node) => 
+              selectedNodeLabel === d.label ? '#1976d2' : '#000000'
+            )
+            .attr('font-weight', (d: D3Node) => 
+              selectedNodeLabel === d.label ? 'bold' : 'bold'
+            );
+
+          return update;
+        },
+        // Exit selection - removed nodes
+        (exit) => {
+          return exit
+            .transition()
+            .duration(300)
+            .attr('opacity', 0)
+            .remove();
+        }
+      );
 
     // Add click handler for empty space (node creation)
     if (mode === 'edit' && onNodeCreate) {

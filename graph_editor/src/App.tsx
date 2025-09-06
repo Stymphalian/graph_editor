@@ -42,6 +42,7 @@ function App() {
 
   const handleNodeCreate = (x: number, y: number) => {
     console.log('Creating node at:', x, y);
+    // graph.addNodeWithAutoLabel(x, y);
     // This will be implemented in the next tasks
   };
 
