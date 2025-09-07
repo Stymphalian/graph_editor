@@ -27,6 +27,7 @@ function App() {
   const [currentGraph] = useState<Graph>(graph);
   const [graphData, setGraphData] = useState<GraphData>(graph.getData());
   const [newNodePosition, setNewNodePosition] = useState<{ x: number; y: number } | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const handleNodeCreate = (x: number, y: number) => {
     console.log('Creating node at:', x, y);
@@ -61,6 +62,37 @@ function App() {
       setGraphData(currentGraph.getData());
     } else {
       console.error('Failed to create edge:', currentGraph.getError());
+    }
+  };
+
+  const handleNodeLabelEdit = (nodeId: number, newLabel: string) => {
+    console.log('Editing node label:', nodeId, '->', newLabel);
+    
+    // Update the node label using the Graph model
+    const updatedNode = currentGraph.updateNode(nodeId, { label: newLabel });
+    
+    if (updatedNode) {
+      console.log('Node label updated:', updatedNode);
+      // Update the graph data state to trigger re-render
+      setGraphData(currentGraph.getData());
+    } else {
+      console.error('Failed to update node label:', currentGraph.getError());
+      // Show error to user via the error callback
+      const errorMessage = currentGraph.getError() || 'Failed to update node label';
+      handleError(errorMessage);
+    }
+  };
+
+  const handleError = (message: string) => {
+    // This will be passed to GraphViewer to display the error
+    if (message === '') {
+      setErrorMessage(null);
+    } else {
+      setErrorMessage(message);
+      // Auto-dismiss error after 5 seconds
+      setTimeout(() => {
+        setErrorMessage(null);
+      }, 5000);
     }
   };
 
@@ -104,6 +136,9 @@ function App() {
                     height={600}
                     onNodeCreate={handleNodeCreate}
                     onEdgeCreate={handleEdgeCreate}
+                    onNodeLabelEdit={handleNodeLabelEdit}
+                    onError={handleError}
+                    errorMessage={errorMessage}
                     mode="edit"
                     newNodePosition={newNodePosition}
                     onNewNodePositioned={() => setNewNodePosition(null)}

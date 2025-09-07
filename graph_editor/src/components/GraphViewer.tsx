@@ -13,6 +13,9 @@ interface GraphViewerProps {
   height?: number;
   onNodeCreate?: (x: number, y: number) => void;
   onEdgeCreate?: (sourceId: number, targetId: number) => void;
+  onNodeLabelEdit?: (nodeId: number, newLabel: string) => void;
+  onError?: (message: string) => void;
+  errorMessage?: string | null;
   mode?: 'edit' | 'delete' | 'view-force';
   newNodePosition?: { x: number; y: number } | null;
   onNewNodePositioned?: () => void;
@@ -24,6 +27,9 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
   height = 600,
   onNodeCreate,
   onEdgeCreate,
+  onNodeLabelEdit,
+  onError,
+  errorMessage,
   mode = 'edit',
   newNodePosition,
   onNewNodePositioned,
@@ -34,6 +40,9 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
   const [selectionChange, setSelectionChange] = useState<boolean>(false);
   const [edgeCreationCancel, setEdgeCreationCancel] = useState<boolean>(false);
   const [showClickableAreas, setShowClickableAreas] = useState<boolean>(false);
+  const [editingNodeId, setEditingNodeId] = useState<number | null>(null);
+  const [editingLabel, setEditingLabel] = useState<string>('');
+  const [editingPosition, setEditingPosition] = useState<{ x: number; y: number } | null>(null);
 
   // Internal click handlers
   const handleNodeClick = (node: Node) => {
@@ -48,6 +57,50 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
     d3InstanceRef.current!.selectedNodeId = null;
     setSelectionChange(val => !val);
     console.log('Selection change triggered, selectedEdgeId:', d3InstanceRef.current!.selectedEdgeId);
+  };
+
+  const handleNodeLabelEdit = (node: Node) => {
+    // Find the node's current position in the D3 simulation
+    const d3Node = d3InstanceRef.current?.simulation?.nodes()?.find((n: any) => n.id === node.id);
+    if (d3Node && d3Node.x !== undefined && d3Node.y !== undefined) {
+      setEditingNodeId(node.id);
+      setEditingLabel(node.label);
+      
+      // Calculate position relative to the container, accounting for SVG centering
+      const containerRect = containerRef.current?.getBoundingClientRect();
+      const svgRect = svgRef.current?.getBoundingClientRect();
+      if (containerRect && svgRect) {
+        const relativeX = d3Node.x + (svgRect.left - containerRect.left);
+        const relativeY = d3Node.y + (svgRect.top - containerRect.top);
+        setEditingPosition({ x: relativeX, y: relativeY });
+      } else {
+        setEditingPosition({ x: d3Node.x, y: d3Node.y });
+      }
+    }
+  };
+
+
+  const handleLabelEditSave = () => {
+    if (editingNodeId && editingLabel.trim() !== '') {
+      onNodeLabelEdit?.(editingNodeId, editingLabel.trim());
+    }
+    setEditingNodeId(null);
+    setEditingLabel('');
+    setEditingPosition(null);
+  };
+
+  const handleLabelEditCancel = () => {
+    setEditingNodeId(null);
+    setEditingLabel('');
+    setEditingPosition(null);
+  };
+
+  const handleLabelEditKeyDown = (event: React.KeyboardEvent) => {
+    if (event.key === 'Enter') {
+      handleLabelEditSave();
+    } else if (event.key === 'Escape') {
+      handleLabelEditCancel();
+    }
   };
 
   const svgRef = useRef<SVGSVGElement>(null);
@@ -492,8 +545,12 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
             const nodeSelection = d3.select(this);
             const eventHandlers = createNodeEventHandlers(d, {
               onNodeClick: (node) => handleNodeClickLogic(node),
-              onNodeDoubleClick: () => {
-                // Double-click functionality removed - edge creation now uses nibs
+              onNodeDoubleClick: (node) => {
+                // Double-click for node label editing
+                const originalNode = data.nodes.find(n => n.id === node.id);
+                if (originalNode) {
+                  handleNodeLabelEdit(originalNode);
+                }
               },
               onNodeMouseEnter: () => {
                 // Mouse enter/leave styling removed to avoid conflicts with selection styling
@@ -518,6 +575,12 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
             const isEditMode = mode === 'edit';
             const isSource = d3InstanceRef.current?.edgeCreationSource === d.id;
 
+            // Update the node label text and attribute
+            nodeSelection
+              .attr('data-node-label', d.label)
+              .select('text')
+              .text(d.label);
+
             applyNodeStyling(nodeSelection, isSelected, NODE_RADIUS, isSource);
             applyNodeNibs(nodeSelection, isEditMode && isSelected && !isSource, NODE_RADIUS, (node) => {
               // Nib click starts edge creation mode
@@ -529,8 +592,12 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
             // Re-attach event handlers for existing nodes
             const eventHandlers = createNodeEventHandlers(d, {
               onNodeClick: (node) => handleNodeClickLogic(node),
-              onNodeDoubleClick: () => {
-                // Double-click functionality removed - edge creation now uses nibs
+              onNodeDoubleClick: (node) => {
+                // Double-click for node label editing
+                const originalNode = data.nodes.find(n => n.id === node.id);
+                if (originalNode) {
+                  handleNodeLabelEdit(originalNode);
+                }
               },
               onNodeMouseEnter: () => {
                 // Mouse enter/leave styling removed to avoid conflicts with selection styling
@@ -739,7 +806,7 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
   return (
     <div
       ref={containerRef}
-      className="graph-container w-full h-full min-w-[300px] min-h-[300px] flex flex-col items-center justify-center"
+      className="graph-container w-full h-full min-w-[300px] min-h-[300px] flex flex-col items-center justify-center relative"
       data-testid="graph-viewer"
     >
       <svg
@@ -773,6 +840,50 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
           <span className="text-gray-700">Show clickable areas</span>
         </label>
       </div>
+
+      {/* Error Message */}
+      {errorMessage && (
+        <div className="px-3 py-2 bg-red-50 border border-red-200 rounded-lg text-sm text-red-800 animate-fade-in">
+          <div className="flex items-center justify-between">
+            <span>{errorMessage}</span>
+            <button
+              onClick={() => onError?.('')}
+              className="ml-2 text-red-600 hover:text-red-800 focus:outline-none"
+              aria-label="Dismiss error"
+            >
+              ×
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Inline Label Editor */}
+      {editingNodeId && editingPosition && (
+        <div
+          className="absolute z-50"
+          style={{
+            left: `${editingPosition.x - 30}px`,
+            top: `${editingPosition.y - 10}px`,
+            transform: 'translate(-50%, -50%)',
+          }}
+        >
+          <input
+            type="text"
+            value={editingLabel}
+            onChange={(e) => setEditingLabel(e.target.value)}
+            onKeyDown={handleLabelEditKeyDown}
+            onBlur={handleLabelEditSave}
+            className="px-1 py-0.5 text-xs border border-blue-500 rounded shadow-lg bg-white focus:outline-none focus:ring-1 focus:ring-blue-500 w-12"
+            autoFocus
+            style={{
+              fontSize: '10px',
+              fontWeight: 'bold',
+              textAlign: 'center',
+              height: '20px',
+            }}
+          />
+        </div>
+      )}
 
     </div>
   );
