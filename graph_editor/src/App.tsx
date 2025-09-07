@@ -163,6 +163,10 @@ function App() {
   const handleModeChange = (mode: Mode) => {
     console.log('Mode changed to:', mode);
     console.log('Current graph data when mode changes:', graphData);
+    
+    // Clear any ongoing operations when switching modes
+    setErrorMessage(null);
+    
     setCurrentMode(mode);
   };
 

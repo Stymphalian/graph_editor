@@ -267,7 +267,7 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
         d3InstanceRef.current.mousePosition = null;
         updatePreviewLine();
         // Reset cursor when mouse leaves
-        svg.style('cursor', mode === 'edit' ? 'crosshair' : 'default');
+        svg.style('cursor', getModeCursor());
       }
     });
 
@@ -289,7 +289,7 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
           d3InstanceRef.current.mousePosition = null;
           setEdgeCreationCancel(val => !val);
           // Reset cursor
-          svg.style('cursor', mode === 'edit' ? 'crosshair' : 'default');
+          svg.style('cursor', getModeCursor());
           return;
         }
 
@@ -408,7 +408,7 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
           d3InstanceRef.current.mousePosition = null;
           // Reset cursor
           if (d3InstanceRef.current?.svg) {
-            d3InstanceRef.current.svg.style('cursor', mode === 'edit' ? 'crosshair' : 'default');
+            d3InstanceRef.current.svg.style('cursor', getModeCursor());
           }
         } else {
           // Complete edge creation and continue from target node
@@ -466,17 +466,38 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
   const shouldProcessEvent = (eventType: 'click' | 'dblclick' | 'drag', target: 'node' | 'edge' | 'empty'): boolean => {
     switch (mode) {
       case 'edit':
-        // In edit mode, all events are allowed
+        // In edit mode, all events are allowed for full editing capabilities
         return true;
       case 'delete':
         // In delete mode, only clicks for deletion are allowed
+        // No node creation, edge creation, or editing
         return eventType === 'click' && (target === 'node' || target === 'edge');
       case 'view-force':
-        // In view-force mode, only drag events are allowed for node movement
+        // In view-force mode, only drag events for node movement are allowed
+        // No creation, editing, or deletion
         return eventType === 'drag' && target === 'node';
       default:
         return true;
     }
+  };
+
+  // Helper function to get mode-specific cursor
+  const getModeCursor = (): string => {
+    switch (mode) {
+      case 'edit':
+        return 'crosshair';
+      case 'delete':
+        return 'not-allowed';
+      case 'view-force':
+        return 'grab';
+      default:
+        return 'default';
+    }
+  };
+
+  // Helper function to check if force simulation should be active
+  const shouldForceSimulationBeActive = (): boolean => {
+    return mode === 'view-force';
   };
 
   // Update D3 data and rendering
@@ -968,6 +989,23 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
     return undefined;
   }, [newNodePosition, onNewNodePositioned]);
 
+  // Control force simulation based on mode
+  useEffect(() => {
+    if (d3InstanceRef.current?.simulation) {
+      const { simulation } = d3InstanceRef.current;
+      
+      if (shouldForceSimulationBeActive()) {
+        // Start or restart force simulation in view-force mode
+        simulation.alpha(0.3).restart();
+        console.log('Force simulation started for view-force mode');
+      } else {
+        // Stop force simulation in edit and delete modes
+        simulation.stop();
+        console.log('Force simulation stopped for', mode, 'mode');
+      }
+    }
+  }, [mode]);
+
   // Cleanup on unmount
   useEffect(() => {
     return () => {
@@ -984,12 +1022,25 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
       className="graph-container w-full h-full min-w-[300px] min-h-[300px] flex flex-col items-center justify-center relative"
       data-testid="graph-viewer"
     >
+      {/* Mode indicator */}
+      <div className="absolute top-2 left-2 z-10">
+        <div className={`px-3 py-1 rounded-full text-xs font-medium ${
+          mode === 'edit' ? 'bg-blue-100 text-blue-800' :
+          mode === 'delete' ? 'bg-red-100 text-red-800' :
+          mode === 'view-force' ? 'bg-green-100 text-green-800' :
+          'bg-gray-100 text-gray-800'
+        }`}>
+          {mode === 'edit' ? 'Edit Mode' :
+           mode === 'delete' ? 'Delete Mode' :
+           mode === 'view-force' ? 'View/Force Mode' :
+           'Unknown Mode'}
+        </div>
+      </div>
       <svg
         ref={svgRef}
         width={dimensions.width}
         height={dimensions.height}
-        className={`graph-svg border border-gray-200 rounded-lg bg-white ${mode === 'edit' ? 'cursor-crosshair' : 'cursor-default'
-          }`}
+        className={`graph-svg border border-gray-200 rounded-lg bg-white cursor-${getModeCursor().replace('-', '-')}`}
         style={{
           width: `${dimensions.width}px`,
           height: `${dimensions.height}px`
