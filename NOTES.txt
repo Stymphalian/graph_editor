@@ -3,3 +3,5 @@
   pass in a function which validates if a label is okay.
 - restrict the nodes area to the size of the SVG area. Nodes shouldn't be able
   to wander beyond the bounds.
+- highlight/expand the nibs when hovering
+- node dragging still causes the simulatin to run

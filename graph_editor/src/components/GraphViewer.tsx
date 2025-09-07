@@ -22,6 +22,7 @@ interface GraphViewerProps {
   mode?: 'edit' | 'delete' | 'view-force';
   newNodePosition?: { x: number; y: number } | null;
   onNewNodePositioned?: () => void;
+  onModeTransitionCleanup?: () => void;
 }
 
 const GraphViewer: React.FC<GraphViewerProps> = ({
@@ -39,6 +40,7 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
   mode = 'edit',
   newNodePosition,
   onNewNodePositioned,
+  onModeTransitionCleanup,
 }) => {
   // Internal selection state
   // const [selectedNodeId, setSelectedNodeId] = useState<number | null>(null);
@@ -921,12 +923,19 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
     updateD3Data();
   }, [data, mode, newNodePosition]);
 
-  // Clear selections when graph structure changes (new nodes/edges added)
+  // Clear selections and interactive states when graph structure changes
   // Only clear if the actual structure changed, not just data object recreation
   useEffect(() => {
-    d3InstanceRef.current!.selectedNodeId = null;
-    d3InstanceRef.current!.selectedEdgeId = null;
-    setSelectionChange(val => !val);
+    if (d3InstanceRef.current) {
+      d3InstanceRef.current.selectedNodeId = null;
+      d3InstanceRef.current.selectedEdgeId = null;
+      d3InstanceRef.current.edgeCreationSource = null;
+      d3InstanceRef.current.mousePosition = null;
+      setSelectionChange(val => !val);
+      setEdgeCreationCancel(val => !val);
+      setEditingNodeId(null);
+      setEditingLabel('');
+    }
   }, [data.nodes, data.edges]);
 
   // Update selection styling without restarting simulation
@@ -989,8 +998,43 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
     return undefined;
   }, [newNodePosition, onNewNodePositioned]);
 
-  // Control force simulation based on mode
+  // Comprehensive state cleanup function for mode transitions
+  const performModeTransitionCleanup = () => {
+    console.log('Performing comprehensive mode transition cleanup');
+    
+    if (d3InstanceRef.current) {
+      // Clear all interactive states
+      d3InstanceRef.current.selectedNodeId = null;
+      d3InstanceRef.current.selectedEdgeId = null;
+      d3InstanceRef.current.edgeCreationSource = null;
+      d3InstanceRef.current.mousePosition = null;
+      
+      // Trigger re-renders to clear visual states
+      setSelectionChange(val => !val);
+      setEdgeCreationCancel(val => !val);
+      
+      // Clear any editing states
+      setEditingNodeId(null);
+      setEditingLabel('');
+      
+      // Clear preview line
+      if (d3InstanceRef.current.svg) {
+        d3InstanceRef.current.svg.selectAll('.preview-line').remove();
+        d3InstanceRef.current.svg.style('cursor', getModeCursor());
+      }
+      
+      console.log('Mode transition cleanup completed');
+    }
+    
+    // Call parent cleanup callback if provided
+    onModeTransitionCleanup?.();
+  };
+
+  // Control force simulation and perform cleanup based on mode
   useEffect(() => {
+    // Perform comprehensive state cleanup on mode change
+    performModeTransitionCleanup();
+    
     if (d3InstanceRef.current?.simulation) {
       const { simulation } = d3InstanceRef.current;
       

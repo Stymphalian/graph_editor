@@ -170,6 +170,13 @@ function App() {
     setCurrentMode(mode);
   };
 
+  const handleModeTransitionCleanup = () => {
+    console.log('Performing mode transition cleanup');
+    // Clear any ongoing operations when switching modes
+    setErrorMessage(null);
+    // Additional cleanup can be added here as needed
+  };
+
   const handleGraphTypeChange = (type: GraphType) => {
     console.log('Graph type changed to:', type);
     
@@ -238,6 +245,7 @@ function App() {
                     mode={currentMode}
                     newNodePosition={newNodePosition}
                     onNewNodePositioned={() => setNewNodePosition(null)}
+                    onModeTransitionCleanup={handleModeTransitionCleanup}
                   />
                 </div>
                 <p className="graph-editor-help-text mt-4">

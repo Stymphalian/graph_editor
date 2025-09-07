@@ -1,5 +1,4 @@
 import { render, mockGraphData } from '../test-utils';
-import { act } from '@testing-library/react';
 import GraphViewer from './GraphViewer';
 
 describe('GraphViewer', () => {
@@ -94,6 +93,34 @@ describe('GraphViewer', () => {
       rerender(<GraphViewer data={mockGraphData} mode="view-force" onEdgeCreate={() => {}} />);
       svgElement = document.querySelector('.graph-svg');
       expect(svgElement).toHaveClass('cursor-grab');
+    });
+
+    it('calls mode transition cleanup callback when mode changes', () => {
+      let cleanupCalled = false;
+      const mockCleanup = () => {
+        cleanupCalled = true;
+      };
+      
+      const { rerender } = render(
+        <GraphViewer 
+          data={mockGraphData} 
+          mode="edit" 
+          onEdgeCreate={() => {}} 
+          onModeTransitionCleanup={mockCleanup}
+        />
+      );
+      
+      // Change mode to trigger cleanup
+      rerender(
+        <GraphViewer 
+          data={mockGraphData} 
+          mode="delete" 
+          onEdgeCreate={() => {}} 
+          onModeTransitionCleanup={mockCleanup}
+        />
+      );
+      
+      expect(cleanupCalled).toBe(true);
     });
   });
 
