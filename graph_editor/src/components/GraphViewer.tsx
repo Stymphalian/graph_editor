@@ -135,7 +135,6 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
     if (!svgRef.current || d3InstanceRef.current) return;
 
     const svg = d3.select(svgRef.current);
-    console.log("@@@@ initializeD3Instance");
     svg.selectAll('*').remove(); // Clear previous content
 
     // Create main group for graph elements
@@ -334,35 +333,42 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
     const { container, simulation } = d3InstanceRef.current;
     const d3Data = convertToD3Data(data);
 
-    // Clear previous content
-    container.selectAll('*').remove();
-
-    // Add arrow markers for directed graphs
+    // Handle arrow markers for directed graphs (only add if not already present)
     if (data.type === 'directed') {
-      const defs = container.append('defs');
-      defs.append('marker')
-        .attr('id', 'arrowhead')
-        .attr('viewBox', '0 -5 10 10')
-        .attr('refX', 15)
-        .attr('refY', 0)
-        .attr('markerWidth', 6)
-        .attr('markerHeight', 6)
-        .attr('orient', 'auto')
-        .append('path')
-        .attr('d', 'M0,-5L10,0L0,5')
-        .attr('fill', '#000000');
+      const existingDefs = container.select('defs');
+      if (existingDefs.empty()) {
+        const defs = container.append('defs');
+        defs.append('marker')
+          .attr('id', 'arrowhead')
+          .attr('viewBox', '0 -5 10 10')
+          .attr('refX', 15)
+          .attr('refY', 0)
+          .attr('markerWidth', 6)
+          .attr('markerHeight', 6)
+          .attr('orient', 'auto')
+          .append('path')
+          .attr('d', 'M0,-5L10,0L0,5')
+          .attr('fill', '#000000');
+      }
+    } else {
+      // Remove arrow markers for undirected graphs
+      container.select('defs').remove();
     }
 
     // Render edges
-    const edgeGroup = container.append('g').attr('class', 'edges-group');
+    let edgeGroup = container.select('.edges-group');
+    if (edgeGroup.empty()) {
+      edgeGroup = container.append('g').attr('class', 'edges-group');
+    }
     const edges = edgeGroup
-      .selectAll('.edge')
+      .selectAll('.graph-edge')
       .data(d3Data.edges, (d: any) => d.id)
       .join(
         (enter: any) => {
           const edgeEnter = enter
             .append('line')
             .attr('class', 'graph-edge')
+            .attr('data-edge-id', (d: D3Edge) => d.id)
             .attr('opacity', 1);
 
           edgeEnter.each(function(this: any, d: D3Edge) {
@@ -419,10 +425,13 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
       );
 
     // Render nodes
-    const nodeGroup = container.append('g').attr('class', 'nodes-group');
+    let nodeGroup = container.select('.nodes-group');
+    if (nodeGroup.empty()) {
+      nodeGroup = container.append('g').attr('class', 'nodes-group');
+    }
     const nodes = nodeGroup
       .selectAll('.node')
-      .data(d3Data.nodes, (d: any) => d.label)
+      .data(d3Data.nodes, (d: any) => d.id)
       .join(
         (enter: any) => {
           const nodeEnter = enter
@@ -520,8 +529,7 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
           return update;
         },
         (exit: any) => {
-          return exit
-            .remove();
+          return exit.remove();
         }
       );
 
@@ -566,11 +574,11 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
   const convertToD3Data = (graphData: GraphData) => {
     // Get existing node positions from the simulation if it exists
     const existingNodes = d3InstanceRef.current?.simulation?.nodes() || [];
-    const existingNodeMap = new Map(existingNodes.map((node: any) => [node.label, { x: node.x, y: node.y }]));
+    const existingNodeMap = new Map(existingNodes.map((node: any) => [node.id, { x: node.x, y: node.y }]));
 
     const d3Nodes: D3Node[] = graphData.nodes.map((node, index) => {
       // Preserve existing position if available
-      const existingPos = existingNodeMap.get(node.label);
+      const existingPos = existingNodeMap.get(node.id);
       if (existingPos && existingPos.x !== undefined && existingPos.y !== undefined) {
         return {
           id: node.id,
