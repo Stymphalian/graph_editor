@@ -96,3 +96,41 @@ between nodes.
 If the user select's empty space it should cancel the edge creation.
 If the user selects a node and create the new edge, we should continue edge creation
 from the newly selected node.
+
+
+Next I want to finish off task 4 (the text-panel)
+Here is the functionality of the text-panel.
+It should be synchronized to the Graph model. Any edits to the text representation
+should affect what is shown in the graph viewer. Any edits made in the graph viewer
+should also have updates to the text representation. this should be done through the common
+Graph model that is held in App.tsx
+
+Here is the text-representation format of the graph. 
+(It is essentially an edge list)
+Here is an example:
+```
+1            // lines with a single label denote nodes in the graph
+2
+4
+2 3          // lines with two elements separated by whitespace is an edge (from, to)
+1 2 100      // lines with 3 elements is an edge with the given weight (from, to, weight)
+4 3
+3            // this node is defined after the edges, but should still be valid
+```
+
+The user may be able to directly edit the text and have it update the graph.
+Any invalid lines should be ignored:
+   - Duplicate labels
+   - duplicate edges
+   - lines with too many parts (i.e >3 after splitting on whitespace)
+
+For the visual layout of the Text Panel on the UI
+I want two text-areas. One to show the node count and the other
+to show the text-representatin of the graph with line-numbers (1-indexed)
+
+
+Ask me any clarifying questions on the behavior/functionality/visual layout/interactions.
+After that update the task-prd section 4 with the list of tasks.
+
+
+

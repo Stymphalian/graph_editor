@@ -82,14 +82,17 @@
 - [ ] 4.0 Text Panel and Data Synchronization
   - [x] 4.1 Create TextPanel component with textarea for graph data display
   - [x] 4.2 Implement text format generation from graph data (Node Count, Graph Data, edges)
-  - [ ] 4.3 Add real-time text panel updates when graph is modified visually
-  - [ ] 4.4 Implement text panel parsing to update graph when text is modified
-  - [ ] 4.5 Add validation and error handling for malformed text input
-  - [ ] 4.6 Implement bidirectional synchronization between visual and text representations
-  - [ ] 4.7 Add support for edge weight display in text format
-  - [ ] 4.8 Ensure text panel serves as ground truth for graph data
-  - [ ] 4.9 Add visual indicators for text panel validation errors
-  - [ ] 4.10 Implement proper text formatting and line break handling
+  - [ ] 4.3 Implement two-textarea layout: read-only node count (top) and editable graph representation (bottom)
+  - [ ] 4.4 Add line numbers as visual indicators in the graph representation textarea
+  - [ ] 4.5 Implement debounced text parsing (0.5s delay) to update graph when text is modified
+  - [ ] 4.6 Add text format parsing with validation (ignore invalid lines, continue processing)
+  - [ ] 4.7 Implement partial graph updates/merging when text is parsed (preserve existing data)
+  - [ ] 4.8 Add real-time text panel updates when graph is modified visually
+  - [ ] 4.9 Implement bidirectional synchronization between visual and text representations
+  - [ ] 4.10 Add support for edge weight display in text format (empty string for unweighted edges)
+  - [ ] 4.11 Preserve user-typed order in text representation (maintain as-is formatting)
+  - [ ] 4.12 Ensure text panel serves as ground truth for graph data
+  - [ ] 4.13 Implement proper text formatting and line break handling
 
 - [ ] 5.0 User Interaction System
   - [x] 5.1 Implement mouse event handlers for node creation (left-click on empty space)
@@ -103,13 +106,12 @@
   - [x] 5.9 Implement edge deletion on click in Delete mode
   - [x] 5.10 Add proper event propagation and conflict resolution
 
-- [ ] 6.0 Mode Management and Controls
+- [x] 6.0 Mode Management and Controls
   - [x] 6.1 Create ModeControls component with Edit/Delete/View-Force buttons
   - [x] 6.4 Create GraphControls component for directed/undirected toggle
   - [x] 6.5 Add node indexing mode controls (0-indexed, 1-indexed, custom)
   - [x] 6.6 Implement mode-specific interaction behaviors
   - [x] 6.8 Ensure proper mode transitions and state cleanup
-  - [ ] 6.10 Implement mode-specific UI element enabling/disabling
 
 - [ ] 7.0 Undo/Redo System
   - [ ] 7.1 Create useUndoRedo hook for action history management

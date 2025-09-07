@@ -67,27 +67,32 @@ This document outlines the requirements for a web-based graph editor application
 26. The system must allow manual node repositioning during force simulation
 
 ### Text Data Panel
-27. The system must display a left panel with text representation of the graph
-28. The system must use the specified text format:
-   - Node Count: [number]
-   - Graph Data: [list of node labels]
-   - [edge definitions as "source target" or "source target weight"]
-29. The system must update the text panel in real-time when graph is modified visually
-30. The system must update the visual graph when text panel is modified
-31. The system must treat the text panel as the ground truth for graph data
+27. The system must display a left panel with two textareas: read-only node count (top) and editable graph representation (bottom)
+28. The system must use the specified text format (edge list format):
+   - Single labels on lines denote nodes in the graph
+   - Two elements separated by whitespace denote edges (from, to)
+   - Three elements denote edges with weights (from, to, weight)
+   - Edges without weights should use empty string values
+29. The system must display line numbers as visual indicators in the graph representation textarea
+30. The system must update the text panel in real-time when graph is modified visually
+31. The system must update the visual graph when text panel is modified (with 0.5s debounced parsing)
+32. The system must handle partial graph updates/merging when text is parsed (preserve existing data)
+33. The system must ignore invalid lines during text parsing (duplicate labels, duplicate edges, lines with >3 elements)
+34. The system must preserve user-typed order in text representation (maintain as-is formatting)
+35. The system must treat the text panel as the ground truth for graph data
 
 ### User Interface
-32. The system must use SVG or vector-based graphics for rendering
-33. The system must provide a central viewport for graph visualization
-34. The system must provide clear visual feedback for node selection
-35. The system must provide visual indicators for node "nibs/bumps" for edge creation
-36. The system must maintain responsive performance with up to 1000 nodes
+36. The system must use SVG or vector-based graphics for rendering
+37. The system must provide a central viewport for graph visualization
+38. The system must provide clear visual feedback for node selection
+39. The system must provide visual indicators for node "nibs/bumps" for edge creation
+40. The system must maintain responsive performance with up to 1000 nodes
 
 ### Undo/Redo Functionality
-37. The system must maintain a history of all graph modifications
-38. The system must provide an undo button that reverts the most recent action
-39. The system must provide a redo button that reapplies the most recently undone action
-40. The system must track the following actions in the history:
+41. The system must maintain a history of all graph modifications
+42. The system must provide an undo button that reverts the most recent action
+43. The system must provide a redo button that reapplies the most recently undone action
+44. The system must track the following actions in the history:
     - Node creation
     - Node deletion
     - Node label changes
@@ -95,8 +100,8 @@ This document outlines the requirements for a web-based graph editor application
     - Edge creation
     - Edge deletion
     - Edge weight changes
-41. The system must disable undo/redo buttons when no actions are available
-42. The system must limit history to the last 50 actions to prevent memory issues
+45. The system must disable undo/redo buttons when no actions are available
+46. The system must limit history to the last 50 actions to prevent memory issues
 
 ## Non-Goals (Out of Scope)
 
@@ -156,7 +161,7 @@ This document outlines the requirements for a web-based graph editor application
 
 ## Success Metrics
 
-1. **Functionality**: All 43 functional requirements are implemented and working
+1. **Functionality**: All 46 functional requirements are implemented and working
 2. **Performance**: Application remains responsive with 1000-node graphs
 3. **Usability**: User can create a 10-node graph with 15 edges in under 2 minutes
 4. **Synchronization**: Text and visual representations stay in perfect sync
