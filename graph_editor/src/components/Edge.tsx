@@ -36,13 +36,31 @@ export const createEdgeEventHandlers = (
   edge: D3Edge,
   handlers: EdgeEventHandlers
 ) => {
+  let clickTimeout: number | null = null;
+
   return {
     click: (event: Event) => {
       event.stopPropagation();
-      handlers.onEdgeClick?.(edge);
+      
+      // Clear any existing timeout
+      if (clickTimeout) {
+        clearTimeout(clickTimeout);
+      }
+      
+      // Delay click handling to allow for double-click detection
+      clickTimeout = setTimeout(() => {
+        handlers.onEdgeClick?.(edge);
+      }, 200);
     },
     dblclick: (event: Event) => {
       event.stopPropagation();
+      
+      // Clear click timeout to prevent single click from firing
+      if (clickTimeout) {
+        clearTimeout(clickTimeout);
+        clickTimeout = null;
+      }
+      
       handlers.onEdgeDoubleClick?.(edge);
     },
     mouseenter: (event: Event) => {

@@ -35,7 +35,7 @@ describe('Node Utility Functions', () => {
   });
 
   describe('createNodeEventHandlers', () => {
-    it('creates event handlers that call the provided functions', () => {
+    it('creates event handlers that call the provided functions', async () => {
       let clickedNode: D3Node | undefined;
       let doubleClickedNode: D3Node | undefined;
       let mouseEnteredNode: D3Node | undefined;
@@ -50,8 +50,11 @@ describe('Node Utility Functions', () => {
 
       const eventHandlers = createNodeEventHandlers(mockNode, handlers);
       
-      // Test click handler
+      // Test click handler (with timeout)
       eventHandlers.click(new Event('click'));
+      
+      // Wait for timeout to complete
+      await new Promise(resolve => setTimeout(resolve, 250));
       expect(clickedNode).toEqual(mockNode);
 
       // Test double click handler

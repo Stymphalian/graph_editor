@@ -70,6 +70,9 @@ export const d3Utils = {
     d3
       .drag<SVGGElement, D3Node, unknown>()
       .on('start', (event, d) => {
+        // Prevent click events from firing after drag
+        event.sourceEvent?.stopPropagation();
+        
         if (!event.active && simulation) {
           if (mode === 'view-force') {
             // In view-force mode, temporarily disable force simulation during drag
@@ -83,10 +86,15 @@ export const d3Utils = {
         d.fy = d.y ?? null;
       })
       .on('drag', (event, d) => {
+        // Prevent click events during drag
+        event.sourceEvent?.stopPropagation();
         d.fx = event.x;
         d.fy = event.y;
       })
       .on('end', (event, d) => {
+        // Prevent click events from firing after drag
+        event.sourceEvent?.stopPropagation();
+        
         if (!event.active && simulation) {
           if (mode === 'view-force') {
             // In view-force mode, restart force simulation after drag

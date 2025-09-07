@@ -43,13 +43,38 @@ export const createNodeEventHandlers = (
   node: D3Node,
   handlers: NodeEventHandlers
 ) => {
+  let dragStarted = false;
+  let clickTimeout: number | null = null;
+
   return {
     click: (event: Event) => {
       event.stopPropagation();
-      handlers.onNodeClick?.(node);
+      
+      // If drag was started, ignore click events
+      if (dragStarted) {
+        dragStarted = false;
+        return;
+      }
+      
+      // Clear any existing timeout
+      if (clickTimeout) {
+        clearTimeout(clickTimeout);
+      }
+      
+      // Delay click handling to allow for double-click detection
+      clickTimeout = setTimeout(() => {
+        handlers.onNodeClick?.(node);
+      }, 200);
     },
     dblclick: (event: Event) => {
       event.stopPropagation();
+      
+      // Clear click timeout to prevent single click from firing
+      if (clickTimeout) {
+        clearTimeout(clickTimeout);
+        clickTimeout = null;
+      }
+      
       handlers.onNodeDoubleClick?.(node);
     },
     mouseenter: (event: Event) => {
@@ -59,6 +84,14 @@ export const createNodeEventHandlers = (
     mouseleave: (event: Event) => {
       event.stopPropagation();
       handlers.onNodeMouseLeave?.(node);
+    },
+    dragstart: () => {
+      dragStarted = true;
+      // Clear any pending click
+      if (clickTimeout) {
+        clearTimeout(clickTimeout);
+        clickTimeout = null;
+      }
     },
   };
 };

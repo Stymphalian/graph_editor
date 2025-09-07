@@ -46,7 +46,7 @@ describe('Edge Utility Functions', () => {
   });
 
   describe('createEdgeEventHandlers', () => {
-    it('creates event handlers that call the provided functions', () => {
+    it('creates event handlers that call the provided functions', async () => {
       let clickedEdge: D3Edge | undefined;
       let doubleClickedEdge: D3Edge | undefined;
       let mouseEnteredEdge: D3Edge | undefined;
@@ -61,8 +61,11 @@ describe('Edge Utility Functions', () => {
 
       const eventHandlers = createEdgeEventHandlers(mockEdge, handlers);
       
-      // Test click handler
+      // Test click handler (with timeout)
       eventHandlers.click(new Event('click'));
+      
+      // Wait for timeout to complete
+      await new Promise(resolve => setTimeout(resolve, 250));
       expect(clickedEdge).toEqual(mockEdge);
 
       // Test double click handler

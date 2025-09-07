@@ -101,11 +101,10 @@
   - [x] 5.7 Add double-click handlers for edge weight editing
   - [x] 5.8 Implement node deletion on click in Delete mode
   - [x] 5.9 Implement edge deletion on click in Delete mode
-  - [ ] 5.10 Add proper event propagation and conflict resolution
-  - [ ] 5.11 Implement keyboard event handling for mode switching (optional)
+  - [x] 5.10 Add proper event propagation and conflict resolution
 
 - [ ] 6.0 Mode Management and Controls
-  - [ ] 6.1 Create ModeControls component with Edit/Delete/View-Force buttons
+  - [x] 6.1 Create ModeControls component with Edit/Delete/View-Force buttons
   - [ ] 6.2 Implement mode state management and context sharing
   - [ ] 6.3 Add visual mode indicators and button styling
   - [ ] 6.4 Create GraphControls component for directed/undirected toggle

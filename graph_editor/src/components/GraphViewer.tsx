@@ -273,8 +273,12 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
 
     // Add click handler for empty space (node creation and edge creation cancellation)
     svg.on('click', (event: any) => {
-      console.log("@@@@ SVG click event mode = ", mode);
       if (event.target === svg.node()) {
+        // Check if this event should be processed based on mode
+        if (!shouldProcessEvent('click', 'empty')) {
+          return;
+        }
+
         // Cancel edge creation if in edge creation mode
         if (d3InstanceRef.current?.edgeCreationSource) {
           d3InstanceRef.current.selectedNodeId = null;
@@ -389,6 +393,10 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
 
   // Helper function to handle node click logic
   const handleNodeClickLogic = (node: D3Node) => {
+    // Check if this event should be processed based on mode
+    if (!shouldProcessEvent('click', 'node')) {
+      return;
+    }
 
     if (mode === 'edit') {
       // Check if we're in edge creation mode
@@ -436,6 +444,11 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
 
   // Helper function to handle edge click logic
   const handleEdgeClickLogic = (edge: D3Edge) => {
+    // Check if this event should be processed based on mode
+    if (!shouldProcessEvent('click', 'edge')) {
+      return;
+    }
+
     if (mode === 'delete') {
       // Handle edge deletion in delete mode
       onEdgeDelete?.(edge.id);
@@ -446,6 +459,23 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
         handleEdgeClick(originalEdge);
       } else {
       }
+    }
+  };
+
+  // Helper function to determine if an event should be processed based on mode
+  const shouldProcessEvent = (eventType: 'click' | 'dblclick' | 'drag', target: 'node' | 'edge' | 'empty'): boolean => {
+    switch (mode) {
+      case 'edit':
+        // In edit mode, all events are allowed
+        return true;
+      case 'delete':
+        // In delete mode, only clicks for deletion are allowed
+        return eventType === 'click' && (target === 'node' || target === 'edge');
+      case 'view-force':
+        // In view-force mode, only drag events are allowed for node movement
+        return eventType === 'drag' && target === 'node';
+      default:
+        return true;
     }
   };
 
@@ -697,7 +727,8 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
 
             nodeSelection
               .on('click', eventHandlers.click)
-              .on('dblclick', eventHandlers.dblclick);
+              .on('dblclick', eventHandlers.dblclick)
+              .on('dragstart', eventHandlers.dragstart);
           });
 
 
@@ -744,7 +775,8 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
 
             nodeSelection
               .on('click', eventHandlers.click)
-              .on('dblclick', eventHandlers.dblclick);
+              .on('dblclick', eventHandlers.dblclick)
+              .on('dragstart', eventHandlers.dragstart);
           });
           return update;
         },
