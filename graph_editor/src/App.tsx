@@ -2,8 +2,9 @@ import { useState, useMemo } from 'react';
 import GraphViewer from './components/GraphViewer';
 import TextPanel from './components/TextPanel';
 import ModeControls from './components/ModeControls';
+import GraphControls from './components/GraphControls';
 import { Graph } from './models/Graph';
-import { GraphData } from './types/graph';
+import { GraphData, GraphType } from './types/graph';
 import { Mode } from './components/ModeControls';
 
 function App() {
@@ -164,6 +165,16 @@ function App() {
     setCurrentMode(mode);
   };
 
+  const handleGraphTypeChange = (type: GraphType) => {
+    console.log('Graph type changed to:', type);
+    
+    // Update the graph type using the Graph model
+    currentGraph.setType(type);
+    
+    // Update the graph data state to trigger re-render
+    setGraphData(currentGraph.getData());
+  };
+
   const handleGraphDataChange = (newData: any) => {
     console.log('Graph data changed:', newData);
     // TODO: Implement graph data parsing and updating (Task 4.4)
@@ -227,11 +238,18 @@ function App() {
                 <h2 className="text-lg font-semibold text-gray-800 mb-3">
                   Controls
                 </h2>
-                <ModeControls
-                  currentMode={currentMode}
-                  onModeChange={handleModeChange}
-                  className="w-full"
-                />
+                <div className="space-y-6">
+                  <ModeControls
+                    currentMode={currentMode}
+                    onModeChange={handleModeChange}
+                    className="w-full"
+                  />
+                  <GraphControls
+                    graphType={graphData.type}
+                    onGraphTypeChange={handleGraphTypeChange}
+                    className="w-full"
+                  />
+                </div>
               </div>
             </div>
           </div>

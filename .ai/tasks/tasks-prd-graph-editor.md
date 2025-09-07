@@ -105,14 +105,10 @@
 
 - [ ] 6.0 Mode Management and Controls
   - [x] 6.1 Create ModeControls component with Edit/Delete/View-Force buttons
-  - [ ] 6.2 Implement mode state management and context sharing
-  - [ ] 6.3 Add visual mode indicators and button styling
-  - [ ] 6.4 Create GraphControls component for directed/undirected toggle
+  - [x] 6.4 Create GraphControls component for directed/undirected toggle
   - [ ] 6.5 Add node indexing mode controls (0-indexed, 1-indexed, custom)
   - [ ] 6.6 Implement mode-specific interaction behaviors
-  - [ ] 6.7 Add mode persistence during session (no cross-session persistence per requirements)
   - [ ] 6.8 Ensure proper mode transitions and state cleanup
-  - [ ] 6.9 Add visual feedback for current active mode
   - [ ] 6.10 Implement mode-specific UI element enabling/disabling
 
 - [ ] 7.0 Undo/Redo System
@@ -137,7 +133,6 @@
   - [ ] 8.7 Optimize force simulation for graphs up to 1000 nodes
   - [ ] 8.8 Add smooth transitions between manual and automatic layout
   - [ ] 8.9 Implement force simulation cleanup and memory management
-  - [ ] 8.10 Add performance monitoring for force simulation
 
 - [ ] 9.0 Testing and Quality Assurance
   - [ ] 9.1 Write comprehensive unit tests for Graph model and all methods
