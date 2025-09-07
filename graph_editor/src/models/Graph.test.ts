@@ -42,6 +42,68 @@ describe('Graph', () => {
       expect(graph.getNodeIndexingMode()).toBe('0-indexed');
     });
 
+    it('should set node indexing mode', () => {
+      graph.setNodeIndexingMode('1-indexed');
+      expect(graph.getNodeIndexingMode()).toBe('1-indexed');
+      expect(graph.isModified()).toBe(true);
+      
+      graph.setNodeIndexingMode('custom');
+      expect(graph.getNodeIndexingMode()).toBe('custom');
+      expect(graph.isModified()).toBe(true);
+    });
+
+    it('should re-label existing nodes when changing indexing mode', () => {
+      // Add some nodes with 0-indexed labels
+      const node1 = graph.addNode({ label: '0' });
+      const node2 = graph.addNode({ label: '1' });
+      const node3 = graph.addNode({ label: '2' });
+      
+      expect(node1?.label).toBe('0');
+      expect(node2?.label).toBe('1');
+      expect(node3?.label).toBe('2');
+      
+      // Switch to 1-indexed mode
+      graph.setNodeIndexingMode('1-indexed');
+      
+      const data = graph.getData();
+      expect(data.nodes[0].label).toBe('1'); // First node becomes 1
+      expect(data.nodes[1].label).toBe('2'); // Second node becomes 2
+      expect(data.nodes[2].label).toBe('3'); // Third node becomes 3
+      
+      // Switch to custom mode (should keep same labels as 0-indexed for now)
+      graph.setNodeIndexingMode('custom');
+      
+      const data2 = graph.getData();
+      expect(data2.nodes[0].label).toBe('0'); // First node becomes 0
+      expect(data2.nodes[1].label).toBe('1'); // Second node becomes 1
+      expect(data2.nodes[2].label).toBe('2'); // Third node becomes 2
+      
+      // Switch back to 0-indexed
+      graph.setNodeIndexingMode('0-indexed');
+      
+      const data3 = graph.getData();
+      expect(data3.nodes[0].label).toBe('0'); // First node becomes 0
+      expect(data3.nodes[1].label).toBe('1'); // Second node becomes 1
+      expect(data3.nodes[2].label).toBe('2'); // Third node becomes 2
+    });
+
+    it('should preserve node IDs when re-labeling', () => {
+      // Add some nodes
+      const node1 = graph.addNode({ label: 'A' });
+      const node2 = graph.addNode({ label: 'B' });
+      const node3 = graph.addNode({ label: 'C' });
+      
+      const originalIds = [node1?.id, node2?.id, node3?.id];
+      
+      // Switch to 1-indexed mode
+      graph.setNodeIndexingMode('1-indexed');
+      
+      const data = graph.getData();
+      expect(data.nodes[0].id).toBe(originalIds[0]); // ID should remain the same
+      expect(data.nodes[1].id).toBe(originalIds[1]); // ID should remain the same
+      expect(data.nodes[2].id).toBe(originalIds[2]); // ID should remain the same
+    });
+
     it('should get max nodes', () => {
       expect(graph.getMaxNodes()).toBe(1000);
     });

@@ -106,7 +106,7 @@
 - [ ] 6.0 Mode Management and Controls
   - [x] 6.1 Create ModeControls component with Edit/Delete/View-Force buttons
   - [x] 6.4 Create GraphControls component for directed/undirected toggle
-  - [ ] 6.5 Add node indexing mode controls (0-indexed, 1-indexed, custom)
+  - [x] 6.5 Add node indexing mode controls (0-indexed, 1-indexed, custom)
   - [ ] 6.6 Implement mode-specific interaction behaviors
   - [ ] 6.8 Ensure proper mode transitions and state cleanup
   - [ ] 6.10 Implement mode-specific UI element enabling/disabling

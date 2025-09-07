@@ -3,14 +3,15 @@ import GraphViewer from './components/GraphViewer';
 import TextPanel from './components/TextPanel';
 import ModeControls from './components/ModeControls';
 import GraphControls from './components/GraphControls';
+import NodeIndexingControls from './components/NodeIndexingControls';
 import { Graph } from './models/Graph';
-import { GraphData, GraphType } from './types/graph';
+import { GraphData, GraphType, NodeIndexingMode } from './types/graph';
 import { Mode } from './components/ModeControls';
 
 function App() {
   // Create a sample graph using the Graph model
   const graph = useMemo(() => {
-    const g = new Graph({ type: 'directed' });
+    const g = new Graph({ type: 'directed', nodeIndexingMode: "custom" });
 
     // Add sample nodes and store their IDs
     const nodeA = g.addNode({ label: 'A' });
@@ -175,6 +176,16 @@ function App() {
     setGraphData(currentGraph.getData());
   };
 
+  const handleNodeIndexingModeChange = (mode: NodeIndexingMode) => {
+    console.log('Node indexing mode changed to:', mode);
+    
+    // Update the node indexing mode using the Graph model
+    currentGraph.setNodeIndexingMode(mode);
+    
+    // Update the graph data state to trigger re-render
+    setGraphData(currentGraph.getData());
+  };
+
   const handleGraphDataChange = (newData: any) => {
     console.log('Graph data changed:', newData);
     // TODO: Implement graph data parsing and updating (Task 4.4)
@@ -247,6 +258,11 @@ function App() {
                   <GraphControls
                     graphType={graphData.type}
                     onGraphTypeChange={handleGraphTypeChange}
+                    className="w-full"
+                  />
+                  <NodeIndexingControls
+                    nodeIndexingMode={graphData.nodeIndexingMode}
+                    onNodeIndexingModeChange={handleNodeIndexingModeChange}
                     className="w-full"
                   />
                 </div>

@@ -118,6 +118,30 @@ export class Graph {
   }
 
   /**
+   * Set node indexing mode (0-indexed, 1-indexed, custom)
+   */
+  setNodeIndexingMode(mode: NodeIndexingMode): void {
+    if (this.state.data.nodeIndexingMode !== mode) {
+      this.state.data.nodeIndexingMode = mode;
+      
+      // Re-label existing nodes based on their order in the array
+      this.relabelNodes();
+      
+      this.state.isModified = true;
+      this.clearError();
+    }
+  }
+
+  /**
+   * Re-label all nodes based on current indexing mode and their order in the array
+   */
+  private relabelNodes(): void {
+    this.state.data.nodes.forEach((node, index) => {
+      node.label = this.generateNodeLabel(index);
+    });
+  }
+
+  /**
    * Check if the graph is directed
    */
   isDirected(): boolean {
@@ -182,9 +206,13 @@ export class Graph {
     if (maxIndex === -1) {
       return this.state.data.nodes.length;
     }
-    
-    // Start from the next index after the highest existing numeric label
-    return maxIndex + 1;
+
+    if (this.getNodeIndexingMode() == "1-indexed") {
+      return maxIndex;
+    } else {
+      // Start from the next index after the highest existing numeric label
+      return maxIndex + 1;
+    }
   }
 
   /**
