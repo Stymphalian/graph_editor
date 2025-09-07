@@ -127,7 +127,7 @@ describe('Edge Utility Functions', () => {
       // Verify line styling was applied
       expect(calls.some(call => call.method === 'attr' && call.args[0] === 'stroke' && call.args[1] === '#1976d2')).toBe(true);
       expect(calls.some(call => call.method === 'attr' && call.args[0] === 'stroke-width' && call.args[1] === 5)).toBe(true);
-      expect(calls.some(call => call.method === 'attr' && call.args[0] === 'marker-end' && call.args[1] === 'url(#arrowhead)')).toBe(true);
+      expect(calls.some(call => call.method === 'attr' && call.args[0] === 'marker-end' && call.args[1] === 'url(#arrowhead-selected)')).toBe(true);
       expect(calls.some(call => call.method === 'style' && call.args[0] === 'cursor' && call.args[1] === 'pointer')).toBe(true);
       expect(calls.some(call => call.method === 'style' && call.args[0] === 'transition' && call.args[1] === 'all 0.2s ease-in-out')).toBe(true);
 

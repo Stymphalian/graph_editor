@@ -25,8 +25,7 @@ export const getEdgeStyling = (
 ) => {
   return {
     stroke: isSelected ? '#1976d2' : strokeColor,
-    strokeWidth : strokeWidth,
-    // strokeWidth: isSelected ? strokeWidth + 1 : strokeWidth,
+    strokeWidth: isSelected ? strokeWidth + 1 : strokeWidth,
   };
 };
 
