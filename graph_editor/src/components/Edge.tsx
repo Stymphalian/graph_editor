@@ -1,4 +1,4 @@
-import { D3Edge, D3Node } from '@/utils/d3Config';
+import { D3Edge } from '@/utils/d3Config';
 
 export interface EdgeConfig {
   isSelected?: boolean;
@@ -95,76 +95,3 @@ export const applyEdgeStyling = (
   }
 };
 
-/**
- * Create an edge line element
- */
-export const createEdgeElement = (
-  edge: D3Edge,
-  sourceNode: D3Node,
-  targetNode: D3Node,
-  config: EdgeConfig = {}
-) => {
-  const {
-    isSelected = false,
-    isDirected = false,
-    strokeWidth = 2,
-    strokeColor = '#000000',
-    className = '',
-  } = config;
-
-  const styling = getEdgeStyling(isSelected, strokeColor, strokeWidth);
-  const x1 = sourceNode.x || 0;
-  const y1 = sourceNode.y || 0;
-  const x2 = targetNode.x || 0;
-  const y2 = targetNode.y || 0;
-
-  const children: Array<{
-    tag: string;
-    attributes: Record<string, any>;
-    text?: string;
-  }> = [
-    {
-      tag: 'line',
-      attributes: {
-        class: 'graph-edge',
-        x1,
-        y1,
-        x2,
-        y2,
-        stroke: styling.stroke,
-        'stroke-width': styling.strokeWidth,
-        'marker-end': isDirected ? 'url(#arrowhead)' : undefined,
-        style: 'cursor: pointer; transition: all 0.2s ease-in-out;',
-      },
-    },
-  ];
-
-  // Add weight text if present
-  if (edge.weight) {
-    children.push({
-      tag: 'text',
-      attributes: {
-        class: 'graph-edge-weight',
-        x: (x1 + x2) / 2,
-        y: (y1 + y2) / 2,
-        'text-anchor': 'middle',
-        dy: '-0.5em',
-        fill: styling.stroke,
-        'font-size': '10px',
-        'font-weight': 'bold',
-        style: 'pointer-events: none; user-select: none; transition: all 0.2s ease-in-out;',
-      },
-      text: edge.weight,
-    });
-  }
-
-  return {
-    tag: 'g',
-    attributes: {
-      class: `edge ${className}`,
-      'data-edge-id': edge.id,
-      'data-testid': `edge-${edge.id}`,
-    },
-    children,
-  };
-};

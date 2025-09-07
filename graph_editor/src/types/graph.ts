@@ -8,17 +8,19 @@ export type NodeIndexingMode = '0-indexed' | '1-indexed' | 'custom';
 export type GraphType = 'directed' | 'undirected';
 
 export interface Node {
-  /** Display label for the node (also serves as unique identifier) */
+  /** Unique identifier for the node */
+  id: number;
+  /** Display label for the node */
   label: string;
 }
 
 export interface Edge {
   /** Unique identifier for the edge */
   id: string;
-  /** Source node label */
-  source: string;
-  /** Target node label */
-  target: string;
+  /** Source node ID */
+  source: number;
+  /** Target node ID */
+  target: number;
   /** Edge weight as string value */
   weight?: string;
 }
@@ -57,13 +59,15 @@ export interface GraphValidationResult {
 export interface NodeCreationData {
   /** Label for the new node */
   label: string;
+  /** Optional ID for the new node (auto-generated if not provided) */
+  id?: number;
 }
 
 export interface EdgeCreationData {
-  /** Source node label */
-  source: string;
-  /** Target node label */
-  target: string;
+  /** Source node ID */
+  source: number;
+  /** Target node ID */
+  target: number;
   /** Edge weight */
   weight?: string;
 }

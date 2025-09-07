@@ -139,6 +139,13 @@ export class Graph {
   }
 
   /**
+   * Generate a unique node ID
+   */
+  private generateNodeId(): number {
+    return ++this.nodeIdCounter;
+  }
+
+  /**
    * Generate a node label based on indexing mode
    */
   private generateNodeLabel(index: number): string {
@@ -157,9 +164,16 @@ export class Graph {
   }
 
   /**
+   * Find a node by ID
+   */
+  private findNodeById(id: number): Node | undefined {
+    return this.state.data.nodes.find(node => node.id === id);
+  }
+
+  /**
    * Find a node by label
    */
-  private findNodeById(label: string): Node | undefined {
+  private findNodeByLabel(label: string): Node | undefined {
     return this.state.data.nodes.find(node => node.label === label);
   }
 
@@ -171,9 +185,9 @@ export class Graph {
   }
 
   /**
-   * Find edges by source and target nodes
+   * Find edges by source and target node IDs
    */
-  private findEdgesByNodes(sourceId: string, targetId: string): Edge[] {
+  private findEdgesByNodeIds(sourceId: number, targetId: number): Edge[] {
     return this.state.data.edges.filter(
       edge =>
         (edge.source === sourceId && edge.target === targetId) ||
@@ -253,14 +267,26 @@ export class Graph {
     }
 
     // Check if label already exists
-    if (this.findNodeById(nodeData.label)) {
+    if (this.findNodeByLabel(nodeData.label)) {
       this.setError(
         `Cannot add node: label '${nodeData.label}' already exists`
       );
       return null;
     }
 
+    // Generate ID if not provided
+    const id = nodeData.id ?? this.generateNodeId();
+    
+    // Check if ID already exists
+    if (this.findNodeById(id)) {
+      this.setError(
+        `Cannot add node: ID '${id}' already exists`
+      );
+      return null;
+    }
+
     const node: Node = {
+      id,
       label: nodeData.label,
     };
 
@@ -289,20 +315,20 @@ export class Graph {
   /**
    * Remove a node by label
    */
-  removeNode(nodeLabel: string): boolean {
+  removeNode(nodeId: number): boolean {
     const nodeIndex = this.state.data.nodes.findIndex(
-      node => node.label === nodeLabel
+      node => node.id === nodeId
     );
     if (nodeIndex === -1) {
       this.setError(
-        `Cannot remove node: node with label '${nodeLabel}' not found`
+        `Cannot remove node: node with ID '${nodeId}' not found`
       );
       return false;
     }
 
     // Remove all edges connected to this node
     this.state.data.edges = this.state.data.edges.filter(
-      edge => edge.source !== nodeLabel && edge.target !== nodeLabel
+      edge => edge.source !== nodeId && edge.target !== nodeId
     );
 
     // Remove the node
@@ -316,13 +342,13 @@ export class Graph {
   /**
    * Update a node by label
    */
-  updateNode(nodeLabel: string, updates: Partial<Node>): Node | null {
+  updateNode(nodeId: number, updates: Partial<Node>): Node | null {
     const nodeIndex = this.state.data.nodes.findIndex(
-      node => node.label === nodeLabel
+      node => node.id === nodeId
     );
     if (nodeIndex === -1) {
       this.setError(
-        `Cannot update node: node with label '${nodeLabel}' not found`
+        `Cannot update node: node with ID '${nodeId}' not found`
       );
       return null;
     }
@@ -332,7 +358,7 @@ export class Graph {
       updates.label &&
       updates.label !== this.state.data.nodes[nodeIndex]!.label
     ) {
-      if (this.findNodeById(updates.label)) {
+      if (this.findNodeByLabel(updates.label)) {
         this.setError(
           `Cannot update node: label '${updates.label}' already exists`
         );
@@ -356,7 +382,7 @@ export class Graph {
    * Get a node by label
    */
   getNodeByLabel(nodeLabel: string): Node | null {
-    const node = this.findNodeById(nodeLabel);
+    const node = this.findNodeByLabel(nodeLabel);
     return node ? { ...node } : null;
   }
 
@@ -371,7 +397,7 @@ export class Graph {
    * Check if a node exists by label
    */
   hasNode(nodeLabel: string): boolean {
-    return this.findNodeById(nodeLabel) !== undefined;
+    return this.findNodeByLabel(nodeLabel) !== undefined;
   }
 
   /**
@@ -414,7 +440,7 @@ export class Graph {
     }
 
     // Check for duplicate edges
-    const existingEdges = this.findEdgesByNodes(
+    const existingEdges = this.findEdgesByNodeIds(
       edgeData.source,
       edgeData.target
     );
@@ -461,7 +487,7 @@ export class Graph {
   /**
    * Remove edges between two nodes
    */
-  removeEdgesBetweenNodes(sourceId: string, targetId: string): number {
+  removeEdgesBetweenNodes(sourceId: number, targetId: number): number {
     const initialCount = this.state.data.edges.length;
 
     this.state.data.edges = this.state.data.edges.filter(
@@ -521,7 +547,7 @@ export class Graph {
   /**
    * Get all edges connected to a node
    */
-  getEdgesByNode(nodeId: string): Edge[] {
+  getEdgesByNode(nodeId: number): Edge[] {
     return this.state.data.edges
       .filter(edge => edge.source === nodeId || edge.target === nodeId)
       .map(edge => ({ ...edge }));
@@ -530,8 +556,8 @@ export class Graph {
   /**
    * Get edges between two specific nodes
    */
-  getEdgesBetweenNodes(sourceId: string, targetId: string): Edge[] {
-    return this.findEdgesByNodes(sourceId, targetId).map(edge => ({ ...edge }));
+  getEdgesBetweenNodes(sourceId: number, targetId: number): Edge[] {
+    return this.findEdgesByNodeIds(sourceId, targetId).map(edge => ({ ...edge }));
   }
 
   /**
@@ -551,8 +577,8 @@ export class Graph {
   /**
    * Check if an edge exists between two nodes
    */
-  hasEdgeBetween(sourceId: string, targetId: string): boolean {
-    return this.findEdgesByNodes(sourceId, targetId).length > 0;
+  hasEdgeBetween(sourceId: number, targetId: number): boolean {
+    return this.findEdgesByNodeIds(sourceId, targetId).length > 0;
   }
 
   /**
@@ -614,8 +640,12 @@ export class Graph {
 
     // Edges (source target weight)
     for (const edge of edges) {
-      const sourceLabel = edge.source;
-      const targetLabel = edge.target;
+      const sourceNode = this.findNodeById(edge.source);
+      if (!sourceNode) continue;
+      const sourceLabel = sourceNode.label;
+      const targetNode = this.findNodeById(edge.target);
+      if (!targetNode) continue;
+      const targetLabel = targetNode.label;
 
       let edgeLine = `${sourceLabel} ${targetLabel}`;
 
@@ -733,8 +763,8 @@ export class Graph {
 
         // Add edge
         const edgeData: EdgeCreationData = {
-          source: sourceNode.label,
-          target: targetNode.label,
+          source: sourceNode.id,
+          target: targetNode.id,
         };
 
         if (weight !== undefined) {

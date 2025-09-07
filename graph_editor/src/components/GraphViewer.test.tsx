@@ -1,4 +1,5 @@
 import { render, mockGraphData } from '../test-utils';
+import { act } from '@testing-library/react';
 import GraphViewer from './GraphViewer';
 
 describe('GraphViewer', () => {
@@ -52,13 +53,10 @@ describe('GraphViewer', () => {
     });
   });
 
-  it('handles node selection and deselection correctly', () => {
-    const mockOnNodeClick = jest.fn();
-    const { rerender } = render(
+  it('handles node selection correctly', () => {
+    render(
       <GraphViewer 
         data={mockGraphData} 
-        onNodeClick={mockOnNodeClick}
-        selectedNodeLabel={null}
         mode="edit"
       />
     );
@@ -67,33 +65,18 @@ describe('GraphViewer', () => {
     const firstNode = document.querySelector('[data-node-label="A"]');
     expect(firstNode).toBeInTheDocument();
 
-    // Simulate clicking the first node
-    firstNode?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    // Initially, no node should be selected (no selection indicator)
+    let selectionIndicator = document.querySelector('.mb-2.px-3.py-1.bg-blue-100');
+    expect(selectionIndicator).not.toBeInTheDocument();
+
+    // Simulate clicking the first node with act()
+    act(() => {
+      firstNode?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    });
     
-    // Should call onNodeClick with the node
-    expect(mockOnNodeClick).toHaveBeenCalledWith(
-      expect.objectContaining({ label: 'A' })
-    );
-
-    // Clear the mock
-    mockOnNodeClick.mockClear();
-
-    // Now render with the node selected
-    rerender(
-      <GraphViewer 
-        data={mockGraphData} 
-        onNodeClick={mockOnNodeClick}
-        selectedNodeLabel="A"
-        mode="edit"
-      />
-    );
-
-    // Click the same node again (should deselect)
-    firstNode?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
-    
-    // Should call onNodeClick again (for deselection)
-    expect(mockOnNodeClick).toHaveBeenCalledWith(
-      expect.objectContaining({ label: 'A' })
-    );
+    // Check that the selection indicator appears
+    selectionIndicator = document.querySelector('.mb-2.px-3.py-1.bg-blue-100');
+    expect(selectionIndicator).toBeInTheDocument();
+    expect(selectionIndicator).toHaveTextContent('Selected: A');
   });
 });

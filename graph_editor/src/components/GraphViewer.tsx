@@ -9,7 +9,7 @@ interface GraphViewerProps {
   width?: number;
   height?: number;
   onNodeCreate?: (x: number, y: number) => void;
-  onEdgeCreate?: (sourceLabel: string, targetLabel: string) => void;
+  onEdgeCreate?: (sourceId: number, targetId: number) => void;
   mode?: 'edit' | 'delete' | 'view-force';
   newNodePosition?: { x: number; y: number } | null;
   onNewNodePositioned?: () => void;
@@ -26,24 +26,24 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
   onNewNodePositioned,
 }) => {
   // Internal selection state
-  const [selectedNodeLabel, setSelectedNodeLabel] = useState<string | null>(null);
+  const [selectedNodeId, setSelectedNodeId] = useState<number | null>(null);
   const [selectedEdgeId, setSelectedEdgeId] = useState<string | null>(null);
 
   // Internal click handlers
   const handleNodeClick = (node: Node) => {
     console.log('Node clicked', node);
-    console.log('Current selectedNodeLabel:', selectedNodeLabel);
-    console.log('Clicked node label:', node.label);
-    console.log('Will deselect?', selectedNodeLabel === node.label);
+    console.log('Current selectedNodeId:', selectedNodeId);
+    console.log('Clicked node id:', node.id);
+    console.log('Will deselect?', selectedNodeId === node.id);
     
     // Toggle selection: if the same node is clicked, deselect it
-    if (selectedNodeLabel === node.label) {
+    if (selectedNodeId === node.id) {
       console.log('Deselecting node');
-      setSelectedNodeLabel(null);
+      setSelectedNodeId(null);
     } else {
       console.log('Selecting node');
       // Select the clicked node and deselect any edge
-      setSelectedNodeLabel(node.label);
+      setSelectedNodeId(node.id);
       setSelectedEdgeId(null);
     }
   };
@@ -57,7 +57,7 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
     } else {
       // Select the clicked edge and deselect any node
       setSelectedEdgeId(edge.id);
-      setSelectedNodeLabel(null);
+      setSelectedNodeId(null);
     }
   };
 
@@ -67,10 +67,10 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
     svg: any;
     container: any;
     simulation: ForceSimulation | null;
-    edgeCreationSource: string | null;
+    edgeCreationSource: number | null;
     mousePosition: { x: number; y: number } | null;
   } | null>(null);
-  const [edgeCreationSource, setEdgeCreationSource] = useState<string | null>(null);
+  const [edgeCreationSource, setEdgeCreationSource] = useState<number | null>(null);
   const [mousePosition, setMousePosition] = useState<{ x: number; y: number } | null>(null);
   const [dimensions, setDimensions] = useState({ 
     width: Math.min(width, height), 
@@ -171,7 +171,7 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
             .selectAll('.node')
             .data()
             .find((d: D3Node) => {
-              if (d.label === d3InstanceRef.current?.edgeCreationSource) return false;
+              if (d.id === d3InstanceRef.current?.edgeCreationSource) return false;
               const dx = (d.x || 0) - x;
               const dy = (d.y || 0) - y;
               const distance = Math.sqrt(dx * dx + dy * dy);
@@ -230,7 +230,7 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
       const sourceNode = d3InstanceRef.current.container
         .selectAll('.node')
         .data()
-        .find((d: D3Node) => d.label === edgeCreationSource);
+        .find((d: D3Node) => d.id === edgeCreationSource);
       
       if (sourceNode) {
         // Check if mouse is over a valid target node
@@ -238,7 +238,7 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
           .selectAll('.node')
           .data()
           .find((d: D3Node) => {
-            if (d.label === edgeCreationSource) return false; // Can't connect to self
+            if (d.id === edgeCreationSource) return false; // Can't connect to self
             const dx = (d.x || 0) - mousePosition.x;
             const dy = (d.y || 0) - mousePosition.y;
             const distance = Math.sqrt(dx * dx + dy * dy);
@@ -271,14 +271,14 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
     console.log(`${section}: GraphViewer onNodeClick called with:`, node);
     console.log(`${section}: Current mode:`, mode);
     console.log(`${section}: Edge creation source:`, d3InstanceRef.current?.edgeCreationSource);
-    console.log(`${section}: Selected node label:`, selectedNodeLabel);
+    console.log(`${section}: Selected node id:`, selectedNodeId);
     
     if (mode === 'edit') {
       // Check if we're in edge creation mode
       if (d3InstanceRef.current?.edgeCreationSource) {
         console.log(`${section}: In edge creation mode`);
         // Handle edge creation
-        if (d3InstanceRef.current.edgeCreationSource === node.label) {
+        if (d3InstanceRef.current.edgeCreationSource === node.id) {
           console.log(`${section}: Canceling edge creation`);
           // Cancel edge creation if clicking the same node
           d3InstanceRef.current.edgeCreationSource = null;
@@ -292,12 +292,12 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
         } else {
           console.log(`${section}: Completing edge creation`);
           // Complete edge creation and continue from target node
-          onEdgeCreate?.(d3InstanceRef.current.edgeCreationSource, node.label);
+          onEdgeCreate?.(d3InstanceRef.current.edgeCreationSource, node.id);
           // Continue edge creation from the target node
-          d3InstanceRef.current!.edgeCreationSource = node.label;
-          setEdgeCreationSource(node.label);
+          d3InstanceRef.current!.edgeCreationSource = node.id;
+          setEdgeCreationSource(node.id);
           // Select the target node to show its nib
-          const originalNode = data.nodes.find(n => n.label === node.label);
+          const originalNode = data.nodes.find(n => n.id === node.id);
           if (originalNode) {
             console.log(`${section}: Calling handleNodeClick for edge creation target`);
             handleNodeClick(originalNode);
@@ -306,7 +306,7 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
       } else {
         console.log(`${section}: Not in edge creation mode, handling selection`);
         // Handle node selection/deselection
-        const originalNode = data.nodes.find(n => n.label === node.label);
+        const originalNode = data.nodes.find(n => n.id === node.id);
         if (originalNode) {
           console.log(`${section}: Calling handleNodeClick for selection`);
           handleNodeClick(originalNode);
@@ -317,7 +317,7 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
     } else {
       console.log(`${section}: Not in edit mode, handling selection`);
       // Handle node selection/deselection in non-edit modes
-      const originalNode = data.nodes.find(n => n.label === node.label);
+      const originalNode = data.nodes.find(n => n.id === node.id);
       if (originalNode) {
         console.log(`${section}: Calling handleNodeClick for non-edit selection`);
         handleNodeClick(originalNode);
@@ -446,16 +446,16 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
 
           nodeEnter.each(function(this: any, d: D3Node) {
             const nodeSelection = d3.select(this);
-            const isSelected = selectedNodeLabel === d.label;
+            const isSelected = selectedNodeId === d.id;
             const isEditMode = mode === 'edit';
-            const isSource = d3InstanceRef.current?.edgeCreationSource === d.label;
+            const isSource = d3InstanceRef.current?.edgeCreationSource === d.id;
             
             applyNodeStyling(nodeSelection, isSelected, 20, isSource);
             applyNodeNibs(nodeSelection, isEditMode && isSelected && !isSource, 20, (node) => {
               // Nib click starts edge creation mode
               if (mode === 'edit' && !d3InstanceRef.current?.edgeCreationSource) {
-                d3InstanceRef.current!.edgeCreationSource = node.label;
-                setEdgeCreationSource(node.label);
+                d3InstanceRef.current!.edgeCreationSource = node.id;
+                setEdgeCreationSource(node.id);
               }
             });
           });
@@ -486,16 +486,16 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
         (update: any) => {
           update.each(function(this: any, d: D3Node) {
             const nodeSelection = d3.select(this);
-            const isSelected = selectedNodeLabel === d.label;
+            const isSelected = selectedNodeId === d.id;
             const isEditMode = mode === 'edit';
-            const isSource = d3InstanceRef.current?.edgeCreationSource === d.label;
+            const isSource = d3InstanceRef.current?.edgeCreationSource === d.id;
             
             applyNodeStyling(nodeSelection, isSelected, 20, isSource);
             applyNodeNibs(nodeSelection, isEditMode && isSelected && !isSource, 20, (node) => {
               // Nib click starts edge creation mode
               if (mode === 'edit' && !d3InstanceRef.current?.edgeCreationSource) {
-                d3InstanceRef.current!.edgeCreationSource = node.label;
-                setEdgeCreationSource(node.label);
+                d3InstanceRef.current!.edgeCreationSource = node.id;
+                setEdgeCreationSource(node.id);
               }
             });
 
@@ -573,7 +573,7 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
       const existingPos = existingNodeMap.get(node.label);
       if (existingPos && existingPos.x !== undefined && existingPos.y !== undefined) {
         return {
-          id: node.label,
+          id: node.id,
           label: node.label,
           x: existingPos.x,
           y: existingPos.y,
@@ -583,7 +583,7 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
         const isNewestNode = index === graphData.nodes.length - 1;
         if (isNewestNode && newNodePosition) {
           return {
-            id: node.label,
+            id: node.id,
             label: node.label,
             x: newNodePosition.x,
             y: newNodePosition.y,
@@ -591,7 +591,7 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
         } else {
           // Generate new position for other new nodes
           return {
-            id: node.label,
+            id: node.id,
             label: node.label,
             x: 100 + (index % 4) * 200,
             y: 100 + Math.floor(index / 4) * 200,
@@ -622,13 +622,13 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
 
   // Clear selections when graph structure changes (new nodes/edges added)
   useEffect(() => {
-    setSelectedNodeLabel(null);
+    setSelectedNodeId(null);
     setSelectedEdgeId(null);
   }, [data.nodes.length, data.edges.length]);
 
   // Update selection styling without restarting simulation
   useEffect(() => {
-    console.log('GraphViewer selection effect triggered. selectedNodeLabel:', selectedNodeLabel);
+    console.log('GraphViewer selection effect triggered. selectedNodeId:', selectedNodeId);
     if (!d3InstanceRef.current) return;
     
     const { container } = d3InstanceRef.current;
@@ -636,16 +636,16 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
     // Update node selection styling
     container.selectAll('.node').each(function(this: any, d: any) {
       const nodeSelection = d3.select(this);
-      const isSelected = selectedNodeLabel === d.label;
+      const isSelected = selectedNodeId === d.id;
       const isEditMode = mode === 'edit';
-      const isSource = d3InstanceRef.current?.edgeCreationSource === d.label;
+      const isSource = d3InstanceRef.current?.edgeCreationSource === d.id;
       
       applyNodeStyling(nodeSelection, isSelected, 20, isSource);
       applyNodeNibs(nodeSelection, isEditMode && isSelected && !isSource, 20, (node) => {
         // Nib click starts edge creation mode
         if (mode === 'edit' && !d3InstanceRef.current?.edgeCreationSource) {
-          d3InstanceRef.current!.edgeCreationSource = node.label;
-          setEdgeCreationSource(node.label);
+          d3InstanceRef.current!.edgeCreationSource = node.id;
+          setEdgeCreationSource(node.id);
         }
       });
     });
@@ -657,7 +657,7 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
       const isDirected = data.type === 'directed';
       applyEdgeStyling(edgeSelection, isSelected, '#000000', 2, isDirected);
     });
-  }, [selectedNodeLabel, selectedEdgeId, mode]);
+  }, [selectedNodeId, selectedEdgeId, mode]);
 
   // Update edge creation state in D3 instance
   useEffect(() => {
@@ -710,9 +710,9 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
       />
 
       {/* Selection indicator */}
-      {selectedNodeLabel && (
+      {selectedNodeId && (
         <div className="mb-2 px-3 py-1 bg-blue-100 border border-blue-300 rounded-full text-sm text-blue-800 font-medium">
-          Selected: {selectedNodeLabel}
+          Selected: {data.nodes.find(n => n.id === selectedNodeId)?.label || `Node ${selectedNodeId}`}
         </div>
       )}
       

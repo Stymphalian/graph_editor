@@ -15,11 +15,11 @@ function App() {
     const nodeC = g.addNode({ label: 'C' });
     const nodeD = g.addNode({ label: 'D' });
 
-    // Add sample edges using the actual node labels
-    if (nodeA && nodeB) g.addEdge({ source: nodeA.label, target: nodeB.label });
-    if (nodeB && nodeC) g.addEdge({ source: nodeB.label, target: nodeC.label });
-    if (nodeC && nodeD) g.addEdge({ source: nodeC.label, target: nodeD.label });
-    // if (nodeD && nodeA) g.addEdge({ source: nodeD.label, target: nodeA.label });
+    // Add sample edges using the actual node IDs
+    if (nodeA && nodeB) g.addEdge({ source: nodeA.id, target: nodeB.id });
+    if (nodeB && nodeC) g.addEdge({ source: nodeB.id, target: nodeC.id });
+    if (nodeC && nodeD) g.addEdge({ source: nodeC.id, target: nodeD.id });
+    // if (nodeD && nodeA) g.addEdge({ source: nodeD.id, target: nodeA.id });
 
     return g;
   }, []);
@@ -46,13 +46,13 @@ function App() {
     }
   };
 
-  const handleEdgeCreate = (sourceLabel: string, targetLabel: string) => {
-    console.log('Creating edge:', sourceLabel, '->', targetLabel);
+  const handleEdgeCreate = (sourceId: number, targetId: number) => {
+    console.log('Creating edge:', sourceId, '->', targetId);
     
-    // Create a new edge between the source and target nodes
+    // Create a new edge between the source and target nodes using their IDs
     const newEdge = currentGraph.addEdge({ 
-      source: sourceLabel, 
-      target: targetLabel 
+      source: sourceId, 
+      target: targetId 
     });
     
     if (newEdge) {

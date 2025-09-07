@@ -107,8 +107,8 @@ describe('Graph', () => {
     });
 
     it('should remove a node', () => {
-      graph.addNode({ label: 'A' });
-      const result = graph.removeNode('A');
+      const node = graph.addNode({ label: 'A' });
+      const result = graph.removeNode(node!.id);
       
       expect(result).toBe(true);
       expect(graph.getNodeCount()).toBe(0);
@@ -116,24 +116,24 @@ describe('Graph', () => {
     });
 
     it('should remove edges when removing node', () => {
-      graph.addNode({ label: 'A' });
-      graph.addNode({ label: 'B' });
-      graph.addEdge({ source: 'A', target: 'B' });
+      const nodeA = graph.addNode({ label: 'A' });
+      const nodeB = graph.addNode({ label: 'B' });
+      graph.addEdge({ source: nodeA!.id, target: nodeB!.id });
       
       expect(graph.getEdgeCount()).toBe(1);
-      graph.removeNode('A');
+      graph.removeNode(nodeA!.id);
       expect(graph.getEdgeCount()).toBe(0);
     });
 
     it('should return false when removing non-existent node', () => {
-        const result = graph.removeNode('nonexistent');
+        const result = graph.removeNode(999);
         expect(result).toBe(false);
         expect(graph.getError()).toContain('not found');
     });
 
     it('should update a node', () => {
-      graph.addNode({ label: 'A' });
-      const result = graph.updateNode('A', { label: 'B' });
+      const node = graph.addNode({ label: 'A' });
+      const result = graph.updateNode(node!.id, { label: 'B' });
 
         expect(result).toBeDefined();
       expect(result?.label).toBe('B');
@@ -159,45 +159,47 @@ describe('Graph', () => {
     });
 
   describe('Edge Management', () => {
+    let nodeA: any, nodeB: any, nodeC: any;
+    
     beforeEach(() => {
-      graph.addNode({ label: 'A' });
-      graph.addNode({ label: 'B' });
-      graph.addNode({ label: 'C' });
+      nodeA = graph.addNode({ label: 'A' });
+      nodeB = graph.addNode({ label: 'B' });
+      nodeC = graph.addNode({ label: 'C' });
     });
 
     it('should add an edge', () => {
-      const edge = graph.addEdge({ source: 'A', target: 'B' });
+      const edge = graph.addEdge({ source: nodeA!.id, target: nodeB!.id });
 
         expect(edge).toBeDefined();
-      expect(edge?.source).toBe('A');
-      expect(edge?.target).toBe('B');
+      expect(edge?.source).toBe(nodeA!.id);
+      expect(edge?.target).toBe(nodeB!.id);
         expect(graph.getEdgeCount()).toBe(1);
-      expect(graph.hasEdgeBetween('A', 'B')).toBe(true);
+      expect(graph.hasEdgeBetween(nodeA!.id, nodeB!.id)).toBe(true);
       });
 
     it('should add an edge with weight', () => {
-      const edge = graph.addEdge({ source: 'A', target: 'B', weight: '5' });
+      const edge = graph.addEdge({ source: nodeA!.id, target: nodeB!.id, weight: '5' });
 
         expect(edge).toBeDefined();
       expect(edge?.weight).toBe('5');
     });
 
     it('should reject edge with non-existent source', () => {
-      const result = graph.addEdge({ source: 'nonexistent', target: 'A' });
+      const result = graph.addEdge({ source: 999, target: nodeA!.id });
 
         expect(result).toBeNull();
       expect(graph.getError()).toContain('source node');
     });
 
     it('should reject edge with non-existent target', () => {
-      const result = graph.addEdge({ source: 'A', target: 'nonexistent' });
+      const result = graph.addEdge({ source: nodeA!.id, target: 999 });
 
         expect(result).toBeNull();
       expect(graph.getError()).toContain('target node');
       });
 
       it('should reject self-loops in undirected graphs', () => {
-      const result = graph.addEdge({ source: 'A', target: 'A' });
+      const result = graph.addEdge({ source: nodeA!.id, target: nodeA!.id });
 
         expect(result).toBeNull();
       expect(graph.getError()).toContain('self-loops are not allowed');
@@ -205,21 +207,21 @@ describe('Graph', () => {
 
       it('should allow self-loops in directed graphs', () => {
         graph.setType('directed');
-      const edge = graph.addEdge({ source: 'A', target: 'A' });
+      const edge = graph.addEdge({ source: nodeA!.id, target: nodeA!.id });
 
         expect(edge).toBeDefined();
       });
 
       it('should reject duplicate edges', () => {
-      graph.addEdge({ source: 'A', target: 'B' });
-      const result = graph.addEdge({ source: 'A', target: 'B' });
+      graph.addEdge({ source: nodeA!.id, target: nodeB!.id });
+      const result = graph.addEdge({ source: nodeA!.id, target: nodeB!.id });
 
         expect(result).toBeNull();
         expect(graph.getError()).toContain('already exists');
     });
 
     it('should remove an edge by ID', () => {
-      const edge = graph.addEdge({ source: 'A', target: 'B' });
+      const edge = graph.addEdge({ source: nodeA!.id, target: nodeB!.id });
       const result = graph.removeEdge(edge!.id);
 
         expect(result).toBe(true);
@@ -227,15 +229,15 @@ describe('Graph', () => {
     });
 
     it('should remove edges between nodes', () => {
-      graph.addEdge({ source: 'A', target: 'B' });
-      const removed = graph.removeEdgesBetweenNodes('A', 'B');
+      graph.addEdge({ source: nodeA!.id, target: nodeB!.id });
+      const removed = graph.removeEdgesBetweenNodes(nodeA!.id, nodeB!.id);
       
       expect(removed).toBe(1);
       expect(graph.getEdgeCount()).toBe(0);
     });
 
     it('should update an edge', () => {
-      const edge = graph.addEdge({ source: 'A', target: 'B' });
+      const edge = graph.addEdge({ source: nodeA!.id, target: nodeB!.id });
       const result = graph.updateEdge(edge!.id, { weight: '10' });
       
       expect(result).toBeDefined();
@@ -243,7 +245,7 @@ describe('Graph', () => {
     });
 
     it('should get edge by ID', () => {
-      const edge = graph.addEdge({ source: 'A', target: 'B' });
+      const edge = graph.addEdge({ source: nodeA!.id, target: nodeB!.id });
       const found = graph.getEdgeById(edge!.id);
       
       expect(found).toBeDefined();
@@ -251,22 +253,22 @@ describe('Graph', () => {
       });
 
       it('should get edges by node', () => {
-      graph.addEdge({ source: 'A', target: 'B' });
-      graph.addEdge({ source: 'A', target: 'C' });
+      graph.addEdge({ source: nodeA!.id, target: nodeB!.id });
+      graph.addEdge({ source: nodeA!.id, target: nodeC!.id });
 
-      const edges = graph.getEdgesByNode('A');
+      const edges = graph.getEdgesByNode(nodeA!.id);
         expect(edges).toHaveLength(2);
     });
 
     it('should get edges between nodes', () => {
-      graph.addEdge({ source: 'A', target: 'B' });
-      const edges = graph.getEdgesBetweenNodes('A', 'B');
+      graph.addEdge({ source: nodeA!.id, target: nodeB!.id });
+      const edges = graph.getEdgesBetweenNodes(nodeA!.id, nodeB!.id);
 
         expect(edges).toHaveLength(1);
       });
 
       it('should update edge weight', () => {
-      const edge = graph.addEdge({ source: 'A', target: 'B' });
+      const edge = graph.addEdge({ source: nodeA!.id, target: nodeB!.id });
       const result = graph.updateEdgeWeight(edge!.id, '15');
 
         expect(result).toBe(true);
@@ -275,7 +277,7 @@ describe('Graph', () => {
     });
 
     it('should remove edge weight', () => {
-      const edge = graph.addEdge({ source: 'A', target: 'B', weight: '5' });
+      const edge = graph.addEdge({ source: nodeA!.id, target: nodeB!.id, weight: '5' });
           const result = graph.removeEdgeWeight(edge!.id);
 
           expect(result).toBe(true);
@@ -284,8 +286,8 @@ describe('Graph', () => {
       });
 
       it('should clear all edges', () => {
-      graph.addEdge({ source: 'A', target: 'B' });
-      graph.addEdge({ source: 'B', target: 'C' });
+      graph.addEdge({ source: nodeA!.id, target: nodeB!.id });
+      graph.addEdge({ source: nodeB!.id, target: nodeC!.id });
 
       expect(graph.getEdgeCount()).toBe(2);
       graph.clearAllEdges();
@@ -293,8 +295,8 @@ describe('Graph', () => {
     });
 
     it('should get all edge IDs', () => {
-      const edge1 = graph.addEdge({ source: 'A', target: 'B' });
-      const edge2 = graph.addEdge({ source: 'B', target: 'C' });
+      const edge1 = graph.addEdge({ source: nodeA!.id, target: nodeB!.id });
+      const edge2 = graph.addEdge({ source: nodeB!.id, target: nodeC!.id });
       
       const ids = graph.getEdgeIds();
       expect(ids).toHaveLength(2);
@@ -305,9 +307,9 @@ describe('Graph', () => {
 
   describe('Graph Reset and Clone', () => {
     it('should reset graph to empty state', () => {
-      graph.addNode({ label: 'A' });
-      graph.addNode({ label: 'B' });
-      graph.addEdge({ source: 'A', target: 'B' });
+      const nodeA = graph.addNode({ label: 'A' });
+      const nodeB = graph.addNode({ label: 'B' });
+      graph.addEdge({ source: nodeA!.id, target: nodeB!.id });
       
       expect(graph.getNodeCount()).toBe(2);
       expect(graph.getEdgeCount()).toBe(1);
@@ -320,9 +322,9 @@ describe('Graph', () => {
     });
 
     it('should clone graph', () => {
-      graph.addNode({ label: 'A' });
-      graph.addNode({ label: 'B' });
-      graph.addEdge({ source: 'A', target: 'B' });
+      const nodeA = graph.addNode({ label: 'A' });
+      const nodeB = graph.addNode({ label: 'B' });
+      graph.addEdge({ source: nodeA!.id, target: nodeB!.id });
       
       const cloned = graph.clone();
       
@@ -340,9 +342,9 @@ describe('Graph', () => {
       });
 
     it('should serialize graph with nodes and edges to text', () => {
-      graph.addNode({ label: 'A' });
-      graph.addNode({ label: 'B' });
-      graph.addEdge({ source: 'A', target: 'B', weight: '5' });
+      const nodeA = graph.addNode({ label: 'A' });
+      const nodeB = graph.addNode({ label: 'B' });
+      graph.addEdge({ source: nodeA!.id, target: nodeB!.id, weight: '5' });
       
         const text = graph.serializeToText();
         const lines = text.split('\n');

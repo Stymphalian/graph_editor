@@ -2,31 +2,17 @@ import {
   getEdgeStyling, 
   createEdgeEventHandlers, 
   applyEdgeStyling, 
-  createEdgeElement 
 } from './Edge';
-import { D3Edge, D3Node } from '@/utils/d3Config';
+import { D3Edge } from '@/utils/d3Config';
 
-// Mock D3Edge and D3Node for testing
+// Mock D3Edge for testing
 const mockEdge: D3Edge = {
   id: 'edge-1',
-  source: 'A',
-  target: 'B',
+  source: 1,
+  target: 2,
   weight: '5',
 };
 
-const mockSourceNode: D3Node = {
-  id: 'A',
-  label: 'A',
-  x: 100,
-  y: 100,
-};
-
-const mockTargetNode: D3Node = {
-  id: 'B',
-  label: 'B',
-  x: 200,
-  y: 200,
-};
 
 describe('Edge Utility Functions', () => {
   describe('getEdgeStyling', () => {
@@ -106,69 +92,6 @@ describe('Edge Utility Functions', () => {
     });
   });
 
-  describe('createEdgeElement', () => {
-    it('creates edge element with default configuration', () => {
-      const element = createEdgeElement(mockEdge, mockSourceNode, mockTargetNode);
-      
-      expect(element.tag).toBe('g');
-      expect(element.attributes.class).toBe('edge ');
-      expect(element.attributes['data-edge-id']).toBe('edge-1');
-      expect(element.attributes['data-testid']).toBe('edge-edge-1');
-      expect(element.children).toHaveLength(2); // line + weight text
-      
-      // Check line element
-      const line = element.children[0];
-      expect(line?.tag).toBe('line');
-      expect(line?.attributes['class']).toBe('graph-edge');
-      expect(line?.attributes['x1']).toBe(100);
-      expect(line?.attributes['y1']).toBe(100);
-      expect(line?.attributes['x2']).toBe(200);
-      expect(line?.attributes['y2']).toBe(200);
-      expect(line?.attributes['stroke']).toBe('#000000');
-      expect(line?.attributes['stroke-width']).toBe(2);
-      expect(line?.attributes['marker-end']).toBeUndefined();
-      
-      // Check weight text element
-      const text = element.children[1];
-      expect(text?.tag).toBe('text');
-      expect(text?.attributes['class']).toBe('graph-edge-weight');
-      expect(text?.text).toBe('5');
-      expect(text?.attributes['x']).toBe(150); // (100 + 200) / 2
-      expect(text?.attributes['y']).toBe(150); // (100 + 200) / 2
-    });
-
-    it('creates edge element with custom configuration', () => {
-      const config = {
-        isSelected: true,
-        isDirected: true,
-        strokeWidth: 4,
-        strokeColor: '#ff0000',
-        className: 'custom-edge',
-      };
-      
-      const element = createEdgeElement(mockEdge, mockSourceNode, mockTargetNode, config);
-      
-      expect(element.attributes.class).toBe('edge custom-edge');
-      
-      const line = element.children[0];
-      expect(line?.attributes['stroke']).toBe('#1976d2'); // selected color overrides custom
-      expect(line?.attributes['stroke-width']).toBe(5); // selected width overrides custom
-      expect(line?.attributes['marker-end']).toBe('url(#arrowhead)');
-    });
-
-    it('creates edge element without weight when not present', () => {
-      const edgeWithoutWeight: D3Edge = {
-        id: 'edge-2',
-        source: 'A',
-        target: 'B',
-      };
-      
-      const element = createEdgeElement(edgeWithoutWeight, mockSourceNode, mockTargetNode);
-      
-      expect(element.children).toHaveLength(1); // only line, no weight text
-      expect(element.children[0]?.tag).toBe('line');
-    });
-  });
 
   describe('applyEdgeStyling', () => {
     it('applies styling to a mock D3 selection', () => {

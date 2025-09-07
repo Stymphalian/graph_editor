@@ -25,7 +25,7 @@ export {
 
 // Node and Edge interfaces for D3
 export interface D3Node extends d3.SimulationNodeDatum {
-  id: string;
+  id: number;
   label: string;
   x?: number;
   y?: number;
@@ -35,8 +35,8 @@ export interface D3Node extends d3.SimulationNodeDatum {
 
 export interface D3Edge extends d3.SimulationLinkDatum<D3Node> {
   id: string;
-  source: string | D3Node;
-  target: string | D3Node;
+  source: number | D3Node;
+  target: number | D3Node;
   weight?: string;
 }
 

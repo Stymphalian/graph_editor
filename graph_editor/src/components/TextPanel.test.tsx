@@ -10,13 +10,13 @@ const mockGraphData: GraphData = {
   nodeIndexingMode: 'custom',
   maxNodes: 1000,
   nodes: [
-    { label: 'A' },
-    { label: 'B' },
-    { label: 'C' },
+    { id: 1, label: 'A' },
+    { id: 2, label: 'B' },
+    { id: 3, label: 'C' },
   ],
   edges: [
-    { id: '1', source: 'A', target: 'B' },
-    { id: '2', source: 'B', target: 'C', weight: '5' },
+    { id: '1', source: 1, target: 2 },
+    { id: '2', source: 2, target: 3, weight: '5' },
   ],
 };
 
@@ -111,11 +111,11 @@ describe('TextPanel', () => {
       nodeIndexingMode: 'custom',
       maxNodes: 1000,
       nodes: [
-        { label: 'X' },
-        { label: 'Y' },
+        { id: 1, label: 'X' },
+        { id: 2, label: 'Y' },
       ],
       edges: [
-        { id: '1', source: 'X', target: 'Y' },
+        { id: '1', source: 1, target: 2 },
       ],
     };
     
@@ -135,8 +135,8 @@ describe('TextPanel', () => {
       nodeIndexingMode: 'custom',
       maxNodes: 1000,
       nodes: [
-        { label: 'Node1' },
-        { label: 'Node2' },
+        { id: 1, label: 'Node1' },
+        { id: 2, label: 'Node2' },
       ],
       edges: [],
     };

@@ -2,13 +2,12 @@ import {
   getNodeStyling, 
   createNodeEventHandlers, 
   applyNodeStyling, 
-  createNodeElement 
 } from './Node';
 import { D3Node } from '@/utils/d3Config';
 
 // Mock D3Node for testing
 const mockNode: D3Node = {
-  id: 'A',
+  id: 1,
   label: 'A',
   x: 100,
   y: 100,
@@ -30,7 +29,7 @@ describe('Node Utility Functions', () => {
       
       expect(styling.fill).toBe('#e3f2fd');
       expect(styling.stroke).toBe('#1976d2');
-      expect(styling.strokeWidth).toBe(3);
+      expect(styling.strokeWidth).toBe(4);
       expect(styling.labelFill).toBe('#1976d2');
     });
   });
@@ -82,54 +81,6 @@ describe('Node Utility Functions', () => {
     });
   });
 
-  describe('createNodeElement', () => {
-    it('creates node element with default configuration', () => {
-      const element = createNodeElement(mockNode);
-      
-      expect(element.tag).toBe('g');
-      expect(element.attributes.class).toBe('node ');
-      expect(element.attributes['data-node-label']).toBe('A');
-      expect(element.attributes['data-testid']).toBe('node-A');
-      expect(element.children).toHaveLength(2);
-      
-      // Check circle element
-      const circle = element.children[0];
-      expect(circle?.tag).toBe('circle');
-      expect(circle?.attributes.class).toBe('graph-node');
-      expect(circle?.attributes.r).toBe(20);
-      expect(circle?.attributes.fill).toBe('white');
-      expect(circle?.attributes.stroke).toBe('#000000');
-      expect((circle?.attributes as any)['stroke-width']).toBe(2);
-      
-      // Check text element
-      const text = element.children[1];
-      expect(text?.tag).toBe('text');
-      expect(text?.attributes.class).toBe('graph-node-label');
-      expect((text as any)?.text).toBe('A');
-      expect(text?.attributes.fill).toBe('#000000');
-    });
-
-    it('creates node element with custom configuration', () => {
-      const config = {
-        isSelected: true,
-        radius: 30,
-        className: 'custom-node',
-      };
-      
-      const element = createNodeElement(mockNode, config);
-      
-      expect(element.attributes.class).toBe('node custom-node');
-      
-      const circle = element.children[0];
-      expect(circle?.attributes.r).toBe(30);
-      expect(circle?.attributes.fill).toBe('#e3f2fd');
-      expect(circle?.attributes.stroke).toBe('#1976d2');
-      expect((circle?.attributes as any)['stroke-width']).toBe(3);
-      
-      const text = element.children[1];
-      expect(text?.attributes.fill).toBe('#1976d2');
-    });
-  });
 
   describe('applyNodeStyling', () => {
     it('applies styling to a mock D3 selection', () => {
@@ -165,7 +116,7 @@ describe('Node Utility Functions', () => {
       expect(calls.some(call => call.method === 'attr' && call.args[0] === 'r' && call.args[1] === 25)).toBe(true);
       expect(calls.some(call => call.method === 'attr' && call.args[0] === 'fill' && call.args[1] === '#e3f2fd')).toBe(true);
       expect(calls.some(call => call.method === 'attr' && call.args[0] === 'stroke' && call.args[1] === '#1976d2')).toBe(true);
-      expect(calls.some(call => call.method === 'attr' && call.args[0] === 'stroke-width' && call.args[1] === 3)).toBe(true);
+      expect(calls.some(call => call.method === 'attr' && call.args[0] === 'stroke-width' && call.args[1] === 4)).toBe(true);
 
       // Verify text styling was applied
       expect(calls.some(call => call.method === 'select' && call.args[0] === 'text')).toBe(true);

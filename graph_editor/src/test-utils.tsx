@@ -5,15 +5,15 @@ import { Node, Edge, GraphData } from '@/types/graph';
 
 // Mock data for testing
 export const mockNodes: Node[] = [
-  { label: 'A', x: 100, y: 100 },
-  { label: 'B', x: 200, y: 200 },
-  { label: 'C', x: 300, y: 100 },
+  { id: 1, label: 'A' },
+  { id: 2, label: 'B' },
+  { id: 3, label: 'C' },
 ];
 
 export const mockEdges: Edge[] = [
-  { id: 'edge1', source: 'A', target: 'B' },
-  { id: 'edge2', source: 'B', target: 'C' },
-  { id: 'edge3', source: 'C', target: 'A' },
+  { id: 'edge1', source: 1, target: 2 },
+  { id: 'edge2', source: 2, target: 3 },
+  { id: 'edge3', source: 3, target: 1 },
 ];
 
 export const mockGraphData: GraphData = {
@@ -39,14 +39,13 @@ export * from '@testing-library/react';
 export { customRender as render };
 
 // Test helpers
-export const createMockNode = (label: string, x = 0, y = 0): Node => ({
+export const createMockNode = (id: number, label: string): Node => ({
+  id,
   label,
-  x,
-  y,
 });
 
-export const createMockD3Node = (label: string, x = 0, y = 0): D3Node => ({
-  id: label,
+export const createMockD3Node = (id: number, label: string, x = 0, y = 0): D3Node => ({
+  id,
   label,
   x,
   y,
@@ -55,8 +54,8 @@ export const createMockD3Node = (label: string, x = 0, y = 0): D3Node => ({
 });
 
 export const createMockEdge = (
-  source: string,
-  target: string,
+  source: number,
+  target: number,
   weight?: string
 ): Edge => ({
   id: `edge_${Math.random().toString(36).substr(2, 9)}`,
@@ -71,7 +70,7 @@ export const createMockGraph = (nodeCount = 3, edgeCount = 2) => {
 
   // Create nodes
   for (let i = 0; i < nodeCount; i++) {
-    nodes.push(createMockNode(String.fromCharCode(65 + i), i * 100, i * 100));
+    nodes.push(createMockNode(i + 1, String.fromCharCode(65 + i)));
   }
 
   // Create edges
@@ -81,7 +80,7 @@ export const createMockGraph = (nodeCount = 3, edgeCount = 2) => {
     const sourceNode = nodes[sourceIndex];
     const targetNode = nodes[targetIndex];
     if (sourceNode && targetNode) {
-      edges.push(createMockEdge(sourceNode.label, targetNode.label));
+      edges.push(createMockEdge(sourceNode.id, targetNode.id));
     }
   }
 

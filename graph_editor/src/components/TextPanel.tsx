@@ -32,9 +32,9 @@ const TextPanel: React.FC<TextPanelProps> = ({
     
     // Remaining lines: edges
     graphData.edges.forEach(edge => {
-      // Convert node labels to indices
-      const sourceIndex = graphData.nodes.findIndex(node => node.label === edge.source);
-      const targetIndex = graphData.nodes.findIndex(node => node.label === edge.target);
+      // Convert node IDs to indices
+      const sourceIndex = graphData.nodes.findIndex(node => node.id === edge.source);
+      const targetIndex = graphData.nodes.findIndex(node => node.id === edge.target);
       
       if (sourceIndex !== -1 && targetIndex !== -1) {
         const edgeLine = `${sourceIndex} ${targetIndex}`;
