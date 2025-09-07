@@ -25,19 +25,19 @@ const TextPanel: React.FC<TextPanelProps> = ({
     // First line: number of nodes
     lines.push(graphData.nodes.length.toString());
     
-    // Next lines: node labels (using index numbers by default)
-    for (let i = 0; i < graphData.nodes.length; i++) {
-      lines.push(i.toString());
-    }
+    // Next lines: node labels
+    graphData.nodes.forEach(node => {
+      lines.push(node.label);
+    });
     
     // Remaining lines: edges
     graphData.edges.forEach(edge => {
-      // Convert node IDs to indices
-      const sourceIndex = graphData.nodes.findIndex(node => node.id === edge.source);
-      const targetIndex = graphData.nodes.findIndex(node => node.id === edge.target);
+      // Find source and target nodes by ID
+      const sourceNode = graphData.nodes.find(node => node.id === edge.source);
+      const targetNode = graphData.nodes.find(node => node.id === edge.target);
       
-      if (sourceIndex !== -1 && targetIndex !== -1) {
-        const edgeLine = `${sourceIndex} ${targetIndex}`;
+      if (sourceNode && targetNode) {
+        const edgeLine = `${sourceNode.label} ${targetNode.label}`;
         const weight = edge.weight ? ` ${edge.weight}` : '';
         lines.push(edgeLine + weight);
       }

@@ -33,13 +33,13 @@ describe('TextPanel', () => {
     const textarea = screen.getByRole('textbox');
     const text = (textarea as HTMLTextAreaElement).value;
     
-    // Check for the simple format: node count, node indices, edges
+    // Check for the simple format: node count, node labels, edges
     expect(text).toContain('3'); // Node count
-    expect(text).toContain('0'); // First node index
-    expect(text).toContain('1'); // Second node index
-    expect(text).toContain('2'); // Third node index
-    expect(text).toContain('0 1'); // Edge from node 0 to node 1
-    expect(text).toContain('1 2 5'); // Edge from node 1 to node 2 with weight 5
+    expect(text).toContain('A'); // First node label
+    expect(text).toContain('B'); // Second node label
+    expect(text).toContain('C'); // Third node label
+    expect(text).toContain('A B'); // Edge from node A to node B
+    expect(text).toContain('B C 5'); // Edge from node B to node C with weight 5
   });
 
   it('handles focus and blur events', () => {
@@ -124,9 +124,9 @@ describe('TextPanel', () => {
     const textarea = screen.getByRole('textbox');
     const text = (textarea as HTMLTextAreaElement).value;
     expect(text).toContain('2'); // Node count
-    expect(text).toContain('0'); // First node index
-    expect(text).toContain('1'); // Second node index
-    expect(text).toContain('0 1'); // Edge from node 0 to node 1
+    expect(text).toContain('X'); // First node label
+    expect(text).toContain('Y'); // Second node label
+    expect(text).toContain('X Y'); // Edge from node X to node Y
   });
 
   it('handles nodes without position data', () => {
@@ -146,8 +146,8 @@ describe('TextPanel', () => {
     const textarea = screen.getByRole('textbox');
     const text = (textarea as HTMLTextAreaElement).value;
     expect(text).toContain('2'); // Node count
-    expect(text).toContain('0'); // First node index
-    expect(text).toContain('1'); // Second node index
+    expect(text).toContain('Node1'); // First node label
+    expect(text).toContain('Node2'); // Second node label
   });
 
   it('applies custom className', () => {
