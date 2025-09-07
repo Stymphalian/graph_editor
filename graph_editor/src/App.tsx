@@ -1,8 +1,10 @@
 import { useState, useMemo } from 'react';
 import GraphViewer from './components/GraphViewer';
 import TextPanel from './components/TextPanel';
+import ModeControls from './components/ModeControls';
 import { Graph } from './models/Graph';
 import { GraphData } from './types/graph';
+import { Mode } from './components/ModeControls';
 
 function App() {
   // Create a sample graph using the Graph model
@@ -28,6 +30,7 @@ function App() {
   const [graphData, setGraphData] = useState<GraphData>(graph.getData());
   const [newNodePosition, setNewNodePosition] = useState<{ x: number; y: number } | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [currentMode, setCurrentMode] = useState<Mode>('edit');
 
   const handleNodeCreate = (x: number, y: number) => {
     console.log('Creating node at:', x, y);
@@ -114,6 +117,11 @@ function App() {
     }
   };
 
+  const handleModeChange = (mode: Mode) => {
+    console.log('Mode changed to:', mode);
+    setCurrentMode(mode);
+  };
+
   const handleGraphDataChange = (newData: any) => {
     console.log('Graph data changed:', newData);
     // TODO: Implement graph data parsing and updating (Task 4.4)
@@ -122,43 +130,42 @@ function App() {
   return (
     <div className="graph-editor-layout">
       <header className="graph-editor-header">
-        <div className="max-w-7xl mx-auto px-4">
-          <h1 className="text-2xl font-bold text-gray-900 py-4">
+        <div className="w-full px-2">
+          <h1 className="text-2xl font-bold text-gray-900 py-3">
             Graph Editor
           </h1>
         </div>
       </header>
 
       <main className="graph-editor-main">
-        <div className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
-          <div className="flex gap-6">
-            {/* Text Panel - 1/3 width */}
-            <div className="w-1/3">
+        <div className="w-full px-2 py-4">
+          <div className="flex gap-4">
+            {/* Text Panel - Fixed width */}
+            <div className="w-80 flex-shrink-0">
               <TextPanel
                 data={graphData}
                 onDataChange={handleGraphDataChange}
-                className="h-[600px]"
+                className="h-[calc(100vh-200px)] min-h-[400px]"
               />
             </div>
 
-            {/* Graph Visualization Panel - 2/3 width */}
-            <div className="w-2/3">
-              <div className="graph-editor-panel p-6">
-                <h2 className="text-lg font-semibold text-gray-800 mb-4">
+            {/* Graph Visualization Panel - Flexible width */}
+            <div className="flex-1 min-w-0">
+              <div className="graph-editor-panel p-3">
+                <h2 className="text-lg font-semibold text-gray-800 mb-3">
                   Graph Visualization
                 </h2>
-                <div className="h-[600px]">
+                <div className="h-[calc(100vh-200px)] min-h-[400px]">
                   <GraphViewer
                     data={graphData}
-                    width={800}
-                    height={600}
+                    height={300}
                     onNodeCreate={handleNodeCreate}
                     onEdgeCreate={handleEdgeCreate}
                     onNodeLabelEdit={handleNodeLabelEdit}
                     onEdgeWeightEdit={handleEdgeWeightEdit}
                     onError={handleError}
                     errorMessage={errorMessage}
-                    mode="edit"
+                    mode={currentMode}
                     newNodePosition={newNodePosition}
                     onNewNodePositioned={() => setNewNodePosition(null)}
                   />
@@ -167,6 +174,20 @@ function App() {
                   Click and drag nodes to move them. The force simulation will
                   automatically adjust the layout.
                 </p>
+              </div>
+            </div>
+
+            {/* Mode Controls Panel - Fixed width */}
+            <div className="w-64 flex-shrink-0">
+              <div className="graph-editor-panel p-3">
+                <h2 className="text-lg font-semibold text-gray-800 mb-3">
+                  Controls
+                </h2>
+                <ModeControls
+                  currentMode={currentMode}
+                  onModeChange={handleModeChange}
+                  className="w-full"
+                />
               </div>
             </div>
           </div>

@@ -172,8 +172,8 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
     selectedEdgeId: string | null | undefined;
   } | null>(null);
   const [dimensions, setDimensions] = useState({
-    width: Math.min(width, height),
-    height: Math.min(width, height)
+    width: Math.min(width || 800, height || 600),
+    height: Math.min(width || 800, height || 600)
   });
 
   // Handle responsive resizing without destroying the graph
@@ -185,7 +185,7 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
         const containerWidth = Math.max(300, rect.width);
         const containerHeight = Math.max(300, rect.height);
 
-        // Calculate square dimensions based on the smaller dimension
+        // Calculate square dimensions based on the smaller dimension to maintain aspect ratio
         const minDimension = Math.min(containerWidth, containerHeight);
         const squareSize = Math.max(300, minDimension); // Minimum size of 300px
         const newDimensions = {
@@ -993,7 +993,7 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
             placeholder="weight"
             style={{
               fontSize: '10px',
-              fontWeight: 'bold',
+              fontWeight: 'normal',
               textAlign: 'center',
               height: '20px',
             }}

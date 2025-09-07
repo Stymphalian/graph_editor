@@ -98,7 +98,7 @@
   - [x] 5.4 Add edge creation by dragging from node nib to another node
   - [x] 5.5 Implement edge preview line during creation process
   - [x] 5.6 Add double-click handlers for node label editing
-  - [ ] 5.7 Add double-click handlers for edge weight editing
+  - [x] 5.7 Add double-click handlers for edge weight editing
   - [ ] 5.8 Implement node deletion on click in Delete mode
   - [ ] 5.9 Implement edge deletion on click in Delete mode
   - [ ] 5.10 Add proper event propagation and conflict resolution

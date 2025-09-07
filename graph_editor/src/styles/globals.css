@@ -22,7 +22,7 @@
   }
 
   .graph-editor-main {
-    @apply max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8;
+    @apply w-full px-2 py-4;
   }
 
   .graph-editor-panel {

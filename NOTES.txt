@@ -1,1 +1,5 @@
 - line edge weights should be smart about placing to the left or right of the line.
+- errro messages should be in the GraphViewer component. Don't pass through props.
+  pass in a function which validates if a label is okay.
+- restrict the nodes area to the size of the SVG area. Nodes shouldn't be able
+  to wander beyond the bounds.
