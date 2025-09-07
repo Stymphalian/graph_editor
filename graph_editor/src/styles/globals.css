@@ -183,20 +183,8 @@
 }
 
 .graph-edge {
-  stroke: #000000;
-  stroke-width: 2px;
   fill: none;
   transition: all 0.2s;
-}
-
-.graph-edge:hover {
-  stroke: #0ea5e9;
-  stroke-width: 2px;
-}
-
-.graph-edge-selected {
-  stroke: #ef4444;
-  stroke-width: 2px;
 }
 
 .graph-label {

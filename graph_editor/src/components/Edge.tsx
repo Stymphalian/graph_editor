@@ -25,7 +25,8 @@ export const getEdgeStyling = (
 ) => {
   return {
     stroke: isSelected ? '#1976d2' : strokeColor,
-    strokeWidth: isSelected ? strokeWidth + 1 : strokeWidth,
+    strokeWidth : strokeWidth,
+    // strokeWidth: isSelected ? strokeWidth + 1 : strokeWidth,
   };
 };
 
@@ -77,7 +78,11 @@ export const applyEdgeStyling = (
 
   // Add arrow marker for directed edges
   if (isDirected) {
-    edgeSelection.attr('marker-end', 'url(#arrowhead)');
+    if (isSelected) {
+      edgeSelection.attr('marker-end', 'url(#arrowhead-selected)');
+    } else {
+      edgeSelection.attr('marker-end', 'url(#arrowhead)');
+    }
   } else {
     edgeSelection.attr('marker-end', null);
   }

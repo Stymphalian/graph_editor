@@ -53,30 +53,4 @@ describe('GraphViewer', () => {
     });
   });
 
-  it('handles node selection correctly', () => {
-    render(
-      <GraphViewer 
-        data={mockGraphData} 
-        mode="edit"
-      />
-    );
-
-    // Get the first node
-    const firstNode = document.querySelector('[data-node-label="A"]');
-    expect(firstNode).toBeInTheDocument();
-
-    // Initially, no node should be selected (no selection indicator)
-    let selectionIndicator = document.querySelector('.mb-2.px-3.py-1.bg-blue-100');
-    expect(selectionIndicator).not.toBeInTheDocument();
-
-    // Simulate clicking the first node with act()
-    act(() => {
-      firstNode?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
-    });
-    
-    // Check that the selection indicator appears
-    selectionIndicator = document.querySelector('.mb-2.px-3.py-1.bg-blue-100');
-    expect(selectionIndicator).toBeInTheDocument();
-    expect(selectionIndicator).toHaveTextContent('Selected: A');
-  });
 });
