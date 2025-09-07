@@ -103,8 +103,8 @@ export const d3Utils = {
   // Force simulation configuration
   createForceSimulation: (width: number, height: number) => {
     return forceSimulation<D3Node, D3Edge>()
-      .force('link', forceLink<D3Node, D3Edge>().id((d: D3Node) => d.id).distance(80).strength(0.8)) // Stronger link force for better connectivity
-      .force('charge', forceManyBody<D3Node>().strength(-10)) // Gentle charge strength to minimize repulsion on new nodes
+      .force('link', forceLink<D3Node, D3Edge>().id((d: D3Node) => d.id).distance(120).strength(0.8)) // Stronger link force for better connectivity
+      .force('charge', forceManyBody<D3Node>().strength(20)) // Gentle charge strength to minimize repulsion on new nodes
       .force('collision', forceCollide<D3Node>().radius(25)) // Smaller collision radius to reduce repulsion
       .force('center', forceCenter<D3Node>(width / 2, height / 2).strength(0.02)) // Reduced center force to minimize disruption
       // .force('x', forceX<D3Node>(width / 2).strength(0.05)) // X position force configuration

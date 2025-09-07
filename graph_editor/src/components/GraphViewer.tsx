@@ -14,6 +14,7 @@ interface GraphViewerProps {
   onNodeCreate?: (x: number, y: number) => void;
   onEdgeCreate?: (sourceId: number, targetId: number) => void;
   onNodeLabelEdit?: (nodeId: number, newLabel: string) => void;
+  onEdgeWeightEdit?: (edgeId: string, newWeight: string) => void;
   onError?: (message: string) => void;
   errorMessage?: string | null;
   mode?: 'edit' | 'delete' | 'view-force';
@@ -28,6 +29,7 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
   onNodeCreate,
   onEdgeCreate,
   onNodeLabelEdit,
+  onEdgeWeightEdit,
   onError,
   errorMessage,
   mode = 'edit',
@@ -43,6 +45,9 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
   const [editingNodeId, setEditingNodeId] = useState<number | null>(null);
   const [editingLabel, setEditingLabel] = useState<string>('');
   const [editingPosition, setEditingPosition] = useState<{ x: number; y: number } | null>(null);
+  const [editingEdgeId, setEditingEdgeId] = useState<string | null>(null);
+  const [editingWeight, setEditingWeight] = useState<string>('');
+  const [editingEdgePosition, setEditingEdgePosition] = useState<{ x: number; y: number } | null>(null);
 
   // Internal click handlers
   const handleNodeClick = (node: Node) => {
@@ -100,6 +105,58 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
       handleLabelEditSave();
     } else if (event.key === 'Escape') {
       handleLabelEditCancel();
+    }
+  };
+
+  const handleEdgeWeightEdit = (edge: Edge) => {
+    // Find the source and target nodes for this edge
+    const sourceNode = d3InstanceRef.current?.simulation?.nodes()?.find((n: any) => n.id === edge.source);
+    const targetNode = d3InstanceRef.current?.simulation?.nodes()?.find((n: any) => n.id === edge.target);
+    
+    if (sourceNode && targetNode && 
+        sourceNode.x !== undefined && sourceNode.y !== undefined &&
+        targetNode.x !== undefined && targetNode.y !== undefined) {
+      
+      setEditingEdgeId(edge.id);
+      setEditingWeight(edge.weight || '');
+      
+      // Calculate the midpoint of the edge
+      const midX = (sourceNode.x + targetNode.x) / 2;
+      const midY = (sourceNode.y + targetNode.y) / 2;
+      
+      // Calculate position relative to the container, accounting for SVG centering
+      const containerRect = containerRef.current?.getBoundingClientRect();
+      const svgRect = svgRef.current?.getBoundingClientRect();
+      if (containerRect && svgRect) {
+        const relativeX = midX + (svgRect.left - containerRect.left);
+        const relativeY = midY + (svgRect.top - containerRect.top);
+        setEditingEdgePosition({ x: relativeX, y: relativeY });
+      } else {
+        setEditingEdgePosition({ x: midX, y: midY });
+      }
+    }
+  };
+
+  const handleWeightEditSave = () => {
+    if (editingEdgeId) {
+      onEdgeWeightEdit?.(editingEdgeId, editingWeight.trim());
+    }
+    setEditingEdgeId(null);
+    setEditingWeight('');
+    setEditingEdgePosition(null);
+  };
+
+  const handleWeightEditCancel = () => {
+    setEditingEdgeId(null);
+    setEditingWeight('');
+    setEditingEdgePosition(null);
+  };
+
+  const handleWeightEditKeyDown = (event: React.KeyboardEvent) => {
+    if (event.key === 'Enter') {
+      handleWeightEditSave();
+    } else if (event.key === 'Escape') {
+      handleWeightEditCancel();
     }
   };
 
@@ -435,6 +492,19 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
             .attr('class', 'graph-edge')
             .attr('opacity', 1);
 
+          // Add weight label text
+          edgeEnter
+            .append('text')
+            .attr('class', 'edge-weight-label')
+            .attr('text-anchor', 'middle')
+            .attr('dy', '-0.5em')
+            .attr('font-size', '10px')
+            .attr('font-weight', 'normal')
+            .attr('fill', '#000000')
+            .style('pointer-events', 'none')
+            .style('user-select', 'none')
+            .text((d: D3Edge) => d.weight || '');
+
           edgeEnter.each(function (this: any, d: D3Edge) {
             const edgeContainer = d3.select(this);
             const visibleEdge = edgeContainer.select('.graph-edge');
@@ -457,7 +527,13 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
                   console.log('Original edge not found for id:', edge.id);
                 }
               },
-              onEdgeDoubleClick: () => { },
+              onEdgeDoubleClick: (edge) => {
+                // Double-click for edge weight editing
+                const originalEdge = data.edges.find(e => e.id === edge.id);
+                if (originalEdge) {
+                  handleEdgeWeightEdit(originalEdge);
+                }
+              },
               onEdgeMouseEnter: (edge) => {
                 const edgeElement = d3.select(`[data-edge-id="${edge.id}"] .graph-edge`);
                 const isDirected = data.type === 'directed';
@@ -488,6 +564,10 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
             const isSelected = d3InstanceRef.current?.selectedEdgeId === d.id;
             const isDirected = data.type === 'directed';
             applyEdgeStyling(visibleEdge, isSelected, '#000000', EDGE_STROKE_WIDTH, isDirected);
+            
+            // Update weight label text
+            edgeContainer.select('.edge-weight-label')
+              .text(d.weight || '');
           });
           return update;
         },
@@ -652,6 +732,13 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
               .attr('y1', y1)
               .attr('x2', x2)
               .attr('y2', y2);
+
+            // Update weight label position (midpoint of the edge)
+            const midX = (x1 + x2) / 2;
+            const midY = (y1 + y2) / 2;
+            edgeContainer.select('.edge-weight-label')
+              .attr('x', midX)
+              .attr('y', midY);
           }
         });
 
@@ -875,6 +962,35 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
             onBlur={handleLabelEditSave}
             className="px-1 py-0.5 text-xs border border-blue-500 rounded shadow-lg bg-white focus:outline-none focus:ring-1 focus:ring-blue-500 w-12"
             autoFocus
+            style={{
+              fontSize: '10px',
+              fontWeight: 'bold',
+              textAlign: 'center',
+              height: '20px',
+            }}
+          />
+        </div>
+      )}
+
+      {/* Inline Weight Editor */}
+      {editingEdgeId && editingEdgePosition && (
+        <div
+          className="absolute z-50"
+          style={{
+            left: `${editingEdgePosition.x - 30}px`,
+            top: `${editingEdgePosition.y - 10}px`,
+            transform: 'translate(-50%, -50%)',
+          }}
+        >
+          <input
+            type="text"
+            value={editingWeight}
+            onChange={(e) => setEditingWeight(e.target.value)}
+            onKeyDown={handleWeightEditKeyDown}
+            onBlur={handleWeightEditSave}
+            className="px-1 py-0.5 text-xs border border-black rounded shadow-lg bg-white focus:outline-none focus:ring-1 focus:ring-black w-12"
+            autoFocus
+            placeholder="weight"
             style={{
               fontSize: '10px',
               fontWeight: 'bold',

@@ -16,7 +16,7 @@ function App() {
     const nodeD = g.addNode({ label: 'D' });
 
     // Add sample edges using the actual node IDs
-    if (nodeA && nodeB) g.addEdge({ source: nodeA.id, target: nodeB.id });
+    if (nodeA && nodeB) g.addEdge({ source: nodeA.id, target: nodeB.id, weight: '123456' });
     if (nodeB && nodeC) g.addEdge({ source: nodeB.id, target: nodeC.id });
     if (nodeC && nodeD) g.addEdge({ source: nodeC.id, target: nodeD.id });
     // if (nodeD && nodeA) g.addEdge({ source: nodeD.id, target: nodeA.id });
@@ -83,6 +83,24 @@ function App() {
     }
   };
 
+  const handleEdgeWeightEdit = (edgeId: string, newWeight: string) => {
+    console.log('Editing edge weight:', edgeId, '->', newWeight);
+    
+    // Update the edge weight using the Graph model
+    const success = currentGraph.updateEdgeWeight(edgeId, newWeight);
+    
+    if (success) {
+      console.log('Edge weight updated successfully');
+      // Update the graph data state to trigger re-render
+      setGraphData(currentGraph.getData());
+    } else {
+      console.error('Failed to update edge weight:', currentGraph.getError());
+      // Show error to user via the error callback
+      const errorMessage = currentGraph.getError() || 'Failed to update edge weight';
+      handleError(errorMessage);
+    }
+  };
+
   const handleError = (message: string) => {
     // This will be passed to GraphViewer to display the error
     if (message === '') {
@@ -137,6 +155,7 @@ function App() {
                     onNodeCreate={handleNodeCreate}
                     onEdgeCreate={handleEdgeCreate}
                     onNodeLabelEdit={handleNodeLabelEdit}
+                    onEdgeWeightEdit={handleEdgeWeightEdit}
                     onError={handleError}
                     errorMessage={errorMessage}
                     mode="edit"
