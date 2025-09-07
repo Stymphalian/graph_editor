@@ -86,6 +86,47 @@ function App() {
     }
   };
 
+  const handleNodeDelete = (nodeId: number) => {
+    console.log('Deleting node:', nodeId);
+    
+    // Remove the node using the Graph model
+    const success = currentGraph.removeNode(nodeId);
+    
+    if (success) {
+      console.log('Node deleted successfully');
+      // Update the graph data state to trigger re-render
+      setGraphData(currentGraph.getData());
+    } else {
+      console.error('Failed to delete node:', currentGraph.getError());
+      // Show error to user via the error callback
+      const errorMessage = currentGraph.getError() || 'Failed to delete node';
+      handleError(errorMessage);
+    }
+  };
+
+  const handleEdgeDelete = (edgeId: string) => {
+    console.log('handleEdgeDelete called with edgeId:', edgeId);
+    console.log('Current graph data before deletion:', currentGraph.getData());
+    
+    // Remove the edge using the Graph model
+    const success = currentGraph.removeEdge(edgeId);
+    
+    console.log('removeEdge result:', success);
+    
+    if (success) {
+      console.log('Edge deleted successfully');
+      const newData = currentGraph.getData();
+      console.log('New graph data after deletion:', newData);
+      // Update the graph data state to trigger re-render
+      setGraphData(newData);
+    } else {
+      console.error('Failed to delete edge:', currentGraph.getError());
+      // Show error to user via the error callback
+      const errorMessage = currentGraph.getError() || 'Failed to delete edge';
+      handleError(errorMessage);
+    }
+  };
+
   const handleEdgeWeightEdit = (edgeId: string, newWeight: string) => {
     console.log('Editing edge weight:', edgeId, '->', newWeight);
     
@@ -119,6 +160,7 @@ function App() {
 
   const handleModeChange = (mode: Mode) => {
     console.log('Mode changed to:', mode);
+    console.log('Current graph data when mode changes:', graphData);
     setCurrentMode(mode);
   };
 
@@ -163,6 +205,8 @@ function App() {
                     onEdgeCreate={handleEdgeCreate}
                     onNodeLabelEdit={handleNodeLabelEdit}
                     onEdgeWeightEdit={handleEdgeWeightEdit}
+                    onNodeDelete={handleNodeDelete}
+                    onEdgeDelete={handleEdgeDelete}
                     onError={handleError}
                     errorMessage={errorMessage}
                     mode={currentMode}

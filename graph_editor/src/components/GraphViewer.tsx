@@ -15,6 +15,8 @@ interface GraphViewerProps {
   onEdgeCreate?: (sourceId: number, targetId: number) => void;
   onNodeLabelEdit?: (nodeId: number, newLabel: string) => void;
   onEdgeWeightEdit?: (edgeId: string, newWeight: string) => void;
+  onNodeDelete?: (nodeId: number) => void;
+  onEdgeDelete?: (edgeId: string) => void;
   onError?: (message: string) => void;
   errorMessage?: string | null;
   mode?: 'edit' | 'delete' | 'view-force';
@@ -30,6 +32,8 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
   onEdgeCreate,
   onNodeLabelEdit,
   onEdgeWeightEdit,
+  onNodeDelete,
+  onEdgeDelete,
   onError,
   errorMessage,
   mode = 'edit',
@@ -57,11 +61,9 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
   };
 
   const handleEdgeClick = (edge: Edge) => {
-    console.log('handleEdgeClick called with edge:', edge.id);
     d3InstanceRef.current!.selectedEdgeId = edge.id;
     d3InstanceRef.current!.selectedNodeId = null;
     setSelectionChange(val => !val);
-    console.log('Selection change triggered, selectedEdgeId:', d3InstanceRef.current!.selectedEdgeId);
   };
 
   const handleNodeLabelEdit = (node: Node) => {
@@ -229,35 +231,12 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
     };
   }, []);
 
-  // Initialize D3 instance (runs only once)
-  const initializeD3Instance = () => {
-    if (!svgRef.current || d3InstanceRef.current) return;
-
+  // Setup SVG event handlers
+  const setupSVGEventHandlers = () => {
     const svg = d3.select(svgRef.current);
-    svg.selectAll('*').remove(); // Clear previous content
-
-    // Create main group for graph elements
-    const container = svg
-      .append('g')
-      .attr('class', 'graph-group')
-      .attr('data-testid', 'graph-container');
-
-    // Create force simulation with responsive dimensions
-    const simulation = d3Utils.createForceSimulation(dimensions.width, dimensions.height);
-
-    // Store D3 instance
-    d3InstanceRef.current = {
-      svg,
-      container,
-      simulation,
-      edgeCreationSource: null,
-      mousePosition: null,
-      selectedNodeId: null,
-      selectedEdgeId: null,
-    };
-
+    
     // Add mouse tracking for edge creation preview
-    svg.on('mousemove', (event) => {
+    svg.on('mousemove', (event: any) => {
       if (d3InstanceRef.current?.edgeCreationSource) {
         const rect = svg.node()?.getBoundingClientRect();
         if (rect) {
@@ -293,36 +272,69 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
     });
 
     // Add click handler for empty space (node creation and edge creation cancellation)
-    if (mode === 'edit' && onNodeCreate) {
-      svg.on('click', event => {
-        if (event.target === svg.node()) {
-          // Cancel edge creation if in edge creation mode
-          if (d3InstanceRef.current?.edgeCreationSource) {
-            d3InstanceRef.current.selectedNodeId = null;
-            d3InstanceRef.current.selectedEdgeId = null;
-            setSelectionChange(val => !val);
+    svg.on('click', (event: any) => {
+      console.log("@@@@ SVG click event mode = ", mode);
+      if (event.target === svg.node()) {
+        // Cancel edge creation if in edge creation mode
+        if (d3InstanceRef.current?.edgeCreationSource) {
+          d3InstanceRef.current.selectedNodeId = null;
+          d3InstanceRef.current.selectedEdgeId = null;
+          setSelectionChange(val => !val);
 
-            d3InstanceRef.current.edgeCreationSource = null;
-            d3InstanceRef.current.mousePosition = null;
-            setEdgeCreationCancel(val => !val);
-            // Reset cursor
-            svg.style('cursor', mode === 'edit' ? 'crosshair' : 'default');
-            return;
-          }
+          d3InstanceRef.current.edgeCreationSource = null;
+          d3InstanceRef.current.mousePosition = null;
+          setEdgeCreationCancel(val => !val);
+          // Reset cursor
+          svg.style('cursor', mode === 'edit' ? 'crosshair' : 'default');
+          return;
+        }
 
-          if (d3InstanceRef.current?.selectedNodeId || d3InstanceRef.current?.selectedEdgeId) {
-            d3InstanceRef.current.selectedNodeId = null;
-            d3InstanceRef.current.selectedEdgeId = null;
-            setSelectionChange(val => !val);
-            return;
-          }
+        if (d3InstanceRef.current?.selectedNodeId || d3InstanceRef.current?.selectedEdgeId) {
+          d3InstanceRef.current.selectedNodeId = null;
+          d3InstanceRef.current.selectedEdgeId = null;
+          setSelectionChange(val => !val);
+          return;
+        }
 
+        // Only create nodes when in edit mode
+        if (mode === 'edit' && onNodeCreate) {
           // Get coordinates relative to the SVG
           const [x, y] = d3.pointer(event, svg.node());
           onNodeCreate(x, y);
         }
-      });
-    }
+      }
+    });
+  };
+
+  // Initialize D3 instance (runs only once)
+  const initializeD3Instance = () => {
+    if (!svgRef.current || d3InstanceRef.current) return;
+
+    const svg = d3.select(svgRef.current);
+    svg.selectAll('*').remove(); // Clear previous content
+
+    // Create main group for graph elements
+    const container = svg
+      .append('g')
+      .attr('class', 'graph-group')
+      .attr('data-testid', 'graph-container');
+
+    // Create force simulation with responsive dimensions
+    const simulation = d3Utils.createForceSimulation(dimensions.width, dimensions.height);
+
+    // Store D3 instance
+    d3InstanceRef.current = {
+      svg,
+      container,
+      simulation,
+      edgeCreationSource: null,
+      mousePosition: null,
+      selectedNodeId: null,
+      selectedEdgeId: null,
+    };
+
+    // Setup SVG event handlers
+    setupSVGEventHandlers();
   };
 
   // Update preview line
@@ -409,11 +421,29 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
         } else {
         }
       }
+    } else if (mode === 'delete') {
+      // Handle node deletion in delete mode
+      onNodeDelete?.(node.id);
     } else {
       // Handle node selection/deselection in non-edit modes
       const originalNode = data.nodes.find(n => n.id === node.id);
       if (originalNode) {
         handleNodeClick(originalNode);
+      } else {
+      }
+    }
+  };
+
+  // Helper function to handle edge click logic
+  const handleEdgeClickLogic = (edge: D3Edge) => {
+    if (mode === 'delete') {
+      // Handle edge deletion in delete mode
+      onEdgeDelete?.(edge.id);
+    } else {
+      // Handle edge selection/deselection in non-delete modes
+      const originalEdge = data.edges.find(e => e.id === edge.id);
+      if (originalEdge) {
+        handleEdgeClick(originalEdge);
       } else {
       }
     }
@@ -518,14 +548,7 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
             const clickableEdge = edgeContainer.select('.edge-clickable');
             const eventHandlers = createEdgeEventHandlers(d, {
               onEdgeClick: (edge) => {
-                console.log('Edge clicked:', edge.id);
-                const originalEdge = data.edges.find(e => e.id === edge.id);
-                if (originalEdge) {
-                  console.log('Found original edge, calling handleEdgeClick');
-                  handleEdgeClick(originalEdge);
-                } else {
-                  console.log('Original edge not found for id:', edge.id);
-                }
+                handleEdgeClickLogic(edge);
               },
               onEdgeDoubleClick: (edge) => {
                 // Double-click for edge weight editing
@@ -561,6 +584,7 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
           update.each(function (this: any, d: D3Edge) {
             const edgeContainer = d3.select(this);
             const visibleEdge = edgeContainer.select('.graph-edge');
+            const clickableEdge = edgeContainer.select('.edge-clickable');
             const isSelected = d3InstanceRef.current?.selectedEdgeId === d.id;
             const isDirected = data.type === 'directed';
             applyEdgeStyling(visibleEdge, isSelected, '#000000', EDGE_STROKE_WIDTH, isDirected);
@@ -568,6 +592,37 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
             // Update weight label text
             edgeContainer.select('.edge-weight-label')
               .text(d.weight || '');
+
+            // Re-attach event handlers for existing edges
+            const eventHandlers = createEdgeEventHandlers(d, {
+              onEdgeClick: (edge) => {
+                handleEdgeClickLogic(edge);
+              },
+              onEdgeDoubleClick: (edge) => {
+                // Double-click for edge weight editing
+                const originalEdge = data.edges.find(e => e.id === edge.id);
+                if (originalEdge) {
+                  handleEdgeWeightEdit(originalEdge);
+                }
+              },
+              onEdgeMouseEnter: (edge) => {
+                const edgeElement = d3.select(`[data-edge-id="${edge.id}"] .graph-edge`);
+                const isDirected = data.type === 'directed';
+                applyEdgeStyling(edgeElement, false, '#000000', EDGE_STROKE_WIDTH, isDirected);
+              },
+              onEdgeMouseLeave: (edge) => {
+                const edgeElement = d3.select(`[data-edge-id="${edge.id}"] .graph-edge`);
+                const isSelected = d3InstanceRef.current?.selectedEdgeId === edge.id;
+                const isDirected = data.type === 'directed';
+                applyEdgeStyling(edgeElement, isSelected, '#000000', EDGE_STROKE_WIDTH, isDirected);
+              },
+            });
+
+            clickableEdge
+              .on('click', eventHandlers.click)
+              .on('dblclick', eventHandlers.dblclick)
+              .on('mouseenter', eventHandlers.mouseenter)
+              .on('mouseleave', eventHandlers.mouseleave);
           });
           return update;
         },
@@ -809,6 +864,7 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
 
   // Update data when it changes (excluding dimensions to avoid recreating graph on resize)
   useEffect(() => {
+    setupSVGEventHandlers();
     updateD3Data();
   }, [data, mode, newNodePosition]);
 

@@ -99,8 +99,8 @@
   - [x] 5.5 Implement edge preview line during creation process
   - [x] 5.6 Add double-click handlers for node label editing
   - [x] 5.7 Add double-click handlers for edge weight editing
-  - [ ] 5.8 Implement node deletion on click in Delete mode
-  - [ ] 5.9 Implement edge deletion on click in Delete mode
+  - [x] 5.8 Implement node deletion on click in Delete mode
+  - [x] 5.9 Implement edge deletion on click in Delete mode
   - [ ] 5.10 Add proper event propagation and conflict resolution
   - [ ] 5.11 Implement keyboard event handling for mode switching (optional)
 

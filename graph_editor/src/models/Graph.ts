@@ -164,6 +164,30 @@ export class Graph {
   }
 
   /**
+   * Find the next available index for a new node label
+   */
+  private getNextAvailableIndex(): number {
+    const existingLabels = this.state.data.nodes.map(node => node.label);
+    
+    // Find the highest numeric index that exists
+    let maxIndex = -1;
+    for (const label of existingLabels) {
+      const numericValue = parseInt(label, 10);
+      if (!isNaN(numericValue)) {
+        maxIndex = Math.max(maxIndex, numericValue);
+      }
+    }
+    
+    // If no numeric labels exist, use the number of existing nodes
+    if (maxIndex === -1) {
+      return this.state.data.nodes.length;
+    }
+    
+    // Start from the next index after the highest existing numeric label
+    return maxIndex + 1;
+  }
+
+  /**
    * Find a node by ID
    */
   private findNodeById(id: number): Node | undefined {
@@ -301,7 +325,8 @@ export class Graph {
    * Add a node with auto-generated label based on indexing mode
    */
   addNodeWithAutoLabel(): Node | null {
-    const label = this.generateNodeLabel(this.state.data.nodes.length);
+    const index = this.getNextAvailableIndex();
+    const label = this.generateNodeLabel(index);
     return this.addNode({ label });
   }
 
@@ -309,7 +334,8 @@ export class Graph {
    * Get the next available label for a new node
    */
   getNextNodeLabel(): string {
-    return this.generateNodeLabel(this.state.data.nodes.length);
+    const index = this.getNextAvailableIndex();
+    return this.generateNodeLabel(index);
   }
 
   /**
