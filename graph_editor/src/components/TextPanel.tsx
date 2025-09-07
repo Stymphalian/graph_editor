@@ -1,5 +1,6 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { GraphData } from '../types/graph';
+import TextAreaWithLineNumbers from './TextAreaWithLineNumbers';
 
 interface TextPanelProps {
   data: GraphData;
@@ -12,25 +13,20 @@ const TextPanel: React.FC<TextPanelProps> = ({
   onDataChange: _onDataChange, 
   className = '' 
 }) => {
-  const [textContent, setTextContent] = useState<string>('');
+  const [graphTextContent, setGraphTextContent] = useState<string>('');
   const [isEditing, setIsEditing] = useState<boolean>(false);
   const [hasErrors, setHasErrors] = useState<boolean>(false);
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const lineNumbersRef = useRef<HTMLDivElement>(null);
 
-  // Generate simple text representation from graph data
+  // Generate text representation from graph data (edge list format)
   const generateTextFromData = (graphData: GraphData): string => {
     const lines: string[] = [];
     
-    // First line: number of nodes
-    lines.push(graphData.nodes.length.toString());
-    
-    // Next lines: node labels
+    // First: node labels (one per line)
     graphData.nodes.forEach(node => {
       lines.push(node.label);
     });
     
-    // Remaining lines: edges
+    // Then: edges
     graphData.edges.forEach(edge => {
       // Find source and target nodes by ID
       const sourceNode = graphData.nodes.find(node => node.id === edge.source);
@@ -46,89 +42,74 @@ const TextPanel: React.FC<TextPanelProps> = ({
     return lines.join('\n');
   };
 
-  // Generate line numbers
-  const generateLineNumbers = (text: string): string => {
-    const lines = text.split('\n');
-    const lineCount = lines.length;
-    return Array.from({ length: lineCount }, (_, i) => i + 1).join('\n');
-  };
-
   // Update text content when data changes
   useEffect(() => {
     if (!isEditing) {
-      setTextContent(generateTextFromData(data));
+      setGraphTextContent(generateTextFromData(data));
     }
   }, [data, isEditing]);
 
-  // Update line numbers when text content changes
-  useEffect(() => {
-    if (lineNumbersRef.current) {
-      lineNumbersRef.current.textContent = generateLineNumbers(textContent);
-    }
-  }, [textContent]);
-
-  // Handle text area changes
-  const handleTextChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setTextContent(event.target.value);
+  // Handle graph text area changes
+  const handleGraphTextChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setGraphTextContent(event.target.value);
     setHasErrors(false); // Reset error state when user types
   };
 
-  // Handle text area focus
-  const handleFocus = () => {
+  // Handle graph text area focus
+  const handleGraphTextFocus = () => {
     setIsEditing(true);
   };
 
-  // Handle text area blur
-  const handleBlur = () => {
+  // Handle graph text area blur
+  const handleGraphTextBlur = () => {
     setIsEditing(false);
-    // TODO: Parse text and update graph data (Task 4.4)
+    // TODO: Parse text and update graph data (Task 4.5)
     // For now, just reset to current data
-    setTextContent(generateTextFromData(data));
+    setGraphTextContent(generateTextFromData(data));
   };
 
   // Handle key events
-  const handleKeyDown = (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
+  const handleGraphTextKeyDown = (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (event.key === 'Escape') {
       // Cancel editing and revert to current data
       setIsEditing(false);
-      setTextContent(generateTextFromData(data));
+      setGraphTextContent(generateTextFromData(data));
       setHasErrors(false);
     }
   };
 
-  // Handle scroll synchronization between textarea and line numbers
-  const handleScroll = () => {
-    if (textareaRef.current && lineNumbersRef.current) {
-      lineNumbersRef.current.scrollTop = textareaRef.current.scrollTop;
-    }
-  };
 
   return (
     <div className={`text-panel ${className}`}>
       <div className="text-panel-header">
-        <h3 className="text-panel-title">Graph Data</h3>
+        <h2 className="text-lg font-semibold text-gray-800 mb-0">Graph Data</h2>
       </div>
-      <div className="text-panel-editor">
-        <div 
-          ref={lineNumbersRef}
-          className="text-panel-line-numbers"
-        >
-          {generateLineNumbers(textContent)}
-        </div>
+      
+      {/* Node Count Textarea (Read-only) */}
+      <div className="text-panel-section-compact">
+        <label className="text-panel-label-compact">Node Count:</label>
         <textarea
-          ref={textareaRef}
-          value={textContent}
-          onChange={handleTextChange}
-          onFocus={handleFocus}
-          onBlur={handleBlur}
-          onKeyDown={handleKeyDown}
-          onScroll={handleScroll}
-          className={`graph-editor-textarea text-panel-textarea ${
-            hasErrors ? 'text-panel-textarea-error' : ''
-          }`}
-          placeholder="Graph data will appear here..."
-          rows={20}
+          value={data.nodes.length.toString()}
+          readOnly
+          className="graph-editor-textarea text-panel-textarea text-panel-textarea-readonly text-panel-textarea-compact"
+          rows={1}
           spellCheck={false}
+        />
+      </div>
+
+      {/* Graph Representation Textarea (Editable) */}
+      <div className="text-panel-section">
+        <label className="text-panel-label">Graph Representation</label>
+        <TextAreaWithLineNumbers
+          value={graphTextContent}
+          onChange={handleGraphTextChange}
+          onFocus={handleGraphTextFocus}
+          onBlur={handleGraphTextBlur}
+          onKeyDown={handleGraphTextKeyDown}
+          placeholder="Graph data will appear here..."
+          rows={18}
+          spellCheck={false}
+          textareaClassName={hasErrors ? 'text-panel-textarea-error' : ''}
         />
       </div>
     </div>

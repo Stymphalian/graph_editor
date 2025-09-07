@@ -24,17 +24,24 @@ describe('TextPanel', () => {
   it('renders without crashing', () => {
     render(<TextPanel data={mockGraphData} />);
     expect(screen.getByText('Graph Data')).toBeInTheDocument();
-    expect(screen.getByRole('textbox')).toBeInTheDocument();
+    expect(screen.getByText('Node Count:')).toBeInTheDocument();
+    expect(screen.getByText('Graph Representation')).toBeInTheDocument();
+    expect(screen.getAllByRole('textbox')).toHaveLength(2);
   });
 
-  it('displays graph data in simple text format', () => {
+  it('displays graph data in edge list format', () => {
     render(<TextPanel data={mockGraphData} />);
     
-    const textarea = screen.getByRole('textbox');
-    const text = (textarea as HTMLTextAreaElement).value;
+    // Check node count textarea (read-only)
+    const nodeCountTextarea = screen.getByDisplayValue('3');
+    expect(nodeCountTextarea).toBeInTheDocument();
+    expect(nodeCountTextarea).toHaveAttribute('readonly');
     
-    // Check for the simple format: node count, node labels, edges
-    expect(text).toContain('3'); // Node count
+    // Check graph representation textarea (editable)
+    const graphTextarea = screen.getByPlaceholderText('Graph data will appear here...');
+    const text = (graphTextarea as HTMLTextAreaElement).value;
+    
+    // Check for the edge list format: node labels, then edges
     expect(text).toContain('A'); // First node label
     expect(text).toContain('B'); // Second node label
     expect(text).toContain('C'); // Third node label
@@ -42,42 +49,42 @@ describe('TextPanel', () => {
     expect(text).toContain('B C 5'); // Edge from node B to node C with weight 5
   });
 
-  it('handles focus and blur events', () => {
+  it('handles focus and blur events on graph representation textarea', () => {
     render(<TextPanel data={mockGraphData} />);
     
-    const textarea = screen.getByRole('textbox');
-    fireEvent.focus(textarea);
-    fireEvent.blur(textarea);
+    const graphTextarea = screen.getByPlaceholderText('Graph data will appear here...');
+    fireEvent.focus(graphTextarea);
+    fireEvent.blur(graphTextarea);
     
     // Should not crash and textarea should still be present
-    expect(textarea).toBeInTheDocument();
+    expect(graphTextarea).toBeInTheDocument();
   });
 
-  it('handles text changes', () => {
+  it('handles text changes on graph representation textarea', () => {
     render(<TextPanel data={mockGraphData} />);
     
-    const textarea = screen.getByRole('textbox');
-    fireEvent.change(textarea, { target: { value: 'Modified content' } });
+    const graphTextarea = screen.getByPlaceholderText('Graph data will appear here...');
+    fireEvent.change(graphTextarea, { target: { value: 'Modified content' } });
     
-    expect(textarea).toHaveValue('Modified content');
+    expect(graphTextarea).toHaveValue('Modified content');
   });
 
   it('cancels editing when Escape key is pressed', async () => {
     render(<TextPanel data={mockGraphData} />);
     
-    const textarea = screen.getByRole('textbox');
-    fireEvent.focus(textarea);
+    const graphTextarea = screen.getByPlaceholderText('Graph data will appear here...');
+    fireEvent.focus(graphTextarea);
     
     // Modify the text
-    fireEvent.change(textarea, { target: { value: 'Modified content' } });
-    expect(textarea).toHaveValue('Modified content');
+    fireEvent.change(graphTextarea, { target: { value: 'Modified content' } });
+    expect(graphTextarea).toHaveValue('Modified content');
     
     // Press Escape
-    fireEvent.keyDown(textarea, { key: 'Escape' });
+    fireEvent.keyDown(graphTextarea, { key: 'Escape' });
     
     await waitFor(() => {
       // Should revert to original content
-      expect((textarea as HTMLTextAreaElement).value).toContain('3');
+      expect((graphTextarea as HTMLTextAreaElement).value).toContain('A');
     });
   });
 
@@ -100,9 +107,14 @@ describe('TextPanel', () => {
     
     render(<TextPanel data={emptyGraphData} />);
     
-    const textarea = screen.getByRole('textbox');
-    const text = (textarea as HTMLTextAreaElement).value;
-    expect(text).toBe('0'); // Just the node count
+    // Check node count textarea shows 0
+    const nodeCountTextarea = screen.getByDisplayValue('0');
+    expect(nodeCountTextarea).toBeInTheDocument();
+    
+    // Check graph representation textarea is empty
+    const graphTextarea = screen.getByPlaceholderText('Graph data will appear here...');
+    const text = (graphTextarea as HTMLTextAreaElement).value;
+    expect(text).toBe(''); // Empty graph representation
   });
 
   it('handles undirected graph data', () => {
@@ -121,9 +133,13 @@ describe('TextPanel', () => {
     
     render(<TextPanel data={undirectedGraphData} />);
     
-    const textarea = screen.getByRole('textbox');
-    const text = (textarea as HTMLTextAreaElement).value;
-    expect(text).toContain('2'); // Node count
+    // Check node count textarea shows 2
+    const nodeCountTextarea = screen.getByDisplayValue('2');
+    expect(nodeCountTextarea).toBeInTheDocument();
+    
+    // Check graph representation textarea
+    const graphTextarea = screen.getByPlaceholderText('Graph data will appear here...');
+    const text = (graphTextarea as HTMLTextAreaElement).value;
     expect(text).toContain('X'); // First node label
     expect(text).toContain('Y'); // Second node label
     expect(text).toContain('X Y'); // Edge from node X to node Y
@@ -143,9 +159,13 @@ describe('TextPanel', () => {
     
     render(<TextPanel data={graphDataWithoutPositions} />);
     
-    const textarea = screen.getByRole('textbox');
-    const text = (textarea as HTMLTextAreaElement).value;
-    expect(text).toContain('2'); // Node count
+    // Check node count textarea shows 2
+    const nodeCountTextarea = screen.getByDisplayValue('2');
+    expect(nodeCountTextarea).toBeInTheDocument();
+    
+    // Check graph representation textarea
+    const graphTextarea = screen.getByPlaceholderText('Graph data will appear here...');
+    const text = (graphTextarea as HTMLTextAreaElement).value;
     expect(text).toContain('Node1'); // First node label
     expect(text).toContain('Node2'); // Second node label
   });

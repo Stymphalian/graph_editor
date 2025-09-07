@@ -90,7 +90,7 @@
   }
 
   .text-panel-header {
-    @apply flex justify-between items-center mb-3;
+    @apply flex justify-between items-center mb-0;
   }
 
   .text-panel-title {
@@ -114,27 +114,77 @@
   }
 
   .text-panel-editor {
-    @apply flex border border-gray-300 rounded-md overflow-hidden flex-1;
+    @apply border border-gray-300 rounded-md overflow-hidden flex-1;
+    display: inline-grid;
+    grid-template-columns: 3em auto;
+    gap: 0;
+    height: 100%;
+    max-height: 100%;
+    line-height: 1.5;
+    counter-reset: linenumber;
   }
 
   .text-panel-line-numbers {
-    @apply bg-gray-50 text-gray-500 font-mono px-2 py-2 border-r border-gray-300 overflow-hidden;
+    @apply bg-gray-50 text-gray-500 font-mono px-2 py-2 border-r border-gray-300;
     font-size: 0.875rem;
     line-height: 1.5;
-    white-space: pre;
     user-select: none;
-    min-width: 2.5rem;
     text-align: right;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding-right: 5px;
+  }
+
+  .text-panel-line-numbers span {
+    counter-increment: linenumber;
+  }
+
+  .text-panel-line-numbers span::before {
+    content: counter(linenumber);
+    display: block;
+    color: #6b7280;
   }
 
   .text-panel-textarea {
-    @apply flex-1 resize-none border-0 focus:ring-0 focus:outline-none font-mono;
+    @apply resize-none border-0 focus:ring-0 focus:outline-none font-mono;
     font-size: 0.875rem;
     line-height: 1.5;
+    overflow-y: auto;
+    overflow-x: auto;
+    background: transparent;
+    padding-right: 10px;
   }
 
   .text-panel-textarea-error {
     @apply border-red-300 focus:border-red-500 focus:ring-red-500;
+  }
+
+  .text-panel-textarea-readonly {
+    @apply bg-gray-50 text-gray-600 cursor-not-allowed;
+  }
+
+  .text-panel-section {
+    @apply mb-4;
+  }
+
+  .text-panel-section:last-child {
+    @apply mb-0 flex-1 flex flex-col;
+  }
+
+  .text-panel-section-compact {
+    @apply mb-2 flex items-center gap-2;
+  }
+
+  .text-panel-label {
+    @apply block text-xs font-medium text-gray-600 mb-1;
+  }
+
+  .text-panel-label-compact {
+    @apply text-xs font-medium text-gray-600 whitespace-nowrap;
+  }
+
+  .text-panel-textarea-compact {
+    @apply flex-1 min-w-0;
   }
 
   .text-panel-footer {

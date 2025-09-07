@@ -5,3 +5,4 @@
   to wander beyond the bounds.
 - highlight/expand the nibs when hovering
 - node dragging still causes the simulatin to run
+- text-area with line numbers and with scrollbar. Scrollbar not working.
