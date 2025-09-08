@@ -1,14 +1,10 @@
 /**
- * Graph difference resolution utilities
- * Handles comparison and transformation between two graphs with different IDs
+ * Graph difference utilities - simplified to focus on essential changes
  */
 
 import { Graph } from './Graph';
-import { Node, Edge } from '../types/graph';
+import { Node, Edge, GraphData } from '../types/graph';
 
-/**
- * Types of changes that can occur between graphs
- */
 export enum ChangeType {
   NODE_LABEL_CHANGE = 'NODE_LABEL_CHANGE',
   NODE_ADD = 'NODE_ADD',
@@ -21,204 +17,386 @@ export enum ChangeType {
   MAX_NODES_CHANGE = 'MAX_NODES_CHANGE'
 }
 
-/**
- * Represents a match between nodes from original and edited graphs
- */
 export interface NodeMatch {
-  /** Node from original graph */
   originalNode: Node;
-  /** Node from edited graph */
   editedNode: Node;
-  /** Confidence score for the match (0-1) */
-  confidence: number;
-  /** Whether this is an exact match */
   isExact: boolean;
 }
 
-/**
- * Represents a match between edges from original and edited graphs
- */
 export interface EdgeMatch {
-  /** Edge from original graph */
   originalEdge: Edge;
-  /** Edge from edited graph */
   editedEdge: Edge;
-  /** Confidence score for the match (0-1) */
-  confidence: number;
-  /** Whether this is an exact match */
   isExact: boolean;
 }
 
-/**
- * Represents a single change operation
- */
 export interface ChangeOperation {
-  /** Type of change */
   type: ChangeType;
-  /** Description of the change */
-  description: string;
-  /** Original value (if applicable) */
   originalValue?: any;
-  /** New value (if applicable) */
   newValue?: any;
-  /** Node involved in the change (if applicable) */
   node?: Node;
-  /** Edge involved in the change (if applicable) */
   edge?: Edge;
-  /** Additional metadata */
-  metadata?: Record<string, any>;
 }
 
-/**
- * Represents differences found in nodes
- */
-export interface NodeDiff {
-  /** Type of node change */
-  type: ChangeType.NODE_ADD | ChangeType.NODE_REMOVE | ChangeType.NODE_LABEL_CHANGE;
-  /** Original node (if applicable) */
-  originalNode?: Node;
-  /** New/edited node (if applicable) */
-  newNode?: Node;
-  /** Change description */
-  description: string;
-}
-
-/**
- * Represents differences found in edges
- */
-export interface EdgeDiff {
-  /** Type of edge change */
-  type: ChangeType.EDGE_ADD | ChangeType.EDGE_REMOVE | ChangeType.EDGE_WEIGHT_CHANGE;
-  /** Original edge (if applicable) */
-  originalEdge?: Edge;
-  /** New/edited edge (if applicable) */
-  newEdge?: Edge;
-  /** Change description */
-  description: string;
-}
-
-/**
- * Represents all matches found between two graphs
- */
-export interface GraphMatches {
-  /** Matched nodes */
-  nodeMatches: NodeMatch[];
-  /** Matched edges */
-  edgeMatches: EdgeMatch[];
-  /** Unmatched nodes from original graph */
-  unmatchedOriginalNodes: Node[];
-  /** Unmatched nodes from edited graph */
-  unmatchedEditedNodes: Node[];
-  /** Unmatched edges from original graph */
-  unmatchedOriginalEdges: Edge[];
-  /** Unmatched edges from edited graph */
-  unmatchedEditedEdges: Edge[];
-}
-
-/**
- * Comprehensive result of graph comparison
- */
 export interface GraphDiffResult {
-  /** All change operations needed to transform original to edited */
   changes: ChangeOperation[];
-  /** Node-specific differences */
-  nodeDiffs: NodeDiff[];
-  /** Edge-specific differences */
-  edgeDiffs: EdgeDiff[];
-  /** Graph property changes */
-  propertyChanges: ChangeOperation[];
-  /** Matching information */
-  matches: GraphMatches;
-  /** Summary statistics */
-  summary: {
-    totalChanges: number;
-    nodeChanges: number;
-    edgeChanges: number;
-    propertyChanges: number;
-    addedNodes: number;
-    removedNodes: number;
-    modifiedNodes: number;
-    addedEdges: number;
-    removedEdges: number;
-    modifiedEdges: number;
-  };
 }
 
-/**
- * Options for graph comparison
- */
-export interface GraphComparisonOptions {
-  /** Minimum confidence threshold for matches (0-1) */
-  minConfidenceThreshold?: number;
-  /** Whether to consider graph type changes */
-  includeGraphTypeChanges?: boolean;
-  /** Whether to consider indexing mode changes */
-  includeIndexingModeChanges?: boolean;
-  /** Whether to consider max nodes changes */
-  includeMaxNodesChanges?: boolean;
-  /** Custom node matching strategy */
-  customNodeMatcher?: (original: Node[], edited: Node[]) => NodeMatch[];
-  /** Custom edge matching strategy */
-  customEdgeMatcher?: (original: Edge[], edited: Edge[], nodeMatches: NodeMatch[]) => EdgeMatch[];
-}
-
-/**
- * Result of applying changes to a graph
- */
 export interface GraphTransformationResult {
-  /** The transformed graph */
   transformedGraph: Graph;
-  /** Whether the transformation was successful */
   success: boolean;
-  /** Any errors that occurred during transformation */
   errors: string[];
-  /** Warnings about the transformation */
-  warnings: string[];
 }
 
-/**
- * Configuration for graph transformation
- */
-export interface GraphTransformationOptions {
-  /** Whether to validate the result after transformation */
-  validateResult?: boolean;
-  /** Whether to preserve original graph state */
-  preserveOriginal?: boolean;
-  /** Custom validation function */
-  customValidator?: (graph: Graph) => { isValid: boolean; errors: string[] };
+export interface LineOperation {
+  type: 'add' | 'remove' | 'modify' | 'keep';
+  line: string;
+  index: number;
+  originalLine?: string; // For modify operations
 }
 
-// ============================================================================
-// IMPLEMENTATION FUNCTIONS
-// ============================================================================
+export function extractDataChangesFromText(newText: string, prevText: string, originalGraph: GraphData): GraphDiffResult {
+  const operations = extractLineOperationsFromText(newText, prevText);
+  const changes: ChangeOperation[] = [];
 
-/**
- * Compares two graphs and returns detailed differences
- * Uses content-based matching since node/edge IDs may differ
- */
-export function compareGraphs(
-  original: Graph,
-  edited: Graph,
-  options: GraphComparisonOptions = {}
-): GraphDiffResult {
-  const {
-    includeGraphTypeChanges = true,
-    includeIndexingModeChanges = true,
-    includeMaxNodesChanges = true
-  } = options;
+  // Get current graph data for reference
+  const originalNodes = originalGraph.nodes;
+  const originalEdges = originalGraph.edges;
 
+  // Create lookup maps for efficient searching
+  const nodeLabelToNode = new Map<string, Node>();
+  const edgeDescriptionToEdge = new Map<string, Edge>();
+
+  // Build lookup maps from original graph
+  for (const node of originalNodes) {
+    nodeLabelToNode.set(node.label, node);
+  }
+
+  for (const edge of originalEdges) {
+    const sourceNode = originalNodes.find(n => n.id === edge.source);
+    const targetNode = originalNodes.find(n => n.id === edge.target);
+    if (sourceNode && targetNode) {
+      const edgeDescription = `${sourceNode.label} ${targetNode.label}${edge.weight ? ` ${edge.weight}` : ''}`;
+      edgeDescriptionToEdge.set(edgeDescription, edge);
+    }
+  }
+
+  // Process each line operation
+  for (const operation of operations) {
+    switch (operation.type) {
+      case 'add':
+        const addChange = parseLineAsChange(operation.line, 'add');
+        if (addChange) {
+          if (Array.isArray(addChange)) {
+            changes.push(...addChange);
+          } else {
+            changes.push(addChange);
+          }
+        }
+        break;
+
+      case 'remove':
+        const removeChange = parseLineAsChange(operation.line, 'remove', nodeLabelToNode, edgeDescriptionToEdge);
+        if (removeChange) {
+          if (Array.isArray(removeChange)) {
+            changes.push(...removeChange);
+          } else {
+            changes.push(removeChange);
+          }
+        }
+        break;
+
+      case 'modify':
+        const modifyChanges = parseLineAsChange(operation.line, 'modify', nodeLabelToNode, edgeDescriptionToEdge, operation.originalLine);
+        if (modifyChanges) {
+          // parseLineAsChange can return either a single ChangeOperation or an array of ChangeOperations
+          if (Array.isArray(modifyChanges)) {
+            changes.push(...modifyChanges);
+          } else {
+            changes.push(modifyChanges);
+          }
+        }
+        break;
+
+      case 'keep':
+        // No change needed for kept lines
+        break;
+    }
+  }
+
+  return { changes };
+}
+
+function normalizeLine(line: string): string {
+  // Normalize whitespace: trim and replace multiple spaces with single space
+  return line.trim().replace(/\s+/g, ' ');
+}
+
+function parseLineAsChange(
+  line: string, 
+  operation: 'add' | 'remove' | 'modify', 
+  nodeLabelToNode?: Map<string, Node>,
+  edgeDescriptionToEdge?: Map<string, Edge>,
+  originalLine?: string
+): ChangeOperation | ChangeOperation[] | null {
+  const normalizedLine = normalizeLine(line);
+  const parts = normalizedLine.split(/\s+/);
+  
+  if (parts.length === 1) {
+    // Single word - this is a node
+    const label = parts[0];
+    if (!label) return null;
+    
+    if (operation === 'add') {
+      return {
+        type: ChangeType.NODE_ADD,
+        node: { id: 0, label } // ID will be assigned by the graph
+      };
+    } else if (operation === 'remove') {
+      // Find the node in the original graph
+      const originalNode = nodeLabelToNode?.get(label);
+      if (originalNode) {
+        return {
+          type: ChangeType.NODE_REMOVE,
+          node: originalNode
+        };
+      }
+    } else if (operation === 'modify' && originalLine) {
+      // Find the original node (normalize the original line for lookup)
+      const normalizedOriginalLine = normalizeLine(originalLine);
+      const originalNode = nodeLabelToNode?.get(normalizedOriginalLine);
+      if (originalNode) {
+        return {
+          type: ChangeType.NODE_LABEL_CHANGE,
+          originalValue: normalizedOriginalLine,
+          newValue: label,
+          node: originalNode
+        };
+      }
+    }
+  } else if (parts.length >= 2) {
+    // Two or more words - this is an edge
+    const sourceLabel = parts[0];
+    const targetLabel = parts[1];
+    const weight = parts.length >= 3 ? parts[2] : undefined;
+    
+    if (!sourceLabel || !targetLabel) return null;
+    
+    if (operation === 'add') {
+      return {
+        type: ChangeType.EDGE_ADD,
+        edge: { 
+          id: '', 
+          source: 0, 
+          target: 0, 
+          ...(weight && { weight })
+        } // IDs will be resolved by labels
+      };
+    } else if (operation === 'remove') {
+      // Find the edge in the original graph
+      const edgeDescription = `${sourceLabel} ${targetLabel}${weight ? ` ${weight}` : ''}`;
+      const originalEdge = edgeDescriptionToEdge?.get(edgeDescription);
+      if (originalEdge) {
+        return {
+          type: ChangeType.EDGE_REMOVE,
+          edge: originalEdge
+        };
+      }
+    } else if (operation === 'modify' && originalLine) {
+      // Find the original edge (normalize the original line for lookup)
+      const normalizedOriginalLine = normalizeLine(originalLine);
+      const originalEdge = edgeDescriptionToEdge?.get(normalizedOriginalLine);
+      if (originalEdge) {
+        // Check if this is a weight change or edge replacement
+        const originalParts = normalizedOriginalLine.split(/\s+/);
+        const newParts = normalizedLine.split(/\s+/);
+        
+        if (originalParts.length >= 2 && newParts.length >= 2) {
+          const originalSource = originalParts[0];
+          const originalTarget = originalParts[1];
+          const originalWeight = originalParts.length >= 3 ? originalParts[2] : undefined;
+          const newWeight = newParts.length >= 3 ? newParts[2] : undefined;
+          
+          // If source and target are the same but weight changed
+          if (originalSource === sourceLabel && originalTarget === targetLabel && originalWeight !== newWeight) {
+            return {
+              type: ChangeType.EDGE_WEIGHT_CHANGE,
+              originalValue: originalWeight,
+              newValue: newWeight,
+              edge: originalEdge
+            };
+          }
+          
+          // If source or target changed, this is an edge replacement (remove + add)
+          if (originalSource !== sourceLabel || originalTarget !== targetLabel) {
+            return [
+              {
+                type: ChangeType.EDGE_REMOVE,
+                edge: originalEdge
+              },
+              {
+                type: ChangeType.EDGE_ADD,
+                edge: { 
+                  id: '', 
+                  source: 0, 
+                  target: 0, 
+                  ...(newWeight && { weight: newWeight })
+                } // IDs will be resolved by labels
+              }
+            ];
+          }
+        }
+      }
+    }
+  }
+  
+  return null;
+}
+
+export function extractLineOperationsFromText(newText: string, prevText: string): LineOperation[] {
+  // Split texts into lines, handling empty strings properly
+  const newLines = newText === '' ? [] : newText.split('\n');
+  const prevLines = prevText === '' ? [] : prevText.split('\n');
+  
+  // Handle edge cases
+  if (newLines.length === 0 && prevLines.length === 0) {
+    return [];
+  }
+  
+  // Normalize lines for comparison (but keep original lines for output)
+  const normalizedNewLines = newLines.map(line => normalizeLine(line));
+  const normalizedPrevLines = prevLines.map(line => normalizeLine(line));
+  
+  // Calculate minimum edit distance using normalized lines but with original line tracking
+  const operations = calculateEditDistanceWithOriginalLines(
+    normalizedPrevLines, 
+    normalizedNewLines, 
+    prevLines, 
+    newLines
+  );
+  
+  return operations;
+}
+
+function calculateEditDistanceWithOriginalLines(
+  normalizedPrevLines: string[], 
+  normalizedNewLines: string[], 
+  originalPrevLines: string[], 
+  originalNewLines: string[]
+): LineOperation[] {
+  const m = normalizedPrevLines.length;
+  const n = normalizedNewLines.length;
+  
+  // Create DP table
+  const dp: number[][] = Array(m + 1).fill(null).map(() => Array(n + 1).fill(0));
+  
+  // Initialize base cases
+  for (let i = 0; i <= m; i++) {
+    dp[i]![0] = i; // Delete all lines from prev
+  }
+  for (let j = 0; j <= n; j++) {
+    dp[0]![j] = j; // Insert all lines from new
+  }
+  
+  // Fill DP table
+  for (let i = 1; i <= m; i++) {
+    for (let j = 1; j <= n; j++) {
+      const prevLine = normalizedPrevLines[i - 1];
+      const newLine = normalizedNewLines[j - 1];
+      
+      if (prevLine !== undefined && newLine !== undefined && prevLine === newLine) {
+        // Lines are identical
+        dp[i]![j] = dp[i - 1]![j - 1]!;
+      } else {
+        // Take minimum of delete, insert, or modify
+        dp[i]![j] = 1 + Math.min(
+          dp[i - 1]![j]!,     // Delete from prev
+          dp[i]![j - 1]!,     // Insert from new
+          dp[i - 1]![j - 1]!  // Modify (replace)
+        );
+      }
+    }
+  }
+  
+  // Backtrack to find the sequence of operations
+  const operations: LineOperation[] = [];
+  let i = m;
+  let j = n;
+  
+  while (i > 0 || j > 0) {
+    const prevLine = i > 0 ? normalizedPrevLines[i - 1] : undefined;
+    const newLine = j > 0 ? normalizedNewLines[j - 1] : undefined;
+    const originalPrevLine = i > 0 ? originalPrevLines[i - 1] : undefined;
+    const originalNewLine = j > 0 ? originalNewLines[j - 1] : undefined;
+    
+    if (i > 0 && j > 0 && prevLine !== undefined && newLine !== undefined && prevLine === newLine) {
+      // Lines are identical - keep
+      operations.unshift({
+        type: 'keep',
+        line: originalNewLine || '',
+        index: j - 1
+      });
+      i--;
+      j--;
+    } else if (i > 0 && j > 0 && dp[i]![j] === dp[i - 1]![j - 1]! + 1) {
+      // Modify operation
+      operations.unshift({
+        type: 'modify',
+        line: originalNewLine || '',
+        index: j - 1,
+        originalLine: originalPrevLine || ''
+      });
+      i--;
+      j--;
+    } else if (i > 0 && dp[i]![j] === dp[i - 1]![j]! + 1) {
+      // Delete operation
+      operations.unshift({
+        type: 'remove',
+        line: originalPrevLine || '',
+        index: i - 1
+      });
+      i--;
+    } else if (j > 0 && dp[i]![j] === dp[i]![j - 1]! + 1) {
+      // Insert operation
+      operations.unshift({
+        type: 'add',
+        line: originalNewLine || '',
+        index: j - 1
+      });
+      j--;
+    } else {
+      // This shouldn't happen, but handle gracefully
+      if (i > 0 && originalPrevLine !== undefined) {
+        operations.unshift({
+          type: 'remove',
+          line: originalPrevLine,
+          index: i - 1
+        });
+        i--;
+      } else if (j > 0 && originalNewLine !== undefined) {
+        operations.unshift({
+          type: 'add',
+          line: originalNewLine,
+          index: j - 1
+        });
+        j--;
+      }
+    }
+  }
+  
+  return operations;
+}
+
+
+// DO NOT USE THIS FUNCTION. IT DOESN't WORK AS INTENDED.
+export function compareGraphs(original: Graph, edited: Graph): GraphDiffResult {
   const originalNodes = original.getNodes();
   const editedNodes = edited.getNodes();
   const originalEdges = original.getEdges();
   const editedEdges = edited.getEdges();
 
-  // Find node matches
   const nodeMatches = findNodeMatches(originalNodes, editedNodes);
-  
-  // Find edge matches based on node matches
   const edgeMatches = findEdgeMatches(originalEdges, editedEdges, nodeMatches);
 
-  // Identify unmatched nodes and edges
   const matchedOriginalNodeIds = new Set(nodeMatches.map(m => m.originalNode.id));
   const matchedEditedNodeIds = new Set(nodeMatches.map(m => m.editedNode.id));
   
@@ -231,74 +409,112 @@ export function compareGraphs(
   const unmatchedOriginalEdges = originalEdges.filter(e => !matchedOriginalEdgeIds.has(e.id));
   const unmatchedEditedEdges = editedEdges.filter(e => !matchedEditedEdgeIds.has(e.id));
 
-  // Create matches object
-  const matches: GraphMatches = {
-    nodeMatches,
-    edgeMatches,
-    unmatchedOriginalNodes,
-    unmatchedEditedNodes,
-    unmatchedOriginalEdges,
-    unmatchedEditedEdges
-  };
-
-  // Generate change operations
   const changes: ChangeOperation[] = [];
-  const nodeDiffs: NodeDiff[] = [];
-  const edgeDiffs: EdgeDiff[] = [];
-  const propertyChanges: ChangeOperation[] = [];
 
   // Process node changes
-  processNodeChanges(matches, nodeDiffs, changes);
-  
-  // Process edge changes
-  processEdgeChanges(matches, edgeDiffs, changes);
-  
-  // Process property changes
-  if (includeGraphTypeChanges || includeIndexingModeChanges || includeMaxNodesChanges) {
-    processPropertyChanges(original, edited, propertyChanges, options);
+  for (const match of nodeMatches) {
+    if (!match.isExact) {
+      changes.push({
+        type: ChangeType.NODE_LABEL_CHANGE,
+        originalValue: match.originalNode.label,
+        newValue: match.editedNode.label,
+        node: match.originalNode
+      });
+    }
   }
 
-  // Generate summary
-  const summary = generateSummary(nodeDiffs, edgeDiffs, propertyChanges);
+  for (const node of unmatchedOriginalNodes) {
+    changes.push({
+      type: ChangeType.NODE_REMOVE,
+      node
+    });
+  }
 
-  return {
-    changes,
-    nodeDiffs,
-    edgeDiffs,
-    propertyChanges,
-    matches,
-    summary
-  };
+  for (const node of unmatchedEditedNodes) {
+    changes.push({
+      type: ChangeType.NODE_ADD,
+      node
+    });
+  }
+  
+  // Process edge changes
+  for (const match of edgeMatches) {
+    if (!match.isExact) {
+      changes.push({
+        type: ChangeType.EDGE_WEIGHT_CHANGE,
+        originalValue: match.originalEdge.weight,
+        newValue: match.editedEdge.weight,
+        edge: match.originalEdge
+      });
+    }
+  }
+
+  for (const edge of unmatchedOriginalEdges) {
+    changes.push({
+      type: ChangeType.EDGE_REMOVE,
+      edge
+    });
+  }
+
+  for (const edge of unmatchedEditedEdges) {
+    changes.push({
+      type: ChangeType.EDGE_ADD,
+      edge
+    });
+  }
+  
+  // Process property changes
+  if (original.getType() !== edited.getType()) {
+    changes.push({
+      type: ChangeType.GRAPH_TYPE_CHANGE,
+      originalValue: original.getType(),
+      newValue: edited.getType()
+    });
+  }
+
+  if (original.getNodeIndexingMode() !== edited.getNodeIndexingMode()) {
+    changes.push({
+      type: ChangeType.INDEXING_MODE_CHANGE,
+      originalValue: original.getNodeIndexingMode(),
+      newValue: edited.getNodeIndexingMode()
+    });
+  }
+
+  if (original.getMaxNodes() !== edited.getMaxNodes()) {
+    changes.push({
+      type: ChangeType.MAX_NODES_CHANGE,
+      originalValue: original.getMaxNodes(),
+      newValue: edited.getMaxNodes()
+    });
+  }
+
+  return { changes };
 }
 
-/**
- * Finds matches between nodes from original and edited graphs based on labels
- */
 export function findNodeMatches(original: Node[], edited: Node[]): NodeMatch[] {
   const matches: NodeMatch[] = [];
   const usedEditedIndices = new Set<number>();
 
   for (const originalNode of original) {
-    let bestMatch: { node: Node; index: number; confidence: number } | null = null;
+    let bestMatch: { node: Node; index: number } | null = null;
 
     for (let i = 0; i < edited.length; i++) {
       if (usedEditedIndices.has(i)) continue;
 
       const editedNode = edited[i];
       if (!editedNode) continue;
-      const confidence = calculateNodeMatchConfidence(originalNode, editedNode);
 
-      if (confidence > 0 && (!bestMatch || confidence > bestMatch.confidence)) {
-        bestMatch = { node: editedNode, index: i, confidence };
+      if (originalNode.label === editedNode.label) {
+        bestMatch = { node: editedNode, index: i };
+        break;
       }
     }
 
-    if (bestMatch && bestMatch.confidence > 0.5) {
+    if (bestMatch) {
       matches.push({
         originalNode,
         editedNode: bestMatch.node,
-        confidence: bestMatch.confidence,
-        isExact: bestMatch.confidence === 1
+        isExact: true
       });
       usedEditedIndices.add(bestMatch.index);
     }
@@ -307,9 +523,6 @@ export function findNodeMatches(original: Node[], edited: Node[]): NodeMatch[] {
   return matches;
 }
 
-/**
- * Finds matches between edges based on corresponding node matches
- */
 export function findEdgeMatches(
   original: Edge[],
   edited: Edge[],
@@ -318,33 +531,40 @@ export function findEdgeMatches(
   const matches: EdgeMatch[] = [];
   const usedEditedIndices = new Set<number>();
 
-  // Create mapping from original node IDs to edited node IDs
   const nodeIdMap = new Map<number, number>();
   for (const match of nodeMatches) {
     nodeIdMap.set(match.originalNode.id, match.editedNode.id);
   }
 
   for (const originalEdge of original) {
-    let bestMatch: { edge: Edge; index: number; confidence: number } | null = null;
+    let bestMatch: { edge: Edge; index: number } | null = null;
 
     for (let i = 0; i < edited.length; i++) {
       if (usedEditedIndices.has(i)) continue;
 
       const editedEdge = edited[i];
       if (!editedEdge) continue;
-      const confidence = calculateEdgeMatchConfidence(originalEdge, editedEdge, nodeIdMap);
 
-      if (confidence > 0 && (!bestMatch || confidence > bestMatch.confidence)) {
-        bestMatch = { edge: editedEdge, index: i, confidence };
+      const originalSourceMapped = nodeIdMap.get(originalEdge.source);
+      const originalTargetMapped = nodeIdMap.get(originalEdge.target);
+
+      if (!originalSourceMapped || !originalTargetMapped) continue;
+
+      const directMatch = originalSourceMapped === editedEdge.source && originalTargetMapped === editedEdge.target;
+      const reverseMatch = originalSourceMapped === editedEdge.target && originalTargetMapped === editedEdge.source;
+
+      if (directMatch || reverseMatch) {
+        bestMatch = { edge: editedEdge, index: i };
+        break;
       }
     }
 
-    if (bestMatch && bestMatch.confidence > 0.5) {
+    if (bestMatch) {
+      const isExact = originalEdge.weight === bestMatch.edge.weight;
       matches.push({
         originalEdge,
         editedEdge: bestMatch.edge,
-        confidence: bestMatch.confidence,
-        isExact: bestMatch.confidence === 1
+        isExact
       });
       usedEditedIndices.add(bestMatch.index);
     }
@@ -353,390 +573,106 @@ export function findEdgeMatches(
   return matches;
 }
 
-/**
- * Calculates confidence score for node matching based on label similarity
- */
-function calculateNodeMatchConfidence(original: Node, edited: Node): number {
-  if (original.label === edited.label) {
-    return 1.0; // Exact match
-  }
-  
-  // Could add fuzzy matching here for similar labels
-  // For now, only exact matches
-  return 0;
-}
-
-/**
- * Calculates confidence score for edge matching based on node correspondence
- */
-function calculateEdgeMatchConfidence(
-  original: Edge,
-  edited: Edge,
-  nodeIdMap: Map<number, number>
-): number {
-  const originalSourceMapped = nodeIdMap.get(original.source);
-  const originalTargetMapped = nodeIdMap.get(original.target);
-
-  if (!originalSourceMapped || !originalTargetMapped) {
-    return 0; // Can't match if nodes don't correspond
-  }
-
-  // Check if edge connects corresponding nodes
-  const directMatch = originalSourceMapped === edited.source && originalTargetMapped === edited.target;
-  const reverseMatch = originalSourceMapped === edited.target && originalTargetMapped === edited.source;
-
-  if (directMatch || reverseMatch) {
-    // Check weight similarity
-    const weightMatch = original.weight === edited.weight;
-    return weightMatch ? 1.0 : 0.8; // Slightly lower confidence if weights differ
-  }
-
-  return 0;
-}
-
-/**
- * Processes node changes and generates diffs and operations
- */
-function processNodeChanges(
-  matches: GraphMatches,
-  nodeDiffs: NodeDiff[],
-  changes: ChangeOperation[]
-): void {
-  // Process matched nodes for label changes
-  for (const match of matches.nodeMatches) {
-    if (!match.isExact) {
-      const diff: NodeDiff = {
-        type: ChangeType.NODE_LABEL_CHANGE,
-        originalNode: match.originalNode,
-        newNode: match.editedNode,
-        description: `Node label changed from "${match.originalNode.label}" to "${match.editedNode.label}"`
-      };
-      nodeDiffs.push(diff);
-
-      changes.push({
-        type: ChangeType.NODE_LABEL_CHANGE,
-        description: diff.description,
-        originalValue: match.originalNode.label,
-        newValue: match.editedNode.label,
-        node: match.originalNode
-      });
-    }
-  }
-
-  // Process unmatched original nodes as removals
-  for (const node of matches.unmatchedOriginalNodes) {
-    const diff: NodeDiff = {
-      type: ChangeType.NODE_REMOVE,
-      originalNode: node,
-      description: `Node "${node.label}" was removed`
-    };
-    nodeDiffs.push(diff);
-
-    changes.push({
-      type: ChangeType.NODE_REMOVE,
-      description: diff.description,
-      node
-    });
-  }
-
-  // Process unmatched edited nodes as additions
-  for (const node of matches.unmatchedEditedNodes) {
-    const diff: NodeDiff = {
-      type: ChangeType.NODE_ADD,
-      newNode: node,
-      description: `Node "${node.label}" was added`
-    };
-    nodeDiffs.push(diff);
-
-    changes.push({
-      type: ChangeType.NODE_ADD,
-      description: diff.description,
-      node
-    });
-  }
-}
-
-/**
- * Processes edge changes and generates diffs and operations
- */
-function processEdgeChanges(
-  matches: GraphMatches,
-  edgeDiffs: EdgeDiff[],
-  changes: ChangeOperation[]
-): void {
-  // Process matched edges for weight changes
-  for (const match of matches.edgeMatches) {
-    if (!match.isExact) {
-      const diff: EdgeDiff = {
-        type: ChangeType.EDGE_WEIGHT_CHANGE,
-        originalEdge: match.originalEdge,
-        newEdge: match.editedEdge,
-        description: `Edge weight changed from "${match.originalEdge.weight || 'none'}" to "${match.editedEdge.weight || 'none'}"`
-      };
-      edgeDiffs.push(diff);
-
-      changes.push({
-        type: ChangeType.EDGE_WEIGHT_CHANGE,
-        description: diff.description,
-        originalValue: match.originalEdge.weight,
-        newValue: match.editedEdge.weight,
-        edge: match.originalEdge
-      });
-    }
-  }
-
-  // Process unmatched original edges as removals
-  for (const edge of matches.unmatchedOriginalEdges) {
-    const diff: EdgeDiff = {
-      type: ChangeType.EDGE_REMOVE,
-      originalEdge: edge,
-      description: `Edge from node ${edge.source} to ${edge.target} was removed`
-    };
-    edgeDiffs.push(diff);
-
-    changes.push({
-      type: ChangeType.EDGE_REMOVE,
-      description: diff.description,
-      edge
-    });
-  }
-
-  // Process unmatched edited edges as additions
-  for (const edge of matches.unmatchedEditedEdges) {
-    const diff: EdgeDiff = {
-      type: ChangeType.EDGE_ADD,
-      newEdge: edge,
-      description: `Edge from node ${edge.source} to ${edge.target} was added`
-    };
-    edgeDiffs.push(diff);
-
-    changes.push({
-      type: ChangeType.EDGE_ADD,
-      description: diff.description,
-      edge
-    });
-  }
-}
-
-/**
- * Processes property changes between graphs
- */
-function processPropertyChanges(
-  original: Graph,
-  edited: Graph,
-  propertyChanges: ChangeOperation[],
-  options: GraphComparisonOptions
-): void {
-  const { includeGraphTypeChanges, includeIndexingModeChanges, includeMaxNodesChanges } = options;
-
-  if (includeGraphTypeChanges && original.getType() !== edited.getType()) {
-    propertyChanges.push({
-      type: ChangeType.GRAPH_TYPE_CHANGE,
-      description: `Graph type changed from "${original.getType()}" to "${edited.getType()}"`,
-      originalValue: original.getType(),
-      newValue: edited.getType()
-    });
-  }
-
-  if (includeIndexingModeChanges && original.getNodeIndexingMode() !== edited.getNodeIndexingMode()) {
-    propertyChanges.push({
-      type: ChangeType.INDEXING_MODE_CHANGE,
-      description: `Node indexing mode changed from "${original.getNodeIndexingMode()}" to "${edited.getNodeIndexingMode()}"`,
-      originalValue: original.getNodeIndexingMode(),
-      newValue: edited.getNodeIndexingMode()
-    });
-  }
-
-  if (includeMaxNodesChanges && original.getMaxNodes() !== edited.getMaxNodes()) {
-    propertyChanges.push({
-      type: ChangeType.MAX_NODES_CHANGE,
-      description: `Max nodes changed from ${original.getMaxNodes()} to ${edited.getMaxNodes()}`,
-      originalValue: original.getMaxNodes(),
-      newValue: edited.getMaxNodes()
-    });
-  }
-}
-
-/**
- * Generates summary statistics for the comparison
- */
-function generateSummary(
-  nodeDiffs: NodeDiff[],
-  edgeDiffs: EdgeDiff[],
-  propertyChanges: ChangeOperation[]
-): GraphDiffResult['summary'] {
-  const addedNodes = nodeDiffs.filter(d => d.type === ChangeType.NODE_ADD).length;
-  const removedNodes = nodeDiffs.filter(d => d.type === ChangeType.NODE_REMOVE).length;
-  const modifiedNodes = nodeDiffs.filter(d => d.type === ChangeType.NODE_LABEL_CHANGE).length;
-  
-  const addedEdges = edgeDiffs.filter(d => d.type === ChangeType.EDGE_ADD).length;
-  const removedEdges = edgeDiffs.filter(d => d.type === ChangeType.EDGE_REMOVE).length;
-  const modifiedEdges = edgeDiffs.filter(d => d.type === ChangeType.EDGE_WEIGHT_CHANGE).length;
-
-  return {
-    totalChanges: nodeDiffs.length + edgeDiffs.length + propertyChanges.length,
-    nodeChanges: nodeDiffs.length,
-    edgeChanges: edgeDiffs.length,
-    propertyChanges: propertyChanges.length,
-    addedNodes,
-    removedNodes,
-    modifiedNodes,
-    addedEdges,
-    removedEdges,
-    modifiedEdges
-  };
-}
-
-/**
- * Applies changes to transform the original graph into the edited version
- */
 export function applyGraphChanges(
   original: Graph,
-  changes: ChangeOperation[],
-  options: GraphTransformationOptions = {}
+  changes: ChangeOperation[]
 ): GraphTransformationResult {
-  const { validateResult = true, preserveOriginal = true } = options;
   const errors: string[] = [];
-  const warnings: string[] = [];
 
   try {
-    // Create a copy of the original graph if preserving original
-    const workingGraph = preserveOriginal ? new Graph(original.getData()) : original;
-
-    // Apply changes in order
+    // Apply changes directly to the original graph
     for (const change of changes) {
-      try {
-        applyChange(workingGraph, change);
-      } catch (error) {
-        errors.push(`Failed to apply change "${change.description}": ${error}`);
-      }
-    }
-
-    // Validate result if requested
-    if (validateResult) {
-      const validation = validateGraph(workingGraph);
-      if (!validation.isValid) {
-        errors.push(...validation.errors);
+      const success = applyChange(original, change);
+      if (!success) {
+        const error = original.getError();
+        if (error) {
+          errors.push(`Failed to apply change: ${error}`);
+        } else {
+          errors.push(`Failed to apply change of type ${change.type}`);
+        }
       }
     }
 
     return {
-      transformedGraph: workingGraph,
+      transformedGraph: original,
       success: errors.length === 0,
-      errors,
-      warnings
+      errors
     };
   } catch (error) {
     return {
       transformedGraph: original,
       success: false,
-      errors: [`Transformation failed: ${error}`],
-      warnings
+      errors: [`Transformation failed: ${error}`]
     };
   }
 }
 
-/**
- * Applies a single change operation to a graph
- */
-function applyChange(graph: Graph, change: ChangeOperation): void {
+function applyChange(graph: Graph, change: ChangeOperation): boolean {
   switch (change.type) {
     case ChangeType.NODE_ADD:
       if (change.node) {
-        graph.addNode({ label: change.node.label, id: change.node.id });
+        return graph.addNode({ label: change.node.label, id: change.node.id }) !== null;
       }
-      break;
+      return false;
     
     case ChangeType.NODE_REMOVE:
       if (change.node) {
-        graph.removeNode(change.node.id);
+        return graph.removeNode(change.node.id);
       }
-      break;
+      return false;
     
     case ChangeType.NODE_LABEL_CHANGE:
       if (change.node && change.newValue) {
-        graph.updateNode(change.node.id, { label: change.newValue });
+        return graph.updateNode(change.node.id, { label: change.newValue }) !== null;
       }
-      break;
+      return false;
     
     case ChangeType.EDGE_ADD:
       if (change.edge) {
-        graph.addEdge({
+        return graph.addEdge({
           source: change.edge.source,
           target: change.edge.target,
           ...(change.edge.weight && { weight: change.edge.weight })
-        });
+        }) !== null;
       }
-      break;
+      return false;
     
     case ChangeType.EDGE_REMOVE:
       if (change.edge) {
-        graph.removeEdge(change.edge.id);
+        return graph.removeEdge(change.edge.id);
       }
-      break;
+      return false;
     
     case ChangeType.EDGE_WEIGHT_CHANGE:
       if (change.edge && change.newValue !== undefined) {
-        graph.updateEdgeWeight(change.edge.id, change.newValue);
+        return graph.updateEdgeWeight(change.edge.id, change.newValue);
       }
-      break;
+      return false;
     
     case ChangeType.GRAPH_TYPE_CHANGE:
       if (change.newValue) {
         graph.setType(change.newValue as any);
+        return true;
       }
-      break;
+      return false;
     
     case ChangeType.INDEXING_MODE_CHANGE:
       if (change.newValue) {
         graph.setNodeIndexingMode(change.newValue as any);
+        return true;
       }
-      break;
+      return false;
     
     case ChangeType.MAX_NODES_CHANGE:
       if (change.newValue) {
         // Note: Graph class doesn't have setMaxNodes method
         // This would need to be implemented in the Graph class if needed
         console.warn('setMaxNodes not implemented in Graph class');
+        return true; // Consider it successful since it's not implemented
       }
-      break;
+      return false;
+    
+    default:
+      return false;
   }
-}
-
-/**
- * Validates a graph for consistency
- */
-function validateGraph(graph: Graph): { isValid: boolean; errors: string[] } {
-  const errors: string[] = [];
-  
-  // Basic validation - check if graph has valid structure
-  const nodes = graph.getNodes();
-  const edges = graph.getEdges();
-  
-  // Check for orphaned edges
-  const nodeIds = new Set(nodes.map(n => n.id));
-  for (const edge of edges) {
-    if (!nodeIds.has(edge.source)) {
-      errors.push(`Edge ${edge.id} references non-existent source node ${edge.source}`);
-    }
-    if (!nodeIds.has(edge.target)) {
-      errors.push(`Edge ${edge.id} references non-existent target node ${edge.target}`);
-    }
-  }
-  
-  // Check for duplicate node IDs
-  const nodeIdCounts = new Map<number, number>();
-  for (const node of nodes) {
-    nodeIdCounts.set(node.id, (nodeIdCounts.get(node.id) || 0) + 1);
-  }
-  for (const [id, count] of nodeIdCounts) {
-    if (count > 1) {
-      errors.push(`Duplicate node ID found: ${id}`);
-    }
-  }
-  
-  return {
-    isValid: errors.length === 0,
-    errors
-  };
 }
