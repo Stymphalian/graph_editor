@@ -91,3 +91,29 @@ export interface TextFormatData {
   /** Optional metadata */
   metadata?: Record<string, unknown>;
 }
+
+export type GraphOperationType = 
+  | 'NODE_ADD'
+  | 'NODE_LABEL_CHANGE'
+  | 'NODE_REMOVE'
+  | 'EDGE_ADD'
+  | 'EDGE_REMOVE'
+  | 'EDGE_WEIGHT_CHANGE'
+  | 'GRAPH_TYPE_CHANGE'
+  | 'INDEXING_MODE_CHANGE'
+  | 'MAX_NODES_CHANGE';
+
+export interface GraphOperation {
+  /** Type of operation performed */
+  type: GraphOperationType;
+  /** Node ID affected (for node operations) */
+  nodeId?: number;
+  /** Edge ID affected (for edge operations) */
+  edgeId?: string;
+  /** Previous value (for updates) */
+  previousValue?: string | undefined;
+  /** New value (for updates) */
+  newValue?: string | undefined;
+  /** Additional operation data */
+  data?: any;
+}

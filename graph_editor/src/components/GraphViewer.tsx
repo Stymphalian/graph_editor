@@ -88,7 +88,6 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
     }
   };
 
-
   const handleLabelEditSave = () => {
     if (editingNodeId && editingLabel.trim() !== '') {
       onNodeLabelEdit?.(editingNodeId, editingLabel.trim());
@@ -859,8 +858,10 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
 
         updatePreviewLine();
       });
-
-      simulation.alpha(0).restart(); // Very gentle restart to minimize disruption when adding nodes
+    
+      if (mode === 'edit') {
+        simulation.alpha(0).restart(); // Very gentle restart to minimize disruption when adding nodes
+      }
     }
   };
 
