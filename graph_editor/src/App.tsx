@@ -197,9 +197,51 @@ function App() {
     setGraphData(currentGraph.getData());
   };
 
-  const handleGraphDataChange = (newData: any) => {
-    console.log('Graph data changed:', newData);
-    // TODO: Implement graph data parsing and updating (Task 4.4)
+  const handleGraphDataChange = (newData: GraphData) => {
+    console.log('Graph data changed from text panel:', newData);
+    
+    try {
+      // Update the current graph with the new data
+      // First, clear the existing graph
+      currentGraph.reset();
+      
+      // Set the graph type and indexing mode
+      currentGraph.setType(newData.type);
+      currentGraph.setNodeIndexingMode(newData.nodeIndexingMode);
+      
+      // Add all nodes from the new data
+      for (const node of newData.nodes) {
+        const addedNode = currentGraph.addNode({ 
+          label: node.label, 
+          id: node.id 
+        });
+        if (!addedNode) {
+          console.error('Failed to add node:', currentGraph.getError());
+          return;
+        }
+      }
+      
+      // Add all edges from the new data
+      for (const edge of newData.edges) {
+        const addedEdge = currentGraph.addEdge({
+          source: edge.source,
+          target: edge.target,
+          ...(edge.weight && { weight: edge.weight })
+        });
+        if (!addedEdge) {
+          console.error('Failed to add edge:', currentGraph.getError());
+          return;
+        }
+      }
+      
+      // Update the graph data state to trigger re-render
+      setGraphData(currentGraph.getData());
+      console.log('Graph successfully updated from text panel');
+      
+    } catch (error) {
+      console.error('Error updating graph from text panel:', error);
+      handleError('Failed to update graph from text input');
+    }
   };
 
   return (

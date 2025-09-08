@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { GraphData } from '../types/graph';
+import { Graph } from '../models/Graph';
+import { useDebounce } from '../hooks/useDebounce';
 import TextAreaWithLineNumbers from './TextAreaWithLineNumbers';
 
 interface TextPanelProps {
@@ -10,12 +12,15 @@ interface TextPanelProps {
 
 const TextPanel: React.FC<TextPanelProps> = ({ 
   data, 
-  onDataChange: _onDataChange, 
+  onDataChange, 
   className = '' 
 }) => {
   const [graphTextContent, setGraphTextContent] = useState<string>('');
   const [isEditing, setIsEditing] = useState<boolean>(false);
   const [hasErrors, setHasErrors] = useState<boolean>(false);
+  
+  // Debounce the text content with 0.5s delay for parsing
+  const debouncedTextContent = useDebounce(graphTextContent, 500);
 
   // Generate text representation from graph data (edge list format)
   const generateTextFromData = (graphData: GraphData): string => {
@@ -49,6 +54,38 @@ const TextPanel: React.FC<TextPanelProps> = ({
     }
   }, [data, isEditing]);
 
+  // Handle debounced text parsing when user stops typing
+  useEffect(() => {
+    // Only parse if we're editing and the debounced content is different from current data
+    if (isEditing && onDataChange && debouncedTextContent !== generateTextFromData(data)) {
+      parseTextToGraph(debouncedTextContent);
+    }
+  }, [debouncedTextContent, isEditing, onDataChange, data]);
+
+  // Parse text content and update graph data
+  const parseTextToGraph = (textContent: string) => {
+    try {
+      // Use the Graph.parseFromText method to parse the text
+      const parseResult = Graph.parseFromText(textContent);
+      
+      if (parseResult.success && parseResult.graph) {
+        // Get the parsed graph data
+        const newGraphData = parseResult.graph.getData();
+        
+        // Update the graph data via the callback
+        onDataChange?.(newGraphData);
+        setHasErrors(false);
+      } else {
+        // Handle parsing errors
+        console.warn('Text parsing failed:', parseResult.error);
+        setHasErrors(true);
+      }
+    } catch (error) {
+      console.error('Error parsing text to graph:', error);
+      setHasErrors(true);
+    }
+  };
+
   // Handle graph text area changes
   const handleGraphTextChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
     setGraphTextContent(event.target.value);
@@ -63,9 +100,10 @@ const TextPanel: React.FC<TextPanelProps> = ({
   // Handle graph text area blur
   const handleGraphTextBlur = () => {
     setIsEditing(false);
-    // TODO: Parse text and update graph data (Task 4.5)
-    // For now, just reset to current data
-    setGraphTextContent(generateTextFromData(data));
+    // Parse the final text content when user finishes editing
+    if (onDataChange && graphTextContent !== generateTextFromData(data)) {
+      parseTextToGraph(graphTextContent);
+    }
   };
 
   // Handle key events
