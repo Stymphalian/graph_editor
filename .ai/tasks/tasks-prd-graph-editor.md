@@ -86,10 +86,10 @@
   - [x] 4.2 Implement text format generation from graph data (Node Count, Graph Data, edges)
   - [x] 4.3 Implement two-textarea layout: read-only node count (top) and editable graph representation (bottom)
   - [x] 4.4 Add line numbers as visual indicators in the graph representation textarea
-  - [ ] 4.5 Implement debounced text parsing (0.5s delay) to update graph when text is modified
-  - [ ] 4.6 Add text format parsing with validation (ignore invalid lines, continue processing)
-  - [ ] 4.7 Implement partial graph updates/merging when text is parsed (preserve existing data)
-  - [ ] 4.8 Add real-time text panel updates when graph is modified visually
+  - [x] 4.5 Implement debounced text parsing (0.5s delay) to update graph when text is modified
+  - [skip] 4.6 Add text format parsing with validation (ignore invalid lines, continue processing)
+  - [x] 4.7 Implement partial graph updates/merging when text is parsed (preserve existing data)
+  - [x] 4.8 Add real-time text panel updates when graph is modified visually
   - [ ] 4.9 Implement bidirectional synchronization between visual and text representations
   - [ ] 4.10 Add support for edge weight display in text format (empty string for unweighted edges)
   - [ ] 4.11 Preserve user-typed order in text representation (maintain as-is formatting)

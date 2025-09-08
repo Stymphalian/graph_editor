@@ -134,3 +134,25 @@ After that update the task-prd section 4 with the list of tasks.
 
 
 
+Implement partial graph updates/merging when text is parsed (preserve existing data)
+When updating the text-panel with new graph data. Here is how I want the text updates 
+to work.
+
+1. On first initialization, just get the full text-format of the graph.
+2. For any subsequent updates.
+ - NODE_ADD             | Add node to the end of the text
+ - NODE_LABEL_CHANGE    | Find all isntance of that node label and then rename it.
+ - NODE_REMOVE          | Find all instances of that node label and the remove it. If
+                         the removed node appears in an edge. Delete those edge text lines too.
+ - EDGE_ADD             | Add the next edge at the end of text
+ - EDGE_REMOVE          | Find the text-line with that edge and remove it from the text.
+ - EDGE_WEIGHT_CHANGE   | Find the text-line with that edge and change the weight/remove it
+ - GRAPH_TYPE_CHANGE    | Do nothing.
+ - INDEXING_MODE_CHANGE | Regenerate the entire text from the new graph data.
+ - MAX_NODES_CHANGE     | Do nothing.
+
+
+
+Instead of using a lastOperation prop.
+You should be able to generate the list of updates by using GraphUtils to compare 
+the incoming graphData with the old graphData to run the changes.
