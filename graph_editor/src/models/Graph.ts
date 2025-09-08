@@ -714,8 +714,12 @@ export class Graph {
   }
 
   /**
-   * Parse graph from simple text format
-   * Format: number of nodes, then node labels, then edges
+   * Parse graph from edge-list text format
+   * Format: Each line is either a node label or an edge (from, to, [weight])
+   * - Single element: node label
+   * - Two elements: edge without weight
+   * - Three elements: edge with weight
+   * Invalid lines are ignored (duplicates, malformed lines)
    */
   static parseFromText(text: string): {
     success: boolean;
@@ -732,106 +736,92 @@ export class Graph {
         return { success: true, graph: new Graph() };
       }
 
-      // Parse number of nodes
-      const nodeCount = parseInt(lines[0]!);
-      if (isNaN(nodeCount) || nodeCount < 0) {
-        return { success: false, error: 'Invalid node count' };
-      }
-
-      if (nodeCount === 0) {
-        return { success: true, graph: new Graph() };
-      }
-
-      // Parse node labels
-      if (lines.length < nodeCount + 1) {
-        return { success: false, error: 'Not enough lines for node labels' };
-      }
-
-      const nodeLabels: string[] = [];
-      for (let i = 1; i <= nodeCount; i++) {
-        const label = lines[i]!.trim();
-        if (label.length === 0) {
-          return { success: false, error: `Empty node label at line ${i + 1}` };
-        }
-        nodeLabels.push(label);
-      }
-
-      // Check for duplicate labels
-      const uniqueLabels = new Set(nodeLabels);
-      if (uniqueLabels.size !== nodeLabels.length) {
-        return { success: false, error: 'Duplicate node labels found' };
-      }
-
-      // Create graph and add nodes
+      // Create graph
       const graph = new Graph();
       graph.setType('directed'); // Allow self-loops and directed edges
 
-      // Add nodes
-      for (let i = 0; i < nodeLabels.length; i++) {
-        const success = graph.addNode({
-          label: nodeLabels[i]!,
-        });
+      // Track processed nodes and edges to avoid duplicates
+      const processedNodes = new Set<string>();
+      const processedEdges = new Set<string>();
 
-        if (!success) {
-          return {
-            success: false,
-            error: `Failed to add node: ${nodeLabels[i]}`,
-          };
-        }
-      }
-
-      // Parse edges
-      const edgeLines = lines.slice(nodeCount + 1);
-      for (let i = 0; i < edgeLines.length; i++) {
-        const line = edgeLines[i]!.trim();
+      // Process each line
+      for (let i = 0; i < lines.length; i++) {
+        const line = lines[i]!.trim();
         if (line.length === 0) continue;
 
         const parts = line.split(/\s+/);
-        if (parts.length < 2) {
-          return {
-            success: false,
-            error: `Invalid edge format at line ${nodeCount + 2 + i}: ${line}`,
-          };
+        
+        // Skip lines with too many parts (>3)
+        if (parts.length > 3) {
+          continue;
         }
 
-        const sourceLabel = parts[0]!;
-        const targetLabel = parts[1]!;
-        const weight = parts.length > 2 ? parts[2]! : undefined;
+        if (parts.length === 1) {
+          // Single element: node label
+          const label = parts[0]!;
+          
+          // Skip if node already exists
+          if (processedNodes.has(label)) {
+            continue;
+          }
 
-        // Find source and target nodes
-        const sourceNode = graph.getNodes().find(n => n.label === sourceLabel);
-        const targetNode = graph.getNodes().find(n => n.label === targetLabel);
+          // Add node (ignore errors for duplicates)
+          const node = graph.addNode({ label });
+          if (node) {
+            processedNodes.add(label);
+          }
+        } else if (parts.length === 2 || parts.length === 3) {
+          // Two or three elements: edge
+          const sourceLabel = parts[0]!;
+          const targetLabel = parts[1]!;
+          const weight = parts.length === 3 ? parts[2]! : undefined;
 
-        if (!sourceNode) {
-          return {
-            success: false,
-            error: `Source node not found: ${sourceLabel}`,
-          };
+          // Create edge key for duplicate detection
+          const edgeKey = `${sourceLabel}->${targetLabel}`;
+          
+          // Skip if edge already exists
+          if (processedEdges.has(edgeKey)) {
+            continue;
+          }
+
+          // Ensure source node exists
+          if (!processedNodes.has(sourceLabel)) {
+            const sourceNode = graph.addNode({ label: sourceLabel });
+            if (sourceNode) {
+              processedNodes.add(sourceLabel);
+            }
+          }
+
+          // Ensure target node exists
+          if (!processedNodes.has(targetLabel)) {
+            const targetNode = graph.addNode({ label: targetLabel });
+            if (targetNode) {
+              processedNodes.add(targetLabel);
+            }
+          }
+
+          // Find the actual node objects
+          const sourceNode = graph.getNodeByLabel(sourceLabel);
+          const targetNode = graph.getNodeByLabel(targetLabel);
+
+          if (sourceNode && targetNode) {
+            // Add edge (ignore errors for duplicates)
+            const edgeData: EdgeCreationData = {
+              source: sourceNode.id,
+              target: targetNode.id,
+            };
+
+            if (weight !== undefined) {
+              edgeData.weight = weight;
+            }
+
+            const edge = graph.addEdge(edgeData);
+            if (edge) {
+              processedEdges.add(edgeKey);
+            }
+          }
         }
-        if (!targetNode) {
-          return {
-            success: false,
-            error: `Target node not found: ${targetLabel}`,
-          };
-        }
-
-        // Add edge
-        const edgeData: EdgeCreationData = {
-          source: sourceNode.id,
-          target: targetNode.id,
-        };
-
-        if (weight !== undefined) {
-          edgeData.weight = weight;
-        }
-
-        const success = graph.addEdge(edgeData);
-        if (!success) {
-          return {
-            success: false,
-            error: `Failed to add edge: ${sourceLabel} -> ${targetLabel}`,
-          };
-        }
+        // Lines with 0 parts (empty after trimming) are already filtered out
       }
 
       return { success: true, graph };

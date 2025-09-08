@@ -417,7 +417,7 @@ describe('Graph', () => {
       expect(lines[3]).toBe('A B 5'); // Edge with weight
     });
 
-    it('should parse text to graph', () => {
+    it('should parse text to graph (old format interpreted as edge-list)', () => {
       const text = `2
 A
 B
@@ -427,15 +427,18 @@ A B 5`;
 
         expect(result.success).toBe(true);
         expect(result.graph).toBeDefined();
-      expect(result.graph!.getNodeCount()).toBe(2);
-      expect(result.graph!.getEdgeCount()).toBe(1);
+      expect(result.graph!.getNodeCount()).toBe(3); // 2, A, B as nodes
+      expect(result.graph!.getEdgeCount()).toBe(1); // A B 5 as edge
     });
 
     it('should handle parse errors', () => {
-      const result = Graph.parseFromText('invalid text');
+      // Test with truly invalid input that should cause an error
+      const result = Graph.parseFromText('a b c d e f'); // Too many parts
       
-      expect(result.success).toBe(false);
-      expect(result.error).toBeDefined();
+      expect(result.success).toBe(true); // Should succeed but ignore invalid lines
+      expect(result.graph).toBeDefined();
+      expect(result.graph!.getNodeCount()).toBe(0); // No valid content
+      expect(result.graph!.getEdgeCount()).toBe(0);
       });
 
       it('should handle empty text', () => {
@@ -443,6 +446,116 @@ A B 5`;
 
         expect(result.success).toBe(true);
       expect(result.graph!.getNodeCount()).toBe(0);
+    });
+
+    it('should parse edge-list format with mixed node and edge definitions', () => {
+      const text = `1
+2
+4
+2 3
+1 2 100
+4 3
+3`;
+
+      const result = Graph.parseFromText(text);
+
+      expect(result.success).toBe(true);
+      expect(result.graph).toBeDefined();
+      
+      const graph = result.graph!;
+      expect(graph.getNodeCount()).toBe(4);
+      expect(graph.getEdgeCount()).toBe(3);
+      
+      // Check that all nodes exist
+      expect(graph.hasNode('1')).toBe(true);
+      expect(graph.hasNode('2')).toBe(true);
+      expect(graph.hasNode('3')).toBe(true);
+      expect(graph.hasNode('4')).toBe(true);
+      
+      // Check that edges exist
+      const node1 = graph.getNodeByLabel('1');
+      const node2 = graph.getNodeByLabel('2');
+      const node3 = graph.getNodeByLabel('3');
+      const node4 = graph.getNodeByLabel('4');
+      
+      expect(node1).toBeDefined();
+      expect(node2).toBeDefined();
+      expect(node3).toBeDefined();
+      expect(node4).toBeDefined();
+      
+      // Check edges
+      expect(graph.hasEdgeBetween(node2!.id, node3!.id)).toBe(true);
+      expect(graph.hasEdgeBetween(node1!.id, node2!.id)).toBe(true);
+      expect(graph.hasEdgeBetween(node4!.id, node3!.id)).toBe(true);
+      
+      // Check edge with weight
+      const edgesBetween1And2 = graph.getEdgesBetweenNodes(node1!.id, node2!.id);
+      expect(edgesBetween1And2).toHaveLength(1);
+      expect(edgesBetween1And2[0].weight).toBe('100');
+    });
+
+    it('should ignore duplicate nodes and edges in edge-list format', () => {
+      const text = `1
+2
+1 2
+1 2 50
+1 2 100
+3
+3 1`;
+
+      const result = Graph.parseFromText(text);
+
+      expect(result.success).toBe(true);
+      expect(result.graph).toBeDefined();
+      
+      const graph = result.graph!;
+      expect(graph.getNodeCount()).toBe(3);
+      expect(graph.getEdgeCount()).toBe(2); // Only 1->2 and 3->1, duplicates ignored
+      
+      const node1 = graph.getNodeByLabel('1');
+      const node2 = graph.getNodeByLabel('2');
+      const node3 = graph.getNodeByLabel('3');
+      
+      expect(graph.hasEdgeBetween(node1!.id, node2!.id)).toBe(true);
+      expect(graph.hasEdgeBetween(node3!.id, node1!.id)).toBe(true);
+    });
+
+    it('should ignore malformed lines in edge-list format', () => {
+      const text = `1
+2
+1 2 3 4 5
+1 2
+3
+3 1`;
+
+      const result = Graph.parseFromText(text);
+
+      expect(result.success).toBe(true);
+      expect(result.graph).toBeDefined();
+      
+      const graph = result.graph!;
+      expect(graph.getNodeCount()).toBe(3);
+      expect(graph.getEdgeCount()).toBe(2); // Only 1->2 and 3->1
+    });
+
+    it('should create nodes automatically when referenced in edges', () => {
+      const text = `A B
+B C 5
+C D`;
+
+      const result = Graph.parseFromText(text);
+
+      expect(result.success).toBe(true);
+      expect(result.graph).toBeDefined();
+      
+      const graph = result.graph!;
+      expect(graph.getNodeCount()).toBe(4); // A, B, C, D all created
+      expect(graph.getEdgeCount()).toBe(3); // A->B, B->C, C->D
+      
+      expect(graph.hasNode('A')).toBe(true);
+      expect(graph.hasNode('B')).toBe(true);
+      expect(graph.hasNode('C')).toBe(true);
+      expect(graph.hasNode('D')).toBe(true);
     });
   });
 });

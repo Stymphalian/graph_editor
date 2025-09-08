@@ -85,7 +85,7 @@
   - [x] 4.1 Create TextPanel component with textarea for graph data display
   - [x] 4.2 Implement text format generation from graph data (Node Count, Graph Data, edges)
   - [x] 4.3 Implement two-textarea layout: read-only node count (top) and editable graph representation (bottom)
-  - [ ] 4.4 Add line numbers as visual indicators in the graph representation textarea
+  - [x] 4.4 Add line numbers as visual indicators in the graph representation textarea
   - [ ] 4.5 Implement debounced text parsing (0.5s delay) to update graph when text is modified
   - [ ] 4.6 Add text format parsing with validation (ignore invalid lines, continue processing)
   - [ ] 4.7 Implement partial graph updates/merging when text is parsed (preserve existing data)
