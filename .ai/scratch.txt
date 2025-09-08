@@ -156,3 +156,9 @@ to work.
 Instead of using a lastOperation prop.
 You should be able to generate the list of updates by using GraphUtils to compare 
 the incoming graphData with the old graphData to run the changes.
+
+Create a new react hook which keeps tracks of the current and previous value.
+setting the state should save the previous value.
+
+As we parse each line keep track of all the nodes we have seen in the new and old text.
+

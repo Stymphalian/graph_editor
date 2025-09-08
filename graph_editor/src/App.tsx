@@ -7,6 +7,7 @@ import NodeIndexingControls from './components/NodeIndexingControls';
 import { Graph } from './models/Graph';
 import { GraphData, GraphType, NodeIndexingMode, GraphOperation } from './types/graph';
 import { Mode } from './components/ModeControls';
+import { applyGraphChanges, GraphDiffResult } from './models/GraphUtils';
 
 function App() {
   // Create a sample graph using the Graph model
@@ -283,7 +284,7 @@ function App() {
     setGraphData(currentGraph.getData());
   };
 
-  const handleGraphDataChange = (newData: GraphData) => {
+  const handleGraphDataChange = (newData: GraphDiffResult) => {
     console.log('Graph data changed from text panel:', newData);
     
     try {
@@ -291,40 +292,9 @@ function App() {
       setLastOperation({
         type: 'TEXT_BASED_CHANGE'
       });
-      
-      // Update the current graph with the new data
-      // First, clear the existing graph
-      currentGraph.reset();
-      
-      // Set the graph type and indexing mode
-      currentGraph.setType(newData.type);
-      currentGraph.setNodeIndexingMode(newData.nodeIndexingMode);
-      
-      // Add all nodes from the new data
-      for (const node of newData.nodes) {
-        const addedNode = currentGraph.addNode({ 
-          label: node.label, 
-          id: node.id 
-        });
-        if (!addedNode) {
-          console.error('Failed to add node:', currentGraph.getError());
-          return;
-        }
-      }
-      
-      // Add all edges from the new data
-      for (const edge of newData.edges) {
-        const addedEdge = currentGraph.addEdge({
-          source: edge.source,
-          target: edge.target,
-          ...(edge.weight && { weight: edge.weight })
-        });
-        if (!addedEdge) {
-          console.error('Failed to add edge:', currentGraph.getError());
-          return;
-        }
-      }
-      
+
+      applyGraphChanges(currentGraph, newData.changes);
+    
       // Update the graph data state to trigger re-render
       setGraphData(currentGraph.getData());
       console.log('Graph successfully updated from text panel');

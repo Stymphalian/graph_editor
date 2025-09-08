@@ -56,6 +56,7 @@ export interface LineOperation {
 
 export function extractDataChangesFromText(newText: string, prevText: string, originalGraph: GraphData): GraphDiffResult {
   const operations = extractLineOperationsFromText(newText, prevText);
+  console.log("@@@@ operations", operations);
   const changes: ChangeOperation[] = [];
 
   // Get current graph data for reference
@@ -186,8 +187,10 @@ function parseLineAsChange(
         type: ChangeType.EDGE_ADD,
         edge: { 
           id: '', 
-          source: 0, 
-          target: 0, 
+          source: 0,
+          target: 0,
+          sourceLabel: sourceLabel,
+          targetLabel: targetLabel,
           ...(weight && { weight })
         } // IDs will be resolved by labels
       };
@@ -214,10 +217,12 @@ function parseLineAsChange(
           const originalSource = originalParts[0];
           const originalTarget = originalParts[1];
           const originalWeight = originalParts.length >= 3 ? originalParts[2] : undefined;
+          const newSource = newParts[0];
+          const newTarget = newParts[1];
           const newWeight = newParts.length >= 3 ? newParts[2] : undefined;
           
           // If source and target are the same but weight changed
-          if (originalSource === sourceLabel && originalTarget === targetLabel && originalWeight !== newWeight) {
+          if (originalSource === newSource && originalTarget === newTarget && originalWeight !== newWeight) {
             return {
               type: ChangeType.EDGE_WEIGHT_CHANGE,
               originalValue: originalWeight,
@@ -227,22 +232,42 @@ function parseLineAsChange(
           }
           
           // If source or target changed, this is an edge replacement (remove + add)
-          if (originalSource !== sourceLabel || originalTarget !== targetLabel) {
-            return [
+          if (originalSource !== newSource || originalTarget !== newTarget) {
+            const operations: ChangeOperation[] = [
               {
                 type: ChangeType.EDGE_REMOVE,
                 edge: originalEdge
-              },
-              {
-                type: ChangeType.EDGE_ADD,
-                edge: { 
-                  id: '', 
-                  source: 0, 
-                  target: 0, 
-                  ...(newWeight && { weight: newWeight })
-                } // IDs will be resolved by labels
               }
             ];
+
+            // Check if new source node exists, if not add it
+            if (originalSource !== newSource && newSource && !nodeLabelToNode?.has(newSource)) {
+              operations.push({
+                type: ChangeType.NODE_ADD,
+                node: { id: 0, label: newSource } // ID will be assigned by the graph
+              });
+            }
+
+            // Check if new target node exists, if not add it
+            if (originalTarget !== newTarget && newTarget && !nodeLabelToNode?.has(newTarget)) {
+              operations.push({
+                type: ChangeType.NODE_ADD,
+                node: { id: 0, label: newTarget } // ID will be assigned by the graph
+              });
+            }
+
+            // Add the new edge
+            operations.push({
+              type: ChangeType.EDGE_ADD,
+              edge: { 
+                id: '', 
+                source: 0, 
+                target: 0, 
+                ...(newWeight && { weight: newWeight })
+              } // IDs will be resolved by labels
+            });
+
+            return operations;
           }
         }
       }
@@ -395,7 +420,7 @@ export function compareGraphs(original: Graph, edited: Graph): GraphDiffResult {
   const editedEdges = edited.getEdges();
 
   const nodeMatches = findNodeMatches(originalNodes, editedNodes);
-  const edgeMatches = findEdgeMatches(originalEdges, editedEdges, nodeMatches);
+  const edgeMatches = findEdgeMatches(originalEdges, editedEdges, originalNodes, editedNodes);
 
   const matchedOriginalNodeIds = new Set(nodeMatches.map(m => m.originalNode.id));
   const matchedEditedNodeIds = new Set(nodeMatches.map(m => m.editedNode.id));
@@ -526,18 +551,32 @@ export function findNodeMatches(original: Node[], edited: Node[]): NodeMatch[] {
 export function findEdgeMatches(
   original: Edge[],
   edited: Edge[],
-  nodeMatches: NodeMatch[]
+  originalNodes: Node[],
+  editedNodes: Node[]
 ): EdgeMatch[] {
   const matches: EdgeMatch[] = [];
   const usedEditedIndices = new Set<number>();
 
-  const nodeIdMap = new Map<number, number>();
-  for (const match of nodeMatches) {
-    nodeIdMap.set(match.originalNode.id, match.editedNode.id);
+  // Create node ID to label maps for both graphs
+  const originalNodeIdToLabel = new Map<number, string>();
+  const editedNodeIdToLabel = new Map<number, string>();
+  
+  for (const node of originalNodes) {
+    originalNodeIdToLabel.set(node.id, node.label);
+  }
+  
+  for (const node of editedNodes) {
+    editedNodeIdToLabel.set(node.id, node.label);
   }
 
   for (const originalEdge of original) {
     let bestMatch: { edge: Edge; index: number } | null = null;
+
+    // Get labels for the original edge
+    const originalSourceLabel = originalNodeIdToLabel.get(originalEdge.source);
+    const originalTargetLabel = originalNodeIdToLabel.get(originalEdge.target);
+
+    if (!originalSourceLabel || !originalTargetLabel) continue;
 
     for (let i = 0; i < edited.length; i++) {
       if (usedEditedIndices.has(i)) continue;
@@ -545,13 +584,17 @@ export function findEdgeMatches(
       const editedEdge = edited[i];
       if (!editedEdge) continue;
 
-      const originalSourceMapped = nodeIdMap.get(originalEdge.source);
-      const originalTargetMapped = nodeIdMap.get(originalEdge.target);
+      // Get labels for the edited edge
+      const editedSourceLabel = editedNodeIdToLabel.get(editedEdge.source);
+      const editedTargetLabel = editedNodeIdToLabel.get(editedEdge.target);
 
-      if (!originalSourceMapped || !originalTargetMapped) continue;
+      if (!editedSourceLabel || !editedTargetLabel) continue;
 
-      const directMatch = originalSourceMapped === editedEdge.source && originalTargetMapped === editedEdge.target;
-      const reverseMatch = originalSourceMapped === editedEdge.target && originalTargetMapped === editedEdge.source;
+      // Compare edges by their source and target labels
+      const directMatch = originalSourceLabel === editedSourceLabel && 
+                         originalTargetLabel === editedTargetLabel;
+      const reverseMatch = originalSourceLabel === editedTargetLabel && 
+                          originalTargetLabel === editedSourceLabel;
 
       if (directMatch || reverseMatch) {
         bestMatch = { edge: editedEdge, index: i };
@@ -611,7 +654,7 @@ function applyChange(graph: Graph, change: ChangeOperation): boolean {
   switch (change.type) {
     case ChangeType.NODE_ADD:
       if (change.node) {
-        return graph.addNode({ label: change.node.label, id: change.node.id }) !== null;
+        return graph.addNode({ id: change.node.id, label: change.node.label}) !== null;
       }
       return false;
     

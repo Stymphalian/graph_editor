@@ -92,8 +92,7 @@ describe('GraphUtils', () => {
       const originalEdges = originalGraph.getEdges();
       const editedEdges = editedGraph.getEdges();
       
-      const nodeMatches = findNodeMatches(originalNodes, editedNodes);
-      const edgeMatches = findEdgeMatches(originalEdges, editedEdges, nodeMatches);
+      const edgeMatches = findEdgeMatches(originalEdges, editedEdges, originalNodes, editedNodes);
       
       // Should match A-B edge (both nodes matched)
       expect(edgeMatches).toHaveLength(1);
@@ -125,16 +124,19 @@ describe('GraphUtils', () => {
         ]
       });
 
-      const nodeMatches = findNodeMatches(graphWithWeights.getNodes(), graphWithDifferentWeights.getNodes());
-      const edgeMatches = findEdgeMatches(graphWithWeights.getEdges(), graphWithDifferentWeights.getEdges(), nodeMatches);
+      const edgeMatches = findEdgeMatches(
+        graphWithWeights.getEdges(), 
+        graphWithDifferentWeights.getEdges(),
+        graphWithWeights.getNodes(),
+        graphWithDifferentWeights.getNodes()
+      );
       
       expect(edgeMatches).toHaveLength(1);
       expect(edgeMatches[0]?.isExact).toBe(false); // Different weights
     });
 
     it('should handle empty edge arrays', () => {
-      const nodeMatches = findNodeMatches(originalGraph.getNodes(), editedGraph.getNodes());
-      const edgeMatches = findEdgeMatches([], [], nodeMatches);
+      const edgeMatches = findEdgeMatches([], [], [], []);
       expect(edgeMatches).toHaveLength(0);
     });
   });
@@ -947,6 +949,55 @@ describe('GraphUtils', () => {
       expect(result.changes[0]?.type).toBe(ChangeType.EDGE_WEIGHT_CHANGE);
       expect(result.changes[0]?.originalValue).toBe('5');
       expect(result.changes[0]?.newValue).toBe('10');
+    });
+
+    it('should detect edge modifications with new node introduction', () => {
+      const prevText = 'Alice\nBob\nAlice Bob';
+      const newText = 'Alice\nBob\nDavid Bob';
+      
+      const result = extractDataChangesFromText(newText, prevText, testGraphData);
+      
+      // Should detect: removeEdge(Alice,Bob), addNode(David), addEdge(David,Bob)
+      expect(result.changes).toHaveLength(3);
+      
+      const removeOps = result.changes.filter(c => c.type === ChangeType.EDGE_REMOVE);
+      const addNodeOps = result.changes.filter(c => c.type === ChangeType.NODE_ADD);
+      const addEdgeOps = result.changes.filter(c => c.type === ChangeType.EDGE_ADD);
+      
+      expect(removeOps).toHaveLength(1);
+      expect(addNodeOps).toHaveLength(1);
+      expect(addEdgeOps).toHaveLength(1);
+      
+      // Check that the new node is David
+      expect(addNodeOps[0]?.node?.label).toBe('David');
+      
+      // Check that the edge removal references the original edge
+      expect(removeOps[0]?.edge).toBeDefined();
+      
+      // Check that the new edge has the correct structure
+      expect(addEdgeOps[0]?.edge).toBeDefined();
+    });
+
+    it('should detect edge modifications with both new source and target nodes', () => {
+      const prevText = 'Alice\nBob\nAlice Bob';
+      const newText = 'Alice\nBob\nEve Frank';
+      
+      const result = extractDataChangesFromText(newText, prevText, testGraphData);
+      
+      // Should detect: removeEdge(Alice,Bob), addNode(Eve), addNode(Frank), addEdge(Eve,Frank)
+      expect(result.changes).toHaveLength(4);
+      
+      const removeOps = result.changes.filter(c => c.type === ChangeType.EDGE_REMOVE);
+      const addNodeOps = result.changes.filter(c => c.type === ChangeType.NODE_ADD);
+      const addEdgeOps = result.changes.filter(c => c.type === ChangeType.EDGE_ADD);
+      
+      expect(removeOps).toHaveLength(1);
+      expect(addNodeOps).toHaveLength(2);
+      expect(addEdgeOps).toHaveLength(1);
+      
+      // Check that the new nodes are Eve and Frank
+      const nodeLabels = addNodeOps.map(op => op.node?.label).sort();
+      expect(nodeLabels).toEqual(['Eve', 'Frank']);
     });
 
     it('should handle multiple changes', () => {

@@ -8,16 +8,23 @@ import { useState, useRef, useCallback } from 'react';
 export function usePrevious<T>(initialValue: T) {
   const [current, setCurrent] = useState<T>(initialValue);
   const previousRef = useRef<T | undefined>(undefined);
+  const [isInitialized, setIsInitialized] = useState<boolean>(false);
 
   const setValue = useCallback((newValue: T) => {
-    previousRef.current = current;
+    console.log("@@@@ usePrevious.setValue", newValue);
+    if (isInitialized)  {
+        previousRef.current = current;
+    } else {
+        setIsInitialized(true);
+        previousRef.current = newValue;
+    }
     setCurrent(newValue);
   }, [current]);
 
   return {
     current,
     previous: previousRef.current,
-    setValue
+    setValue,
   };
 }
 

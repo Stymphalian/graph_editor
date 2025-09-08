@@ -21,6 +21,10 @@ export interface Edge {
   source: number;
   /** Target node ID */
   target: number;
+  /** Source node label */
+  sourceLabel?: string;
+  /** Target node label */
+  targetLabel?: string;
   /** Edge weight as string value */
   weight?: string;
 }
@@ -68,6 +72,15 @@ export interface EdgeCreationData {
   source: number;
   /** Target node ID */
   target: number;
+  /** Edge weight */
+  weight?: string;
+}
+
+export interface EdgeCreationDataWithLabels {
+  /** Source node label */
+  sourceLabel: string;
+  /** Target node label */
+  targetLabel: string;
   /** Edge weight */
   weight?: string;
 }

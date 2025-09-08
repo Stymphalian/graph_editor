@@ -10,6 +10,7 @@ import {
   GraphState,
   NodeCreationData,
   EdgeCreationData,
+  EdgeCreationDataWithLabels,
   NodeIndexingMode,
   GraphType,
 } from '../types/graph';
@@ -25,8 +26,8 @@ export class Graph {
   ) {
     this.state = {
       data: {
-        nodes: [],
-        edges: [],
+        nodes: initialData?.nodes || [],
+        edges: initialData?.edges || [],
         type: initialData?.type || 'undirected',
         nodeIndexingMode,
         maxNodes: 1000,
@@ -519,6 +520,16 @@ export class Graph {
     return { ...edge };
   }
 
+  addEdgeWithLabels(edgeData: EdgeCreationDataWithLabels): Edge | null {
+    let sourceId = this.findNodeByLabel(edgeData.sourceLabel)?.id;
+    let targetId = this.findNodeByLabel(edgeData.targetLabel)?.id;
+    if (!sourceId || !targetId) {
+      this.setError(`Cannot add edge: source or target node not found`);
+      return null;
+    }
+    return this.addEdge({ source: sourceId, target: targetId, ...(edgeData.weight && { weight: edgeData.weight }) });
+  }
+
   /**
    * Remove an edge by ID
    */
@@ -721,7 +732,7 @@ export class Graph {
    * - Three elements: edge with weight
    * Invalid lines are ignored (duplicates, malformed lines)
    */
-  static parseFromText(text: string): {
+  static parseFromText(text: string, graph: Graph): {
     success: boolean;
     graph?: Graph;
     error?: string;
@@ -733,12 +744,8 @@ export class Graph {
         .filter(line => line.length > 0);
 
       if (lines.length === 0) {
-        return { success: true, graph: new Graph() };
+        return { success: true, graph: graph };
       }
-
-      // Create graph
-      const graph = new Graph();
-      graph.setType('directed'); // Allow self-loops and directed edges
 
       // Track processed nodes and edges to avoid duplicates
       const processedNodes = new Set<string>();

@@ -2,11 +2,13 @@ import React, { useState, useEffect, useRef } from 'react';
 import { GraphData, GraphOperation } from '../types/graph';
 import { Graph } from '../models/Graph';
 import { useDebounce } from '../hooks/useDebounce';
+import { usePrevious } from '../hooks/usePrevious';
 import TextAreaWithLineNumbers from './TextAreaWithLineNumbers';
+import { compareGraphs, GraphDiffResult, extractDataChangesFromText } from '../models/GraphUtils';
 
 interface TextPanelProps {
   data: GraphData;
-  onDataChange?: (newData: GraphData) => void;
+  onDataChange?: (newData: GraphDiffResult) => void;
   className?: string;
   lastOperation?: GraphOperation | undefined;
 }
@@ -17,6 +19,7 @@ const TextPanel: React.FC<TextPanelProps> = ({
   className = '',
   lastOperation
 }) => {
+  // const { current: graphTextContent, previous: prevGraphTextContent, setValue: setGraphTextContent } = usePrevious<string>('');
   const [graphTextContent, setGraphTextContent] = useState<string>('');
   const [isEditing, setIsEditing] = useState<boolean>(false);
   const [hasErrors, setHasErrors] = useState<boolean>(false);
@@ -24,7 +27,7 @@ const TextPanel: React.FC<TextPanelProps> = ({
   const previousDataRef = useRef<GraphData | null>(null);
   
   // Debounce the text content with 0.5s delay for parsing
-  const debouncedTextContent = useDebounce(graphTextContent, 500);
+  const {current: debouncedTextContent, previous: prevGraphTextContent} = useDebounce(graphTextContent, 1000);
 
   // Generate text representation from graph data (edge list format)
   const generateTextFromData = (graphData: GraphData): string => {
@@ -175,17 +178,20 @@ const TextPanel: React.FC<TextPanelProps> = ({
     setGraphTextContent(generateTextFromData(data));
   };
 
-  // Update text content when data changes
+  // On first initialization, just get the full text-format of the graph
   useEffect(() => {
-    if (!isEditing) {
-      // On first initialization, just get the full text-format of the graph
       if (!isInitialized) {
-        setGraphTextContent(generateTextFromData(data));
+        const initialText = generateTextFromData(data);
+        setGraphTextContent(initialText);
         setIsInitialized(true);
         previousDataRef.current = { ...data };
         return;
       }
+  }, [data])
 
+  // Update text content when data changes
+  useEffect(() => {
+    if (!isEditing) {
       // For subsequent updates, use partial updates based on the operation type
       if (lastOperation && previousDataRef.current) {
         
@@ -264,52 +270,43 @@ const TextPanel: React.FC<TextPanelProps> = ({
         setGraphTextContent(generateTextFromData(data));
       }
       
-      // Update the previous data reference
+      // Update the previous data and text content references
       previousDataRef.current = { ...data };
     }
-  }, [data, lastOperation]);
+  }, [lastOperation]);
 
   // Handle debounced text parsing when user stops typing
   useEffect(() => {
-    // Only parse if we're editing and the debounced content is different from current data
-    // if (isEditing && onDataChange && debouncedTextContent !== generateTextFromData(data)) {
-    if (isEditing && onDataChange && debouncedTextContent !== graphTextContent) {
-      parseTextToGraph(debouncedTextContent);
-    }
-  }, [debouncedTextContent, isEditing, onDataChange, data]);
+      // Only parse if we're editing and the debounced content is different from current data
+      if (isEditing && onDataChange) {
+        let editedGraph = new Graph({}, data.nodeIndexingMode);
+        editedGraph.setType(data.type);
+        let result = Graph.parseFromText(debouncedTextContent, editedGraph);
+        if (!result.success) {
+          setHasErrors(true);
+          return;
+        }
+        console.log("@@@@ editedGraph", data.type, data.nodeIndexingMode);
 
-  // Parse text content and update graph data
-  const parseTextToGraph = (textContent: string) => {
-    try {
-      // Use the Graph.parseFromText method to parse the text
-      const parseResult = Graph.parseFromText(textContent);
-      
-      if (parseResult.success && parseResult.graph) {
-        // Get the parsed graph data
-        parseResult.graph.setType(data.type);
-        parseResult.graph.setNodeIndexingMode(data.nodeIndexingMode);
-        const newGraphData = parseResult.graph.getData();
-        
-        // Update the graph data via the callback
-        onDataChange?.(newGraphData);
-        setHasErrors(false);
-      } else {
-        // Handle parsing errors
-        console.warn('Text parsing failed:', parseResult.error);
-        setHasErrors(true);
+        let originalGraph = new Graph(data, data.nodeIndexingMode);
+        originalGraph.setType(data.type);
+
+        let diffResult = compareGraphs(originalGraph, editedGraph);
+        if (diffResult.changes.length > 0) {
+          onDataChange(diffResult);
+        }
+
       }
-    } catch (error) {
-      console.error('Error parsing text to graph:', error);
-      setHasErrors(true);
-    }
-  };
+    }, [debouncedTextContent]);
+
+
 
   // Handle graph text area changes
   const handleGraphTextChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
     // only set graphTextContent if it has changed.
     if (event.target.value !== graphTextContent) {
       setGraphTextContent(event.target.value);
-      setHasErrors(false); // Reset error state when user types
+      setHasErrors(false); // Reset error state when user types  
     }
   };
 
@@ -321,20 +318,20 @@ const TextPanel: React.FC<TextPanelProps> = ({
   // Handle graph text area blur
   const handleGraphTextBlur = () => {
     setIsEditing(false);
-    // Parse the final text content when user finishes editing
-    if (onDataChange && graphTextContent !== generateTextFromData(data)) {
-      parseTextToGraph(graphTextContent);
-    }
+    // // Parse the final text content when user finishes editing
+    // if (onDataChange && graphTextContent !== generateTextFromData(data)) {
+    //   parseTextToGraph(graphTextContent);
+    // }
   };
 
   // Handle key events
   const handleGraphTextKeyDown = (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (event.key === 'Escape') {
-      // Cancel editing and revert to current data
-      setIsEditing(false);
-      setGraphTextContent(generateTextFromData(data));
-      setHasErrors(false);
-    }
+    // if (event.key === 'Escape') {
+    //   // Cancel editing and revert to previous text content
+    //   setIsEditing(false);
+    //   setGraphTextContent(previousTextContentRef.current);
+    //   setHasErrors(false);
+    // }
   };
 
 
