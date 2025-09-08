@@ -90,7 +90,7 @@
   - [skip] 4.6 Add text format parsing with validation (ignore invalid lines, continue processing)
   - [x] 4.7 Implement partial graph updates/merging when text is parsed (preserve existing data)
   - [x] 4.8 Add real-time text panel updates when graph is modified visually
-  - [ ] 4.9 Implement bidirectional synchronization between visual and text representations
+  - [x] 4.9 Implement bidirectional synchronization between visual and text representations
   - [ ] 4.10 Add support for edge weight display in text format (empty string for unweighted edges)
   - [ ] 4.11 Preserve user-typed order in text representation (maintain as-is formatting)
   - [ ] 4.12 Ensure text panel serves as ground truth for graph data

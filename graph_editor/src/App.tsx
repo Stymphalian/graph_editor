@@ -287,6 +287,11 @@ function App() {
     console.log('Graph data changed from text panel:', newData);
     
     try {
+      // Set the operation for bidirectional sync - this was a text-based change
+      setLastOperation({
+        type: 'TEXT_BASED_CHANGE'
+      });
+      
       // Update the current graph with the new data
       // First, clear the existing graph
       currentGraph.reset();

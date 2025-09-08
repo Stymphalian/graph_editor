@@ -101,7 +101,8 @@ export type GraphOperationType =
   | 'EDGE_WEIGHT_CHANGE'
   | 'GRAPH_TYPE_CHANGE'
   | 'INDEXING_MODE_CHANGE'
-  | 'MAX_NODES_CHANGE';
+  | 'MAX_NODES_CHANGE'
+  | 'TEXT_BASED_CHANGE';
 
 export interface GraphOperation {
   /** Type of operation performed */

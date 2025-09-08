@@ -250,6 +250,10 @@ const TextPanel: React.FC<TextPanelProps> = ({
             // Do nothing for max nodes changes
             break;
             
+          case 'TEXT_BASED_CHANGE':
+            // Do nothing for text-based changes - the text is already correct
+            break;
+            
           default:
             // Fallback to full regeneration for unknown operations
             setGraphTextContent(generateTextFromData(data));
@@ -263,12 +267,13 @@ const TextPanel: React.FC<TextPanelProps> = ({
       // Update the previous data reference
       previousDataRef.current = { ...data };
     }
-  }, [data, isEditing, lastOperation, isInitialized]);
+  }, [data, lastOperation]);
 
   // Handle debounced text parsing when user stops typing
   useEffect(() => {
     // Only parse if we're editing and the debounced content is different from current data
-    if (isEditing && onDataChange && debouncedTextContent !== generateTextFromData(data)) {
+    // if (isEditing && onDataChange && debouncedTextContent !== generateTextFromData(data)) {
+    if (isEditing && onDataChange && debouncedTextContent !== graphTextContent) {
       parseTextToGraph(debouncedTextContent);
     }
   }, [debouncedTextContent, isEditing, onDataChange, data]);
@@ -281,6 +286,8 @@ const TextPanel: React.FC<TextPanelProps> = ({
       
       if (parseResult.success && parseResult.graph) {
         // Get the parsed graph data
+        parseResult.graph.setType(data.type);
+        parseResult.graph.setNodeIndexingMode(data.nodeIndexingMode);
         const newGraphData = parseResult.graph.getData();
         
         // Update the graph data via the callback
@@ -299,8 +306,11 @@ const TextPanel: React.FC<TextPanelProps> = ({
 
   // Handle graph text area changes
   const handleGraphTextChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setGraphTextContent(event.target.value);
-    setHasErrors(false); // Reset error state when user types
+    // only set graphTextContent if it has changed.
+    if (event.target.value !== graphTextContent) {
+      setGraphTextContent(event.target.value);
+      setHasErrors(false); // Reset error state when user types
+    }
   };
 
   // Handle graph text area focus
