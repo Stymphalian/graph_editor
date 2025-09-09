@@ -2,9 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { GraphData, GraphOperation } from '../types/graph';
 import { Graph } from '../models/Graph';
 import { useDebounce } from '../hooks/useDebounce';
-import { usePrevious } from '../hooks/usePrevious';
 import TextAreaWithLineNumbers from './TextAreaWithLineNumbers';
-import { compareGraphs, GraphDiffResult, extractDataChangesFromText } from '../models/GraphUtils';
+import { compareGraphs, GraphDiffResult } from '../models/GraphUtils';
 
 interface TextPanelProps {
   data: GraphData;
