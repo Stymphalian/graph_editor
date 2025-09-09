@@ -10,6 +10,10 @@ export type GraphType = 'directed' | 'undirected';
 export interface Node {
   /** Display label for the node */
   label: string;
+  /** X coordinate for node position */
+  x?: number;
+  /** Y coordinate for node position */
+  y?: number;
 }
 
 export interface Edge {
@@ -55,6 +59,10 @@ export interface GraphValidationResult {
 export interface NodeCreationData {
   /** Label for the new node */
   label: string;
+  /** X coordinate for node position */
+  x?: number;
+  /** Y coordinate for node position */
+  y?: number;
 }
 
 export interface EdgeCreationData {

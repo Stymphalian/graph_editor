@@ -17,6 +17,7 @@ interface GraphViewerProps {
   onEdgeWeightEdit?: (sourceLabel: string, targetLabel: string, newWeight: string) => void;
   onNodeDelete?: (nodeLabel: string) => void;
   onEdgeDelete?: (sourceLabel: string, targetLabel: string) => void;
+  onNodePositionUpdate?: (positions: Array<{ label: string; x: number; y: number }>) => void;
   onError?: (message: string) => void;
   errorMessage?: string | null;
   mode?: 'edit' | 'delete' | 'view-force';
@@ -35,6 +36,7 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
   onEdgeWeightEdit,
   onNodeDelete,
   onEdgeDelete,
+  onNodePositionUpdate,
   onError,
   errorMessage,
   mode = 'edit',
@@ -47,6 +49,10 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
   const [edgeCreationCancel, setEdgeCreationCancel] = useState<boolean>(false);
   const [showClickableAreas, setShowClickableAreas] = useState<boolean>(false);
   const [editingNodeLabel, setEditingNodeLabel] = useState<string | null>(null);
+  
+  // Throttling for position updates
+  const lastPositionUpdateRef = useRef<number>(0);
+  const positionUpdateThrottle = 50; // Update positions max every 50ms
   const [editingLabel, setEditingLabel] = useState<string>('');
   const [editingPosition, setEditingPosition] = useState<{ x: number; y: number } | null>(null);
   const [editingEdgeTuple, setEditingEdgeTuple] = useState<[string, string] | null>(null);
@@ -644,7 +650,16 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
               },
             });
 
+            const visibleEdge = edgeContainer.select('.graph-edge');
+            
             clickableEdge
+              .on('click', eventHandlers.click)
+              .on('dblclick', eventHandlers.dblclick)
+              .on('mouseenter', eventHandlers.mouseenter)
+              .on('mouseleave', eventHandlers.mouseleave);
+              
+            // Also attach event handlers to the visible edge line
+            visibleEdge
               .on('click', eventHandlers.click)
               .on('dblclick', eventHandlers.dblclick)
               .on('mouseenter', eventHandlers.mouseenter)
@@ -695,6 +710,13 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
             });
 
             clickableEdge
+              .on('click', eventHandlers.click)
+              .on('dblclick', eventHandlers.dblclick)
+              .on('mouseenter', eventHandlers.mouseenter)
+              .on('mouseleave', eventHandlers.mouseleave);
+              
+            // Also attach event handlers to the visible edge line
+            visibleEdge
               .on('click', eventHandlers.click)
               .on('dblclick', eventHandlers.dblclick)
               .on('mouseenter', eventHandlers.mouseenter)
@@ -880,7 +902,33 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
           (d: D3Node) => `translate(${d.x || 0},${d.y || 0})`
         );
 
+        // Save node positions back to the Graph model (throttled)
+        if (onNodePositionUpdate && simulation.nodes().length > 0) {
+          const now = Date.now();
+          if (now - lastPositionUpdateRef.current > positionUpdateThrottle) {
+            const positions = simulation.nodes().map((node: any) => ({
+              label: node.label || node.id,
+              x: node.x || 0,
+              y: node.y || 0,
+            }));
+            onNodePositionUpdate(positions);
+            lastPositionUpdateRef.current = now;
+          }
+        }
+
         updatePreviewLine();
+      });
+
+      // Save final positions when simulation ends
+      simulation.on('end', () => {
+        if (onNodePositionUpdate && simulation.nodes().length > 0) {
+          const positions = simulation.nodes().map((node: any) => ({
+            label: node.label || node.id,
+            x: node.x || 0,
+            y: node.y || 0,
+          }));
+          onNodePositionUpdate(positions);
+        }
       });
     
       if (mode === 'edit') {
@@ -896,7 +944,17 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
     const existingNodeMap = new Map(existingNodes.map((node: any) => [node.label, { x: node.x, y: node.y }]));
 
     const d3Nodes: D3Node[] = graphData.nodes.map((node, index) => {
-      // Preserve existing position if available
+      // First priority: Use stored position from Graph model
+      if (node.x !== undefined && node.y !== undefined) {
+        return {
+          id: node.label, // Use label as ID for D3
+          label: node.label,
+          x: node.x,
+          y: node.y,
+        };
+      }
+      
+      // Second priority: Preserve existing position from simulation if available
       const existingPos = existingNodeMap.get(node.label);
       if (existingPos && existingPos.x !== undefined && existingPos.y !== undefined) {
         return {
@@ -905,26 +963,26 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
           x: existingPos.x,
           y: existingPos.y,
         };
-      } else {
-        // Check if this is the newest node and we have a position for it
-        const isNewestNode = index === graphData.nodes.length - 1;
-        if (isNewestNode && newNodePosition) {
-          return {
-            id: node.label, // Use label as ID for D3
-            label: node.label,
-            x: newNodePosition.x,
-            y: newNodePosition.y,
-          };
-        } else {
-          // Generate new position for other new nodes
-          return {
-            id: node.label, // Use label as ID for D3
-            label: node.label,
-            x: 100 + (index % 4) * 200,
-            y: 100 + Math.floor(index / 4) * 200,
-          };
-        }
       }
+      
+      // Third priority: Check if this is the newest node and we have a position for it
+      const isNewestNode = index === graphData.nodes.length - 1;
+      if (isNewestNode && newNodePosition) {
+        return {
+          id: node.label, // Use label as ID for D3
+          label: node.label,
+          x: newNodePosition.x,
+          y: newNodePosition.y,
+        };
+      }
+      
+      // Fallback: Generate new position for other new nodes
+      return {
+        id: node.label, // Use label as ID for D3
+        label: node.label,
+        x: 100 + (index % 4) * 200,
+        y: 100 + Math.floor(index / 4) * 200,
+      };
     });
 
     const d3Edges: D3Edge[] = graphData.edges.map((edge, index) => ({
@@ -1021,7 +1079,7 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
       // Use a small delay to ensure the node has been positioned in the simulation
       const timer = setTimeout(() => {
         onNewNodePositioned();
-      }, 100);
+      }, 50);
       return () => clearTimeout(timer);
     }
     return undefined;

@@ -72,8 +72,8 @@ describe('GraphUtils', () => {
       const matches = findNodeMatches(originalNodes, editedNodes);
       
       // C and D should not match
-      const matchedOriginalIds = matches.map(m => m.originalNode.id);
-      const matchedEditedIds = matches.map(m => m.editedNode.id);
+      const matchedOriginalIds = matches.map(m => m.originalNode.label);
+      const matchedEditedIds = matches.map(m => m.editedNode.label);
       
       expect(matchedOriginalIds).not.toContain(3); // C not matched
       expect(matchedEditedIds).not.toContain(30);  // D not matched
@@ -1029,9 +1029,9 @@ describe('GraphUtils', () => {
       // Create a graph with the original data
       const cityGraphData: GraphData = {
         nodes: [
-          { id: 1, label: 'New York' },
-          { id: 2, label: 'Los Angeles' },
-          { id: 3, label: 'Chicago' }
+          { label: 'New York' },
+          { label: 'Los Angeles' },
+          { label: 'Chicago' }
         ],
         edges: [
           { source: 'A', target: 'B' },

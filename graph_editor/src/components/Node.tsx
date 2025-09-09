@@ -64,7 +64,7 @@ export const createNodeEventHandlers = (
       // Delay click handling to allow for double-click detection
       clickTimeout = setTimeout(() => {
         handlers.onNodeClick?.(node);
-      }, 200);
+      }, 100);
     },
     dblclick: (event: Event) => {
       event.stopPropagation();
@@ -156,16 +156,16 @@ export const applyNodeNibs = (nodeSelection: any, showNibs: boolean, radius: num
     
     // Add hover effects
     nib
-      .on('mouseenter', function() {
-        d3.select(this as any)
+      .on('mouseenter', function(this: SVGElement) {
+        d3.select(this)
           .transition()
           .duration(200)
           .attr('r', hoverRadius)
           .attr('fill', hoverFill)
           .style('filter', 'drop-shadow(0 0 4px rgba(25, 118, 210, 0.6))');
       })
-      .on('mouseleave', function() {
-        d3.select(this as any)
+      .on('mouseleave', function(this: SVGElement) {
+        d3.select(this)
           .transition()
           .duration(200)
           .attr('r', nibRadius)

@@ -65,7 +65,7 @@ describe('Edge Utility Functions', () => {
       eventHandlers.click(new Event('click'));
       
       // Wait for timeout to complete
-      await new Promise(resolve => setTimeout(resolve, 250));
+      await new Promise(resolve => setTimeout(resolve, 150));
       expect(clickedEdge).toEqual(mockEdge);
 
       // Test double click handler

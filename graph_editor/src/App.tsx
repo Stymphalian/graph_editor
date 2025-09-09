@@ -42,8 +42,8 @@ function App() {
     // Store the click coordinates for the new node
     setNewNodePosition({ x, y });
     
-    // Create a new node with auto-generated label
-    const newNode = currentGraph.addNodeWithAutoLabel();
+    // Create a new node with auto-generated label and coordinates
+    const newNode = currentGraph.addNodeWithAutoLabel(x, y);
     
     if (newNode) {
       console.log('Node created:', newNode);
@@ -56,6 +56,9 @@ function App() {
       setGraphData(currentGraph.getData());
     } else {
       console.error('Failed to create node:', currentGraph.getError());
+      // Show error to user via the error callback
+      const errorMessage = currentGraph.getError() || 'Failed to create node';
+      handleError(errorMessage);
     }
   };
 
@@ -243,6 +246,11 @@ function App() {
     // Additional cleanup can be added here as needed
   };
 
+  const handleNodePositionUpdate = (positions: Array<{ label: string; x: number; y: number }>) => {
+    // Update node positions in the Graph model
+    currentGraph.updateNodePositions(positions);
+  };
+
   const handleGraphTypeChange = (type: GraphType) => {
     console.log('Graph type changed to:', type);
     
@@ -333,6 +341,7 @@ function App() {
                     onEdgeWeightEdit={handleEdgeWeightEdit}
                     onNodeDelete={handleNodeDelete}
                     onEdgeDelete={handleEdgeDelete}
+                    onNodePositionUpdate={handleNodePositionUpdate}
                     onError={handleError}
                     errorMessage={errorMessage}
                     mode={currentMode}

@@ -50,7 +50,7 @@ export const createEdgeEventHandlers = (
       // Delay click handling to allow for double-click detection
       clickTimeout = setTimeout(() => {
         handlers.onEdgeClick?.(edge);
-      }, 200);
+      }, 100);
     },
     dblclick: (event: Event) => {
       event.stopPropagation();

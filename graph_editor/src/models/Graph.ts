@@ -317,6 +317,8 @@ export class Graph {
 
     const node: Node = {
       label: nodeData.label,
+      ...(nodeData.x !== undefined && { x: nodeData.x }),
+      ...(nodeData.y !== undefined && { y: nodeData.y }),
     };
 
     this.state.data.nodes.push(node);
@@ -329,10 +331,10 @@ export class Graph {
   /**
    * Add a node with auto-generated label based on indexing mode
    */
-  addNodeWithAutoLabel(): Node | null {
+  addNodeWithAutoLabel(x?: number, y?: number): Node | null {
     const index = this.getNextAvailableIndex();
     const label = this.generateNodeLabel(index);
-    return this.addNode({ label });
+    return this.addNode({ label, ...(x !== undefined && { x }), ...(y !== undefined && { y }) });
   }
 
   /**
@@ -436,6 +438,68 @@ export class Graph {
    */
   getNodeLabels(): string[] {
     return this.state.data.nodes.map(node => node.label);
+  }
+
+  /**
+   * Update node position by label
+   */
+  updateNodePosition(nodeLabel: string, x: number, y: number): boolean {
+    const nodeIndex = this.state.data.nodes.findIndex(
+      node => node.label === nodeLabel
+    );
+    if (nodeIndex === -1) {
+      this.setError(
+        `Cannot update node position: node with label '${nodeLabel}' not found`
+      );
+      return false;
+    }
+
+    this.state.data.nodes[nodeIndex] = {
+      ...this.state.data.nodes[nodeIndex]!,
+      x,
+      y,
+    };
+
+    this.markModified();
+    this.clearError();
+    return true;
+  }
+
+  /**
+   * Update multiple node positions at once
+   */
+  updateNodePositions(positions: Array<{ label: string; x: number; y: number }>): boolean {
+    let hasChanges = false;
+    
+    for (const { label, x, y } of positions) {
+      const node = this.findNodeByLabel(label);
+      if (node) {
+        // Only update if position actually changed
+        const currentX = node.x || 0;
+        const currentY = node.y || 0;
+        const threshold = 1; // Only update if change is more than 1 pixel
+        
+        if (Math.abs(currentX - x) > threshold || Math.abs(currentY - y) > threshold) {
+          const success = this.updateNodePosition(label, x, y);
+          if (success) {
+            hasChanges = true;
+          }
+        }
+      }
+    }
+    
+    return hasChanges;
+  }
+
+  /**
+   * Get node position by label
+   */
+  getNodePosition(nodeLabel: string): { x: number; y: number } | null {
+    const node = this.findNodeByLabel(nodeLabel);
+    if (!node || node.x === undefined || node.y === undefined) {
+      return null;
+    }
+    return { x: node.x, y: node.y };
   }
 
   // ==================== EDGE MANAGEMENT METHODS ====================
