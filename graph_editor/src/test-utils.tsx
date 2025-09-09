@@ -5,15 +5,15 @@ import { Node, Edge, GraphData } from '@/types/graph';
 
 // Mock data for testing
 export const mockNodes: Node[] = [
-  { id: 1, label: 'A' },
-  { id: 2, label: 'B' },
-  { id: 3, label: 'C' },
+  { label: 'A' },
+  { label: 'B' },
+  { label: 'C' },
 ];
 
 export const mockEdges: Edge[] = [
-  { id: 'edge1', source: 1, target: 2 },
-  { id: 'edge2', source: 2, target: 3 },
-  { id: 'edge3', source: 3, target: 1 },
+  { source: 'A', target: 'B' },
+  { source: 'B', target: 'C' },
+  { source: 'C', target: 'A' },
 ];
 
 export const mockGraphData: GraphData = {
@@ -39,13 +39,12 @@ export * from '@testing-library/react';
 export { customRender as render };
 
 // Test helpers
-export const createMockNode = (id: number, label: string): Node => ({
-  id,
+export const createMockNode = (label: string): Node => ({
   label,
 });
 
-export const createMockD3Node = (id: number, label: string, x = 0, y = 0): D3Node => ({
-  id,
+export const createMockD3Node = (label: string, x = 0, y = 0): D3Node => ({
+  id: label, // Use label as ID for D3 nodes
   label,
   x,
   y,
@@ -54,11 +53,10 @@ export const createMockD3Node = (id: number, label: string, x = 0, y = 0): D3Nod
 });
 
 export const createMockEdge = (
-  source: number,
-  target: number,
+  source: string,
+  target: string,
   weight?: string
 ): Edge => ({
-  id: `edge_${Math.random().toString(36).substr(2, 9)}`,
   source,
   target,
   ...(weight && { weight }),
@@ -70,7 +68,7 @@ export const createMockGraph = (nodeCount = 3, edgeCount = 2) => {
 
   // Create nodes
   for (let i = 0; i < nodeCount; i++) {
-    nodes.push(createMockNode(i + 1, String.fromCharCode(65 + i)));
+    nodes.push(createMockNode(String.fromCharCode(65 + i)));
   }
 
   // Create edges
@@ -80,7 +78,7 @@ export const createMockGraph = (nodeCount = 3, edgeCount = 2) => {
     const sourceNode = nodes[sourceIndex];
     const targetNode = nodes[targetIndex];
     if (sourceNode && targetNode) {
-      edges.push(createMockEdge(sourceNode.id, targetNode.id));
+      edges.push(createMockEdge(sourceNode.label, targetNode.label));
     }
   }
 

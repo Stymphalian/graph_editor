@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 
 /**
  * Custom hook that tracks both current and previous values
@@ -7,23 +7,16 @@ import { useState, useRef, useCallback } from 'react';
  */
 export function usePrevious<T>(initialValue: T) {
   const [current, setCurrent] = useState<T>(initialValue);
-  const previousRef = useRef<T | undefined>(undefined);
-  const [isInitialized, setIsInitialized] = useState<boolean>(false);
+  const [previous, setPrevious] = useState<T | undefined>(undefined);
 
   const setValue = useCallback((newValue: T) => {
-    console.log("@@@@ usePrevious.setValue", newValue);
-    if (isInitialized)  {
-        previousRef.current = current;
-    } else {
-        setIsInitialized(true);
-        previousRef.current = newValue;
-    }
+    setPrevious(current);
     setCurrent(newValue);
   }, [current]);
 
   return {
     current,
-    previous: previousRef.current,
+    previous,
     setValue,
   };
 }

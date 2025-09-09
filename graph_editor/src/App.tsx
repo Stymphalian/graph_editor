@@ -21,9 +21,9 @@ function App() {
     const nodeD = g.addNode({ label: 'D' });
 
     // Add sample edges using the actual node IDs
-    if (nodeA && nodeB) g.addEdge({ source: nodeA.id, target: nodeB.id, weight: '123456' });
-    if (nodeB && nodeC) g.addEdge({ source: nodeB.id, target: nodeC.id });
-    if (nodeC && nodeD) g.addEdge({ source: nodeC.id, target: nodeD.id });
+    if (nodeA && nodeB) g.addEdge({ source: nodeA.label, target: nodeB.label, weight: '123456' });
+    if (nodeB && nodeC) g.addEdge({ source: nodeB.label, target: nodeC.label });
+    if (nodeC && nodeD) g.addEdge({ source: nodeC.label, target: nodeD.label });
     // if (nodeD && nodeA) g.addEdge({ source: nodeD.id, target: nodeA.id });
 
     return g;
@@ -50,7 +50,7 @@ function App() {
       // Set the operation for partial text updates
       setLastOperation({
         type: 'NODE_ADD',
-        nodeId: newNode.id
+        nodeLabel: newNode.label
       });
       // Update the graph data state to trigger re-render without recreating the graph
       setGraphData(currentGraph.getData());
@@ -59,13 +59,13 @@ function App() {
     }
   };
 
-  const handleEdgeCreate = (sourceId: number, targetId: number) => {
-    console.log('Creating edge:', sourceId, '->', targetId);
+  const handleEdgeCreate = (sourceLabel: string, targetLabel: string) => {
+    console.log('Creating edge:', sourceLabel, '->', targetLabel);
     
-    // Create a new edge between the source and target nodes using their IDs
+    // Create a new edge between the source and target nodes using their labels
     const newEdge = currentGraph.addEdge({ 
-      source: sourceId, 
-      target: targetId 
+      source: sourceLabel, 
+      target: targetLabel 
     });
     
     if (newEdge) {
@@ -73,7 +73,7 @@ function App() {
       // Set the operation for partial text updates
       setLastOperation({
         type: 'EDGE_ADD',
-        edgeId: newEdge.id
+        edgeTuple: [sourceLabel, targetLabel]
       });
       // Update the graph data state to trigger re-render without recreating the graph
       setGraphData(currentGraph.getData());
@@ -82,22 +82,22 @@ function App() {
     }
   };
 
-  const handleNodeLabelEdit = (nodeId: number, newLabel: string) => {
-    console.log('Editing node label:', nodeId, '->', newLabel);
+  const handleNodeLabelEdit = (nodeLabel: string, newLabel: string) => {
+    console.log('Editing node label:', nodeLabel, '->', newLabel);
     
     // Get the current node to find the old label
-    const currentNode = currentGraph.getNodes().find(node => node.id === nodeId);
+    const currentNode = currentGraph.getNodes().find(node => node.label === nodeLabel);
     const oldLabel = currentNode?.label;
     
     // Update the node label using the Graph model
-    const updatedNode = currentGraph.updateNode(nodeId, { label: newLabel });
+    const updatedNode = currentGraph.updateNode(nodeLabel, { label: newLabel });
     
     if (updatedNode) {
       console.log('Node label updated:', updatedNode);
       // Set the operation for partial text updates
       setLastOperation({
         type: 'NODE_LABEL_CHANGE',
-        nodeId: nodeId,
+        nodeLabel: nodeLabel,
         previousValue: oldLabel,
         newValue: newLabel
       });
@@ -111,23 +111,23 @@ function App() {
     }
   };
 
-  const handleNodeDelete = (nodeId: number) => {
-    console.log('Deleting node:', nodeId);
+  const handleNodeDelete = (nodeLabel: string) => {
+    console.log('Deleting node:', nodeLabel);
     
     // Get the current node to find the label before deletion
-    const currentNode = currentGraph.getNodes().find(node => node.id === nodeId);
-    const nodeLabel = currentNode?.label;
+    const currentNode = currentGraph.getNodes().find(node => node.label === nodeLabel);
+    const nodeLabelToDelete = currentNode?.label;
     
     // Remove the node using the Graph model
-    const success = currentGraph.removeNode(nodeId);
+    const success = currentGraph.removeNode(nodeLabel);
     
     if (success) {
       console.log('Node deleted successfully');
       // Set the operation for partial text updates
       setLastOperation({
         type: 'NODE_REMOVE',
-        nodeId: nodeId,
-        previousValue: nodeLabel
+        nodeLabel: nodeLabel,
+        previousValue: nodeLabelToDelete
       });
       // Update the graph data state to trigger re-render
       setGraphData(currentGraph.getData());
@@ -139,36 +139,32 @@ function App() {
     }
   };
 
-  const handleEdgeDelete = (edgeId: string) => {
-    console.log('handleEdgeDelete called with edgeId:', edgeId);
+  const handleEdgeDelete = (sourceLabel: string, targetLabel: string) => {
+    console.log('handleEdgeDelete called with sourceLabel:', sourceLabel, 'targetLabel:', targetLabel);
     console.log('Current graph data before deletion:', currentGraph.getData());
     
-    // Get the current edge to find the source and target labels before deletion
-    const currentEdge = currentGraph.getEdges().find(edge => edge.id === edgeId);
+    // Get the current edge to find the weight before deletion
+    const currentEdge = currentGraph.getEdges().find(edge => edge.source === sourceLabel && edge.target === targetLabel);
     let edgeData = null;
     if (currentEdge) {
-      const sourceNode = currentGraph.getNodes().find(node => node.id === currentEdge.source);
-      const targetNode = currentGraph.getNodes().find(node => node.id === currentEdge.target);
-      if (sourceNode && targetNode) {
-        edgeData = {
-          sourceLabel: sourceNode.label,
-          targetLabel: targetNode.label,
-          weight: currentEdge.weight
-        };
-      }
+      edgeData = {
+        sourceLabel: currentEdge.source,
+        targetLabel: currentEdge.target,
+        weight: currentEdge.weight
+      };
     }
     
     // Remove the edge using the Graph model
-    const success = currentGraph.removeEdge(edgeId);
+    const success = currentGraph.removeEdgeByNodes(sourceLabel, targetLabel);
     
-    console.log('removeEdge result:', success);
+    console.log('removeEdgeByNodes result:', success);
     
     if (success) {
       console.log('Edge deleted successfully');
       // Set the operation for partial text updates
       setLastOperation({
         type: 'EDGE_REMOVE',
-        edgeId: edgeId,
+        edgeTuple: [sourceLabel, targetLabel],
         data: edgeData
       });
       const newData = currentGraph.getData();
@@ -183,33 +179,29 @@ function App() {
     }
   };
 
-  const handleEdgeWeightEdit = (edgeId: string, newWeight: string) => {
-    console.log('Editing edge weight:', edgeId, '->', newWeight);
+  const handleEdgeWeightEdit = (sourceLabel: string, targetLabel: string, newWeight: string) => {
+    console.log('Editing edge weight:', sourceLabel, '->', targetLabel, 'weight:', newWeight);
     
-    // Get the current edge to find the old weight and node labels
-    const currentEdge = currentGraph.getEdges().find(edge => edge.id === edgeId);
+    // Get the current edge to find the old weight
+    const currentEdge = currentGraph.getEdges().find(edge => edge.source === sourceLabel && edge.target === targetLabel);
     const oldWeight = currentEdge?.weight;
     let edgeData = null;
     if (currentEdge) {
-      const sourceNode = currentGraph.getNodes().find(node => node.id === currentEdge.source);
-      const targetNode = currentGraph.getNodes().find(node => node.id === currentEdge.target);
-      if (sourceNode && targetNode) {
-        edgeData = {
-          sourceLabel: sourceNode.label,
-          targetLabel: targetNode.label
-        };
-      }
+      edgeData = {
+        sourceLabel: currentEdge.source,
+        targetLabel: currentEdge.target
+      };
     }
     
     // Update the edge weight using the Graph model
-    const success = currentGraph.updateEdgeWeight(edgeId, newWeight);
+    const success = currentGraph.updateEdgeWeightByNodes(sourceLabel, targetLabel, newWeight);
     
     if (success) {
       console.log('Edge weight updated successfully');
       // Set the operation for partial text updates
       setLastOperation({
         type: 'EDGE_WEIGHT_CHANGE',
-        edgeId: edgeId,
+        edgeTuple: [sourceLabel, targetLabel],
         previousValue: oldWeight,
         newValue: newWeight,
         data: edgeData

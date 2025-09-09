@@ -22,27 +22,27 @@ describe('GraphUtils', () => {
     // Create a simple original graph
     originalGraph = new Graph({
       nodes: [
-        { id: 1, label: 'A' },
-        { id: 2, label: 'B' },
-        { id: 3, label: 'C' }
+        { label: 'A' },
+        { label: 'B' },
+        { label: 'C' }
       ],
       edges: [
-        { id: 'e1', source: 1, target: 2 },
-        { id: 'e2', source: 2, target: 3 }
+        { source: 'A', target: 'B' },
+        { source: 'B', target: 'C' }
       ],
       type: 'undirected'
     });
 
-    // Create an edited version with different IDs but similar structure
+    // Create an edited version with similar structure
     editedGraph = new Graph({
       nodes: [
-        { id: 10, label: 'A' },      // Same label, different ID
-        { id: 20, label: 'B' },      // Same label, different ID
-        { id: 30, label: 'D' }       // New node
+        { label: 'A' },      // Same label
+        { label: 'B' },      // Same label
+        { label: 'D' }       // New node
       ],
       edges: [
-        { id: 'edge1', source: 10, target: 20 },  // Same connection, different IDs
-        { id: 'edge2', source: 20, target: 30 }   // New connection
+        { source: 'A', target: 'B' },  // Same connection
+        { source: 'B', target: 'D' }   // New connection
       ],
       type: 'undirected'
     });
@@ -87,48 +87,44 @@ describe('GraphUtils', () => {
 
   describe('findEdgeMatches', () => {
     it('should match edges by corresponding node matches', () => {
-      const originalNodes = originalGraph.getNodes();
-      const editedNodes = editedGraph.getNodes();
       const originalEdges = originalGraph.getEdges();
       const editedEdges = editedGraph.getEdges();
       
-      const edgeMatches = findEdgeMatches(originalEdges, editedEdges, originalNodes, editedNodes);
+      const edgeMatches = findEdgeMatches(originalEdges, editedEdges);
       
       // Should match A-B edge (both nodes matched)
       expect(edgeMatches).toHaveLength(1);
-      expect(edgeMatches[0]?.originalEdge.source).toBe(1); // A
-      expect(edgeMatches[0]?.originalEdge.target).toBe(2); // B
-      expect(edgeMatches[0]?.editedEdge.source).toBe(10); // A
-      expect(edgeMatches[0]?.editedEdge.target).toBe(20); // B
+      expect(edgeMatches[0]?.originalEdge.source).toBe('A');
+      expect(edgeMatches[0]?.originalEdge.target).toBe('B');
+      expect(edgeMatches[0]?.editedEdge.source).toBe('A');
+      expect(edgeMatches[0]?.editedEdge.target).toBe('B');
       expect(edgeMatches[0]?.isExact).toBe(true);
     });
 
     it('should detect edge weight changes', () => {
       const graphWithWeights = new Graph({
         nodes: [
-          { id: 1, label: 'A' },
-          { id: 2, label: 'B' }
+          { label: 'A' },
+          { label: 'B' }
         ],
         edges: [
-          { id: 'e1', source: 1, target: 2, weight: '5' }
+          { source: 'A', target: 'B', weight: '5' }
         ]
       });
 
       const graphWithDifferentWeights = new Graph({
         nodes: [
-          { id: 10, label: 'A' },
-          { id: 20, label: 'B' }
+          { label: 'A' },
+          { label: 'B' }
         ],
         edges: [
-          { id: 'e2', source: 10, target: 20, weight: '10' }
+          { source: 'A', target: 'B', weight: '10' }
         ]
       });
 
       const edgeMatches = findEdgeMatches(
         graphWithWeights.getEdges(), 
-        graphWithDifferentWeights.getEdges(),
-        graphWithWeights.getNodes(),
-        graphWithDifferentWeights.getNodes()
+        graphWithDifferentWeights.getEdges()
       );
       
       expect(edgeMatches).toHaveLength(1);
@@ -136,7 +132,7 @@ describe('GraphUtils', () => {
     });
 
     it('should handle empty edge arrays', () => {
-      const edgeMatches = findEdgeMatches([], [], [], []);
+      const edgeMatches = findEdgeMatches([], []);
       expect(edgeMatches).toHaveLength(0);
     });
   });
@@ -168,13 +164,13 @@ describe('GraphUtils', () => {
 
     it('should detect graph property changes', () => {
       const directedGraph = new Graph({
-        nodes: [{ id: 1, label: 'A' }],
+        nodes: [{ label: 'A' }],
         edges: [],
         type: 'directed'
       });
 
       const undirectedGraph = new Graph({
-        nodes: [{ id: 1, label: 'A' }],
+        nodes: [{ label: 'A' }],
         edges: [],
         type: 'undirected'
       });
@@ -203,16 +199,16 @@ describe('GraphUtils', () => {
     it('should handle graphs with only nodes (no edges)', () => {
       const nodesOnlyOriginal = new Graph({
         nodes: [
-          { id: 1, label: 'A' },
-          { id: 2, label: 'B' }
+          { label: 'A' },
+          { label: 'B' }
         ],
         edges: []
       });
 
       const nodesOnlyEdited = new Graph({
         nodes: [
-          { id: 10, label: 'A' },
-          { id: 20, label: 'C' }
+          { label: 'A' },
+          { label: 'C' }
         ],
         edges: []
       });
@@ -265,8 +261,8 @@ describe('GraphUtils', () => {
       // Create a fresh copy for this test
       const testGraph = new Graph(originalGraph.getData());
       const changes = [
-        { type: ChangeType.NODE_ADD, node: { id: 4, label: 'D' } },
-        { type: ChangeType.NODE_REMOVE, node: { id: 3, label: 'C' } }
+        { type: ChangeType.NODE_ADD, node: { label: 'D' } },
+        { type: ChangeType.NODE_REMOVE, node: { label: 'C' } }
       ];
 
       const result = applyGraphChanges(testGraph, changes);
@@ -288,7 +284,7 @@ describe('GraphUtils', () => {
       const changes = [
         { 
           type: ChangeType.NODE_LABEL_CHANGE, 
-          node: { id: 2, label: 'B' },
+          node: { label: 'B' },
           originalValue: 'B',
           newValue: 'X'
         }
@@ -300,8 +296,8 @@ describe('GraphUtils', () => {
       expect(result.errors).toHaveLength(0);
       expect(result.transformedGraph).toBe(testGraph); // Should be the same reference
       
-      const nodeB = testGraph.getNodes().find(n => n.id === 2);
-      expect(nodeB?.label).toBe('X');
+      const nodeX = testGraph.getNodes().find(n => n.label === 'X');
+      expect(nodeX?.label).toBe('X');
     });
 
     it('should apply edge additions and removals', () => {
@@ -309,11 +305,11 @@ describe('GraphUtils', () => {
       const changes = [
         { 
           type: ChangeType.EDGE_ADD, 
-          edge: { id: 'e3', source: 1, target: 3 }
+          edge: { source: 'A', target: 'C' }
         },
         { 
           type: ChangeType.EDGE_REMOVE, 
-          edge: { id: 'e2', source: 2, target: 3 }
+          edge: { source: 'B', target: 'C' }
         }
       ];
 
@@ -325,31 +321,31 @@ describe('GraphUtils', () => {
       expect(testGraph.getEdges()).toHaveLength(2); // e1, new edge
       
       const edges = testGraph.getEdges();
-      const edgeIds = edges.map(e => e.id);
-      expect(edgeIds).toContain('e1');
-      expect(edgeIds).not.toContain('e2');
+      const edgeTuples = edges.map(e => `${e.source}-${e.target}`);
+      expect(edgeTuples).toContain('A-B');
+      expect(edgeTuples).not.toContain('B-C');
       
-      // Check that the new edge connects nodes 1 and 3
-      const newEdge = edges.find(e => e.id !== 'e1');
-      expect(newEdge?.source).toBe(1);
-      expect(newEdge?.target).toBe(3);
+      // Check that the new edge connects nodes A and C
+      const newEdge = edges.find(e => e.source !== 'A' || e.target !== 'B');
+      expect(newEdge?.source).toBe('A');
+      expect(newEdge?.target).toBe('C');
     });
 
     it('should apply edge weight changes', () => {
       const graphWithWeightedEdge = new Graph({
         nodes: [
-          { id: 1, label: 'A' },
-          { id: 2, label: 'B' }
+          { label: 'A' },
+          { label: 'B' }
         ],
         edges: [
-          { id: 'e1', source: 1, target: 2, weight: '5' }
+          { source: 'A', target: 'B', weight: '5' }
         ]
       });
 
       const changes = [
         { 
           type: ChangeType.EDGE_WEIGHT_CHANGE, 
-          edge: { id: 'e1', source: 1, target: 2, weight: '5' },
+          edge: { source: 'A', target: 'B', weight: '5' },
           originalValue: '5',
           newValue: '10'
         }
@@ -361,7 +357,7 @@ describe('GraphUtils', () => {
       expect(result.errors).toHaveLength(0);
       expect(result.transformedGraph).toBe(graphWithWeightedEdge); // Should be the same reference
       
-      const edge = graphWithWeightedEdge.getEdges().find(e => e.id === 'e1');
+      const edge = graphWithWeightedEdge.getEdges().find(e => e.source === 'A' && e.target === 'B');
       expect(edge?.weight).toBe('10');
     });
 
@@ -404,17 +400,17 @@ describe('GraphUtils', () => {
     it('should handle multiple changes in sequence', () => {
       const testGraph = new Graph(originalGraph.getData());
       const changes = [
-        { type: ChangeType.NODE_ADD, node: { id: 4, label: 'D' } },
-        { type: ChangeType.NODE_REMOVE, node: { id: 3, label: 'C' } },
+        { type: ChangeType.NODE_ADD, node: { label: 'D' } },
+        { type: ChangeType.NODE_REMOVE, node: { label: 'C' } },
         { 
           type: ChangeType.NODE_LABEL_CHANGE, 
-          node: { id: 2, label: 'B' },
+          node: { label: 'B' },
           originalValue: 'B',
           newValue: 'X'
         },
         { 
           type: ChangeType.EDGE_ADD, 
-          edge: { id: 'e3', source: 1, target: 4 }
+          edge: { source: 'A', target: 'D' }
         }
       ];
 
@@ -436,8 +432,8 @@ describe('GraphUtils', () => {
       expect(edges).toHaveLength(2); // e1, new edge (A-D)
       
       // Check that there's an edge from A to D
-      const edgeToD = edges.find(e => e.target === 4);
-      expect(edgeToD?.source).toBe(1);
+      const edgeToD = edges.find(e => e.target === 'D');
+      expect(edgeToD?.source).toBe('A');
     });
 
     it('should handle empty changes array', () => {
@@ -833,13 +829,13 @@ describe('GraphUtils', () => {
     beforeEach(() => {
       testGraphData = {
         nodes: [
-          { id: 1, label: 'Alice' },
-          { id: 2, label: 'Bob' },
-          { id: 3, label: 'Charlie' }
+          { label: 'Alice' },
+          { label: 'Bob' },
+          { label: 'Charlie' }
         ],
         edges: [
-          { id: 'edge_1', source: 1, target: 2 },
-          { id: 'edge_2', source: 2, target: 3, weight: '5' }
+          { source: 'Alice', target: 'Bob' },
+          { source: 'Bob', target: 'Charlie', weight: '5' }
         ],
         type: 'directed',
         nodeIndexingMode: '1-indexed',
@@ -890,8 +886,8 @@ describe('GraphUtils', () => {
       
       expect(result.changes).toHaveLength(1);
       expect(result.changes[0]?.type).toBe(ChangeType.EDGE_ADD);
-      expect(result.changes[0]?.edge?.source).toBe(0); // Will be resolved by labels
-      expect(result.changes[0]?.edge?.target).toBe(0); // Will be resolved by labels
+      expect(result.changes[0]?.edge?.source).toBe('Bob'); // Will be resolved by labels
+      expect(result.changes[0]?.edge?.target).toBe('Charlie'); // Will be resolved by labels
     });
 
     it('should detect edge removals', () => {
@@ -1038,8 +1034,8 @@ describe('GraphUtils', () => {
           { id: 3, label: 'Chicago' }
         ],
         edges: [
-          { id: 'edge_1', source: 1, target: 2 },
-          { id: 'edge_2', source: 2, target: 3 }
+          { source: 'A', target: 'B' },
+          { source: 'B', target: 'C' }
         ],
         type: 'directed',
         nodeIndexingMode: '1-indexed',
@@ -1063,13 +1059,13 @@ describe('GraphUtils', () => {
       // Create a graph with the original data
       const nodeGraphData: GraphData = {
         nodes: [
-          { id: 1, label: 'Node1' },
-          { id: 2, label: 'Node2' },
-          { id: 3, label: 'Node3' }
+          { label: 'Node1' },
+          { label: 'Node2' },
+          { label: 'Node3' }
         ],
         edges: [
-          { id: 'edge_1', source: 1, target: 2 },
-          { id: 'edge_2', source: 2, target: 3 }
+          { source: 'Node1', target: 'Node2' },
+          { source: 'Node2', target: 'Node3' }
         ],
         type: 'directed',
         nodeIndexingMode: '1-indexed',

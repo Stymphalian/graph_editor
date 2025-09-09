@@ -8,23 +8,15 @@ export type NodeIndexingMode = '0-indexed' | '1-indexed' | 'custom';
 export type GraphType = 'directed' | 'undirected';
 
 export interface Node {
-  /** Unique identifier for the node */
-  id: number;
   /** Display label for the node */
   label: string;
 }
 
 export interface Edge {
-  /** Unique identifier for the edge */
-  id: string;
-  /** Source node ID */
-  source: number;
-  /** Target node ID */
-  target: number;
   /** Source node label */
-  sourceLabel?: string;
+  source: string;
   /** Target node label */
-  targetLabel?: string;
+  target: string;
   /** Edge weight as string value */
   weight?: string;
 }
@@ -63,15 +55,13 @@ export interface GraphValidationResult {
 export interface NodeCreationData {
   /** Label for the new node */
   label: string;
-  /** Optional ID for the new node (auto-generated if not provided) */
-  id?: number;
 }
 
 export interface EdgeCreationData {
-  /** Source node ID */
-  source: number;
-  /** Target node ID */
-  target: number;
+  /** Source node label */
+  source: string;
+  /** Target node label */
+  target: string;
   /** Edge weight */
   weight?: string;
 }
@@ -120,10 +110,10 @@ export type GraphOperationType =
 export interface GraphOperation {
   /** Type of operation performed */
   type: GraphOperationType;
-  /** Node ID affected (for node operations) */
-  nodeId?: number;
-  /** Edge ID affected (for edge operations) */
-  edgeId?: string;
+  /** Node label affected (for node operations) */
+  nodeLabel?: string;
+  /** Edge tuple (source, target) affected (for edge operations) */
+  edgeTuple?: [string, string];
   /** Previous value (for updates) */
   previousValue?: string | undefined;
   /** New value (for updates) */

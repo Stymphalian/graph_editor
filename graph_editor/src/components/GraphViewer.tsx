@@ -12,11 +12,11 @@ interface GraphViewerProps {
   width?: number;
   height?: number;
   onNodeCreate?: (x: number, y: number) => void;
-  onEdgeCreate?: (sourceId: number, targetId: number) => void;
-  onNodeLabelEdit?: (nodeId: number, newLabel: string) => void;
-  onEdgeWeightEdit?: (edgeId: string, newWeight: string) => void;
-  onNodeDelete?: (nodeId: number) => void;
-  onEdgeDelete?: (edgeId: string) => void;
+  onEdgeCreate?: (sourceLabel: string, targetLabel: string) => void;
+  onNodeLabelEdit?: (nodeLabel: string, newLabel: string) => void;
+  onEdgeWeightEdit?: (sourceLabel: string, targetLabel: string, newWeight: string) => void;
+  onNodeDelete?: (nodeLabel: string) => void;
+  onEdgeDelete?: (sourceLabel: string, targetLabel: string) => void;
   onError?: (message: string) => void;
   errorMessage?: string | null;
   mode?: 'edit' | 'delete' | 'view-force';
@@ -43,36 +43,34 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
   onModeTransitionCleanup,
 }) => {
   // Internal selection state
-  // const [selectedNodeId, setSelectedNodeId] = useState<number | null>(null);
-  // const [selectedEdgeId, setSelectedEdgeId] = useState<string | null>(null);
   const [selectionChange, setSelectionChange] = useState<boolean>(false);
   const [edgeCreationCancel, setEdgeCreationCancel] = useState<boolean>(false);
   const [showClickableAreas, setShowClickableAreas] = useState<boolean>(false);
-  const [editingNodeId, setEditingNodeId] = useState<number | null>(null);
+  const [editingNodeLabel, setEditingNodeLabel] = useState<string | null>(null);
   const [editingLabel, setEditingLabel] = useState<string>('');
   const [editingPosition, setEditingPosition] = useState<{ x: number; y: number } | null>(null);
-  const [editingEdgeId, setEditingEdgeId] = useState<string | null>(null);
+  const [editingEdgeTuple, setEditingEdgeTuple] = useState<[string, string] | null>(null);
   const [editingWeight, setEditingWeight] = useState<string>('');
   const [editingEdgePosition, setEditingEdgePosition] = useState<{ x: number; y: number } | null>(null);
 
   // Internal click handlers
   const handleNodeClick = (node: Node) => {
-    d3InstanceRef.current!.selectedNodeId = node.id;
-    d3InstanceRef.current!.selectedEdgeId = null;
+    d3InstanceRef.current!.selectedNodeId = node.label;
+    d3InstanceRef.current!.selectedEdgeTuple = null;
     setSelectionChange(val => !val);
   };
 
   const handleEdgeClick = (edge: Edge) => {
-    d3InstanceRef.current!.selectedEdgeId = edge.id;
+    d3InstanceRef.current!.selectedEdgeTuple = [edge.source, edge.target];
     d3InstanceRef.current!.selectedNodeId = null;
     setSelectionChange(val => !val);
   };
 
   const handleNodeLabelEdit = (node: Node) => {
     // Find the node's current position in the D3 simulation
-    const d3Node = d3InstanceRef.current?.simulation?.nodes()?.find((n: any) => n.id === node.id);
+    const d3Node = d3InstanceRef.current?.simulation?.nodes()?.find((n: any) => n.id === node.label);
     if (d3Node && d3Node.x !== undefined && d3Node.y !== undefined) {
-      setEditingNodeId(node.id);
+      setEditingNodeLabel(node.label);
       setEditingLabel(node.label);
       
       // Calculate position relative to the container, accounting for SVG centering
@@ -89,16 +87,16 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
   };
 
   const handleLabelEditSave = () => {
-    if (editingNodeId && editingLabel.trim() !== '') {
-      onNodeLabelEdit?.(editingNodeId, editingLabel.trim());
+    if (editingNodeLabel && editingLabel.trim() !== '') {
+      onNodeLabelEdit?.(editingNodeLabel, editingLabel.trim());
     }
-    setEditingNodeId(null);
+    setEditingNodeLabel(null);
     setEditingLabel('');
     setEditingPosition(null);
   };
 
   const handleLabelEditCancel = () => {
-    setEditingNodeId(null);
+    setEditingNodeLabel(null);
     setEditingLabel('');
     setEditingPosition(null);
   };
@@ -120,7 +118,7 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
         sourceNode.x !== undefined && sourceNode.y !== undefined &&
         targetNode.x !== undefined && targetNode.y !== undefined) {
       
-      setEditingEdgeId(edge.id);
+      setEditingEdgeTuple([edge.source, edge.target]);
       setEditingWeight(edge.weight || '');
       
       // Calculate the midpoint of the edge
@@ -141,16 +139,16 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
   };
 
   const handleWeightEditSave = () => {
-    if (editingEdgeId) {
-      onEdgeWeightEdit?.(editingEdgeId, editingWeight.trim());
+    if (editingEdgeTuple) {
+      onEdgeWeightEdit?.(editingEdgeTuple[0], editingEdgeTuple[1], editingWeight.trim());
     }
-    setEditingEdgeId(null);
+    setEditingEdgeTuple(null);
     setEditingWeight('');
     setEditingEdgePosition(null);
   };
 
   const handleWeightEditCancel = () => {
-    setEditingEdgeId(null);
+    setEditingEdgeTuple(null);
     setEditingWeight('');
     setEditingEdgePosition(null);
   };
@@ -169,10 +167,10 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
     svg: any;
     container: any;
     simulation: ForceSimulation | null;
-    edgeCreationSource: number | null;
+    edgeCreationSource: string | null;
     mousePosition: { x: number; y: number } | null;
-    selectedNodeId: number | null | undefined;
-    selectedEdgeId: string | null | undefined;
+    selectedNodeId: string | null | undefined;
+    selectedEdgeTuple: [string, string] | null | undefined;
   } | null>(null);
   const [dimensions, setDimensions] = useState({
     width: Math.min(width || 800, height || 600),
@@ -283,7 +281,7 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
         // Cancel edge creation if in edge creation mode
         if (d3InstanceRef.current?.edgeCreationSource) {
           d3InstanceRef.current.selectedNodeId = null;
-          d3InstanceRef.current.selectedEdgeId = null;
+          d3InstanceRef.current.selectedEdgeTuple = null;
           setSelectionChange(val => !val);
 
           d3InstanceRef.current.edgeCreationSource = null;
@@ -294,9 +292,9 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
           return;
         }
 
-        if (d3InstanceRef.current?.selectedNodeId || d3InstanceRef.current?.selectedEdgeId) {
+        if (d3InstanceRef.current?.selectedNodeId || d3InstanceRef.current?.selectedEdgeTuple) {
           d3InstanceRef.current.selectedNodeId = null;
-          d3InstanceRef.current.selectedEdgeId = null;
+          d3InstanceRef.current.selectedEdgeTuple = null;
           setSelectionChange(val => !val);
           return;
         }
@@ -335,7 +333,7 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
       edgeCreationSource: null,
       mousePosition: null,
       selectedNodeId: null,
-      selectedEdgeId: null,
+      selectedEdgeTuple: null,
     };
 
     // Setup SVG event handlers
@@ -403,7 +401,7 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
       // Check if we're in edge creation mode
       if (d3InstanceRef.current?.edgeCreationSource) {
         // Handle edge creation
-        if (d3InstanceRef.current.edgeCreationSource === node.id) {
+        if (d3InstanceRef.current.edgeCreationSource === node.label) {
           // Cancel edge creation if clicking the same node
           d3InstanceRef.current.edgeCreationSource = null;
           d3InstanceRef.current.mousePosition = null;
@@ -413,18 +411,18 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
           }
         } else {
           // Complete edge creation and continue from target node
-          onEdgeCreate?.(d3InstanceRef.current.edgeCreationSource, node.id);
+          onEdgeCreate?.(d3InstanceRef.current.edgeCreationSource, node.label);
           // Continue edge creation from the target node
-          d3InstanceRef.current!.edgeCreationSource = node.id;
+          d3InstanceRef.current!.edgeCreationSource = node.label;
           // Select the target node to show its nib
-          const originalNode = data.nodes.find(n => n.id === node.id);
+          const originalNode = data.nodes.find(n => n.label === node.label);
           if (originalNode) {
             handleNodeClick(originalNode);
           }
         }
       } else {
         // Handle node selection/deselection
-        const originalNode = data.nodes.find(n => n.id === node.id);
+        const originalNode = data.nodes.find(n => n.label === node.label);
         if (originalNode) {
           handleNodeClick(originalNode);
         } else {
@@ -432,10 +430,10 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
       }
     } else if (mode === 'delete') {
       // Handle node deletion in delete mode
-      onNodeDelete?.(node.id);
+      onNodeDelete?.(node.label);
     } else {
       // Handle node selection/deselection in non-edit modes
-      const originalNode = data.nodes.find(n => n.id === node.id);
+      const originalNode = data.nodes.find(n => n.label === node.label);
       if (originalNode) {
         handleNodeClick(originalNode);
       } else {
@@ -452,10 +450,14 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
 
     if (mode === 'delete') {
       // Handle edge deletion in delete mode
-      onEdgeDelete?.(edge.id);
+      const sourceLabel = typeof edge.source === 'string' ? edge.source : edge.source.label;
+      const targetLabel = typeof edge.target === 'string' ? edge.target : edge.target.label;
+      onEdgeDelete?.(sourceLabel, targetLabel);
     } else {
       // Handle edge selection/deselection in non-delete modes
-      const originalEdge = data.edges.find(e => e.id === edge.id);
+      const sourceLabel = typeof edge.source === 'string' ? edge.source : edge.source.label;
+      const targetLabel = typeof edge.target === 'string' ? edge.target : edge.target.label;
+      const originalEdge = data.edges.find(e => e.source === sourceLabel && e.target === targetLabel);
       if (originalEdge) {
         handleEdgeClick(originalEdge);
       } else {
@@ -558,7 +560,8 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
           const edgeEnter = enter
             .append('g')
             .attr('class', 'edge-container')
-            .attr('data-edge-id', (d: D3Edge) => d.id);
+            .attr('data-edge-source', (d: D3Edge) => d.source)
+            .attr('data-edge-target', (d: D3Edge) => d.target);
 
           // Add invisible clickable area (wider stroke)
           edgeEnter
@@ -590,9 +593,13 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
           edgeEnter.each(function (this: any, d: D3Edge) {
             const edgeContainer = d3.select(this);
             const visibleEdge = edgeContainer.select('.graph-edge');
-            const isSelected = d3InstanceRef.current?.selectedEdgeId === d.id;
+            const sourceLabel = typeof d.source === 'string' ? d.source : d.source.label;
+            const targetLabel = typeof d.target === 'string' ? d.target : d.target.label;
+            const isSelected = d3InstanceRef.current?.selectedEdgeTuple && 
+              d3InstanceRef.current.selectedEdgeTuple[0] === sourceLabel && 
+              d3InstanceRef.current.selectedEdgeTuple[1] === targetLabel;
             const isDirected = data.type === 'directed';
-            applyEdgeStyling(visibleEdge, isSelected, '#000000', EDGE_STROKE_WIDTH, isDirected);
+            applyEdgeStyling(visibleEdge, isSelected || false, '#000000', EDGE_STROKE_WIDTH, isDirected);
           });
 
           edgeEnter.each(function (this: any, d: D3Edge) {
@@ -604,21 +611,23 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
               },
               onEdgeDoubleClick: (edge) => {
                 // Double-click for edge weight editing
-                const originalEdge = data.edges.find(e => e.id === edge.id);
+                const originalEdge = data.edges.find(e => e.source === edge.source && e.target === edge.target);
                 if (originalEdge) {
                   handleEdgeWeightEdit(originalEdge);
                 }
               },
               onEdgeMouseEnter: (edge) => {
-                const edgeElement = d3.select(`[data-edge-id="${edge.id}"] .graph-edge`);
+                const edgeElement = d3.select(`[data-edge-source="${edge.source}"][data-edge-target="${edge.target}"] .graph-edge`);
                 const isDirected = data.type === 'directed';
                 applyEdgeStyling(edgeElement, false, '#000000', EDGE_STROKE_WIDTH, isDirected);
               },
               onEdgeMouseLeave: (edge) => {
-                const edgeElement = d3.select(`[data-edge-id="${edge.id}"] .graph-edge`);
-                const isSelected = d3InstanceRef.current?.selectedEdgeId === edge.id;
+                const edgeElement = d3.select(`[data-edge-source="${edge.source}"][data-edge-target="${edge.target}"] .graph-edge`);
+                const isSelected = d3InstanceRef.current?.selectedEdgeTuple && 
+                  d3InstanceRef.current.selectedEdgeTuple[0] === edge.source && 
+                  d3InstanceRef.current.selectedEdgeTuple[1] === edge.target;
                 const isDirected = data.type === 'directed';
-                applyEdgeStyling(edgeElement, isSelected, '#000000', EDGE_STROKE_WIDTH, isDirected);
+                applyEdgeStyling(edgeElement, isSelected || false, '#000000', EDGE_STROKE_WIDTH, isDirected);
               },
             });
 
@@ -637,9 +646,11 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
             const edgeContainer = d3.select(this);
             const visibleEdge = edgeContainer.select('.graph-edge');
             const clickableEdge = edgeContainer.select('.edge-clickable');
-            const isSelected = d3InstanceRef.current?.selectedEdgeId === d.id;
+            const isSelected = d3InstanceRef.current?.selectedEdgeTuple && 
+              d3InstanceRef.current.selectedEdgeTuple[0] === d.source && 
+              d3InstanceRef.current.selectedEdgeTuple[1] === d.target;
             const isDirected = data.type === 'directed';
-            applyEdgeStyling(visibleEdge, isSelected, '#000000', EDGE_STROKE_WIDTH, isDirected);
+            applyEdgeStyling(visibleEdge, isSelected || false, '#000000', EDGE_STROKE_WIDTH, isDirected);
             
             // Update weight label text
             edgeContainer.select('.edge-weight-label')
@@ -652,21 +663,23 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
               },
               onEdgeDoubleClick: (edge) => {
                 // Double-click for edge weight editing
-                const originalEdge = data.edges.find(e => e.id === edge.id);
+                const originalEdge = data.edges.find(e => e.source === edge.source && e.target === edge.target);
                 if (originalEdge) {
                   handleEdgeWeightEdit(originalEdge);
                 }
               },
               onEdgeMouseEnter: (edge) => {
-                const edgeElement = d3.select(`[data-edge-id="${edge.id}"] .graph-edge`);
+                const edgeElement = d3.select(`[data-edge-source="${edge.source}"][data-edge-target="${edge.target}"] .graph-edge`);
                 const isDirected = data.type === 'directed';
                 applyEdgeStyling(edgeElement, false, '#000000', EDGE_STROKE_WIDTH, isDirected);
               },
               onEdgeMouseLeave: (edge) => {
-                const edgeElement = d3.select(`[data-edge-id="${edge.id}"] .graph-edge`);
-                const isSelected = d3InstanceRef.current?.selectedEdgeId === edge.id;
+                const edgeElement = d3.select(`[data-edge-source="${edge.source}"][data-edge-target="${edge.target}"] .graph-edge`);
+                const isSelected = d3InstanceRef.current?.selectedEdgeTuple && 
+                  d3InstanceRef.current.selectedEdgeTuple[0] === edge.source && 
+                  d3InstanceRef.current.selectedEdgeTuple[1] === edge.target;
                 const isDirected = data.type === 'directed';
-                applyEdgeStyling(edgeElement, isSelected, '#000000', EDGE_STROKE_WIDTH, isDirected);
+                applyEdgeStyling(edgeElement, isSelected || false, '#000000', EDGE_STROKE_WIDTH, isDirected);
               },
             });
 
@@ -723,7 +736,7 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
             applyNodeNibs(nodeSelection, isEditMode && isSelected && !isSource, NODE_RADIUS, (node) => {
               // Nib click starts edge creation mode
               if (mode === 'edit' && !d3InstanceRef.current?.edgeCreationSource) {
-                d3InstanceRef.current!.edgeCreationSource = node.id;
+                d3InstanceRef.current!.edgeCreationSource = node.label;
               }
             });
           });
@@ -734,7 +747,7 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
               onNodeClick: (node) => handleNodeClickLogic(node),
               onNodeDoubleClick: (node) => {
                 // Double-click for node label editing
-                const originalNode = data.nodes.find(n => n.id === node.id);
+                const originalNode = data.nodes.find(n => n.label === node.label);
                 if (originalNode) {
                   handleNodeLabelEdit(originalNode);
                 }
@@ -773,7 +786,7 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
             applyNodeNibs(nodeSelection, isEditMode && isSelected && !isSource, NODE_RADIUS, (node) => {
               // Nib click starts edge creation mode
               if (mode === 'edit' && !d3InstanceRef.current?.edgeCreationSource) {
-                d3InstanceRef.current!.edgeCreationSource = node.id;
+                d3InstanceRef.current!.edgeCreationSource = node.label;
               }
             });
 
@@ -782,7 +795,7 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
               onNodeClick: (node) => handleNodeClickLogic(node),
               onNodeDoubleClick: (node) => {
                 // Double-click for node label editing
-                const originalNode = data.nodes.find(n => n.id === node.id);
+                const originalNode = data.nodes.find(n => n.label === node.label);
                 if (originalNode) {
                   handleNodeLabelEdit(originalNode);
                 }
@@ -869,14 +882,14 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
   const convertToD3Data = (graphData: GraphData) => {
     // Get existing node positions from the simulation if it exists
     const existingNodes = d3InstanceRef.current?.simulation?.nodes() || [];
-    const existingNodeMap = new Map(existingNodes.map((node: any) => [node.id, { x: node.x, y: node.y }]));
+    const existingNodeMap = new Map(existingNodes.map((node: any) => [node.label, { x: node.x, y: node.y }]));
 
     const d3Nodes: D3Node[] = graphData.nodes.map((node, index) => {
       // Preserve existing position if available
-      const existingPos = existingNodeMap.get(node.id);
+      const existingPos = existingNodeMap.get(node.label);
       if (existingPos && existingPos.x !== undefined && existingPos.y !== undefined) {
         return {
-          id: node.id,
+          id: node.label, // Use label as ID for D3
           label: node.label,
           x: existingPos.x,
           y: existingPos.y,
@@ -886,7 +899,7 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
         const isNewestNode = index === graphData.nodes.length - 1;
         if (isNewestNode && newNodePosition) {
           return {
-            id: node.id,
+            id: node.label, // Use label as ID for D3
             label: node.label,
             x: newNodePosition.x,
             y: newNodePosition.y,
@@ -894,7 +907,7 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
         } else {
           // Generate new position for other new nodes
           return {
-            id: node.id,
+            id: node.label, // Use label as ID for D3
             label: node.label,
             x: 100 + (index % 4) * 200,
             y: 100 + Math.floor(index / 4) * 200,
@@ -903,10 +916,10 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
       }
     });
 
-    const d3Edges: D3Edge[] = graphData.edges.map(edge => ({
-      id: edge.id,
-      source: edge.source, // This will be the node label
-      target: edge.target, // This will be the node label
+    const d3Edges: D3Edge[] = graphData.edges.map((edge, index) => ({
+      id: `edge_${index}`, // Generate a simple ID for D3 edges
+      source: edge.source, // This is the node label
+      target: edge.target, // This is the node label
       ...(edge.weight && { weight: edge.weight }),
     }));
 
@@ -929,12 +942,12 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
   useEffect(() => {
     if (d3InstanceRef.current) {
       d3InstanceRef.current.selectedNodeId = null;
-      d3InstanceRef.current.selectedEdgeId = null;
+      d3InstanceRef.current.selectedEdgeTuple = null;
       d3InstanceRef.current.edgeCreationSource = null;
       d3InstanceRef.current.mousePosition = null;
       setSelectionChange(val => !val);
       setEdgeCreationCancel(val => !val);
-      setEditingNodeId(null);
+      setEditingNodeLabel(null);
       setEditingLabel('');
     }
   }, [data.nodes, data.edges]);
@@ -956,7 +969,7 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
       applyNodeNibs(nodeSelection, isEditMode && isSelected && !isSource, NODE_RADIUS, (node) => {
         // Nib click starts edge creation mode
         if (mode === 'edit' && !d3InstanceRef.current?.edgeCreationSource) {
-          d3InstanceRef.current!.edgeCreationSource = node.id;
+          d3InstanceRef.current!.edgeCreationSource = node.label;
         }
       });
     });
@@ -965,9 +978,11 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
     container.selectAll('.edge-container').each(function (this: any, d: any) {
       const edgeContainer = d3.select(this);
       const visibleEdge = edgeContainer.select('.graph-edge');
-      const isSelected = d3InstanceRef.current?.selectedEdgeId === d.id;
+      const isSelected = d3InstanceRef.current?.selectedEdgeTuple && 
+        d3InstanceRef.current.selectedEdgeTuple[0] === d.source && 
+        d3InstanceRef.current.selectedEdgeTuple[1] === d.target;
       const isDirected = data.type === 'directed';
-      applyEdgeStyling(visibleEdge, isSelected, '#000000', EDGE_STROKE_WIDTH, isDirected);
+      applyEdgeStyling(visibleEdge, isSelected || false, '#000000', EDGE_STROKE_WIDTH, isDirected);
     });
   }, [selectionChange, mode]);
 
@@ -1006,7 +1021,7 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
     if (d3InstanceRef.current) {
       // Clear all interactive states
       d3InstanceRef.current.selectedNodeId = null;
-      d3InstanceRef.current.selectedEdgeId = null;
+      d3InstanceRef.current.selectedEdgeTuple = null;
       d3InstanceRef.current.edgeCreationSource = null;
       d3InstanceRef.current.mousePosition = null;
       
@@ -1015,7 +1030,7 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
       setEdgeCreationCancel(val => !val);
       
       // Clear any editing states
-      setEditingNodeId(null);
+      setEditingNodeLabel(null);
       setEditingLabel('');
       
       // Clear preview line
@@ -1093,9 +1108,9 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
       />
 
       <div className="mb-2 px-3 py-1 bg-blue-100 border border-blue-300 rounded-full text-sm text-blue-800 font-medium">
-        Selected: {data.nodes.find(n => n.id === d3InstanceRef.current?.selectedNodeId)?.label || `Node ${d3InstanceRef.current?.selectedNodeId}`}
+        Selected: {d3InstanceRef.current?.selectedNodeId ? data.nodes.find(n => n.label === d3InstanceRef.current?.selectedNodeId)?.label || `Node ${d3InstanceRef.current?.selectedNodeId}` : 'none'}
         <span className="ml-2">
-          | Edge: {data.edges.find(e => e.id === d3InstanceRef.current?.selectedEdgeId)?.id || d3InstanceRef.current?.selectedEdgeId}
+          | Edge: {d3InstanceRef.current?.selectedEdgeTuple ? `${d3InstanceRef.current.selectedEdgeTuple[0]}-${d3InstanceRef.current.selectedEdgeTuple[1]}` : 'none'}
         </span>
       </div>
 
@@ -1129,7 +1144,7 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
       )}
 
       {/* Inline Label Editor */}
-      {editingNodeId && editingPosition && (
+      {editingNodeLabel && editingPosition && (
         <div
           className="absolute z-50"
           style={{
@@ -1157,7 +1172,7 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
       )}
 
       {/* Inline Weight Editor */}
-      {editingEdgeId && editingEdgePosition && (
+      {editingEdgeTuple && editingEdgePosition && (
         <div
           className="absolute z-50"
           style={{

@@ -26,8 +26,8 @@ const TextPanel: React.FC<TextPanelProps> = ({
   const [isInitialized, setIsInitialized] = useState<boolean>(false);
   const previousDataRef = useRef<GraphData | null>(null);
   
-  // Debounce the text content with 0.5s delay for parsing
-  const {current: debouncedTextContent, previous: prevGraphTextContent} = useDebounce(graphTextContent, 1000);
+  // Debounce the text content with 1s delay for parsing
+  const debouncedTextContent = useDebounce(graphTextContent, 1000);
 
   // Generate text representation from graph data (edge list format)
   const generateTextFromData = (graphData: GraphData): string => {
@@ -40,15 +40,10 @@ const TextPanel: React.FC<TextPanelProps> = ({
     
     // Then: edges
     graphData.edges.forEach(edge => {
-      // Find source and target nodes by ID
-      const sourceNode = graphData.nodes.find(node => node.id === edge.source);
-      const targetNode = graphData.nodes.find(node => node.id === edge.target);
-      
-      if (sourceNode && targetNode) {
-        const edgeLine = `${sourceNode.label} ${targetNode.label}`;
-        const weight = edge.weight ? ` ${edge.weight}` : '';
-        lines.push(edgeLine + weight);
-      }
+      // Use edge source and target directly (they are now labels)
+      const edgeLine = `${edge.source} ${edge.target}`;
+      const weight = edge.weight ? ` ${edge.weight}` : '';
+      lines.push(edgeLine + weight);
     });
     
     return lines.join('\n');
@@ -61,7 +56,7 @@ const TextPanel: React.FC<TextPanelProps> = ({
     setGraphTextContent(currentText + (currentText ? '\n' : '') + newLine);
   };
 
-  const updateTextForNodeLabelChange = (_nodeId: number, oldLabel: string, newLabel: string): void => {
+  const updateTextForNodeLabelChange = (_nodeLabel: string, oldLabel: string, newLabel: string): void => {
     let updatedText = graphTextContent;
     
     // Replace all instances of the old label with the new label
@@ -72,7 +67,7 @@ const TextPanel: React.FC<TextPanelProps> = ({
     setGraphTextContent(updatedText);
   };
 
-  const updateTextForNodeRemove = (_nodeId: number, nodeLabel: string): void => {
+  const updateTextForNodeRemove = (_nodeLabel: string, nodeLabelToRemove: string): void => {
     const lines = graphTextContent.split('\n');
     const filteredLines: string[] = [];
     
@@ -80,7 +75,7 @@ const TextPanel: React.FC<TextPanelProps> = ({
       const trimmedLine = line.trim();
       
       // Skip lines that are just the node label
-      if (trimmedLine === nodeLabel) {
+      if (trimmedLine === nodeLabelToRemove) {
         continue;
       }
       
@@ -89,7 +84,7 @@ const TextPanel: React.FC<TextPanelProps> = ({
       if (parts.length >= 2) {
         const sourceLabel = parts[0];
         const targetLabel = parts[1];
-        if (sourceLabel === nodeLabel || targetLabel === nodeLabel) {
+        if (sourceLabel === nodeLabelToRemove || targetLabel === nodeLabelToRemove) {
           continue;
         }
       }
@@ -106,7 +101,7 @@ const TextPanel: React.FC<TextPanelProps> = ({
     setGraphTextContent(currentText + (currentText ? '\n' : '') + edgeLine);
   };
 
-  const updateTextForEdgeRemove = (_edgeId: string, sourceLabel: string, targetLabel: string, weight?: string): void => {
+  const updateTextForEdgeRemove = (_edgeTuple: [string, string], sourceLabel: string, targetLabel: string, weight?: string): void => {
     const lines = graphTextContent.split('\n');
     const filteredLines: string[] = [];
     
@@ -138,7 +133,7 @@ const TextPanel: React.FC<TextPanelProps> = ({
     setGraphTextContent(filteredLines.join('\n'));
   };
 
-  const updateTextForEdgeWeightChange = (_edgeId: string, sourceLabel: string, targetLabel: string, oldWeight: string | undefined, newWeight: string | undefined): void => {
+  const updateTextForEdgeWeightChange = (_edgeTuple: [string, string], sourceLabel: string, targetLabel: string, oldWeight: string | undefined, newWeight: string | undefined): void => {
     const lines = graphTextContent.split('\n');
     const updatedLines: string[] = [];
     
@@ -197,8 +192,8 @@ const TextPanel: React.FC<TextPanelProps> = ({
         
         switch (lastOperation.type) {
           case 'NODE_ADD':
-            if (lastOperation.nodeId) {
-              const newNode = data.nodes.find(node => node.id === lastOperation.nodeId);
+            if (lastOperation.nodeLabel) {
+              const newNode = data.nodes.find(node => node.label === lastOperation.nodeLabel);
               if (newNode) {
                 updateTextForNodeAdd(newNode);
               }
@@ -206,41 +201,38 @@ const TextPanel: React.FC<TextPanelProps> = ({
             break;
             
           case 'NODE_LABEL_CHANGE':
-            if (lastOperation.nodeId && lastOperation.previousValue && lastOperation.newValue) {
-              updateTextForNodeLabelChange(lastOperation.nodeId, lastOperation.previousValue, lastOperation.newValue);
+            if (lastOperation.nodeLabel && lastOperation.previousValue && lastOperation.newValue) {
+              updateTextForNodeLabelChange(lastOperation.nodeLabel, lastOperation.previousValue, lastOperation.newValue);
             }
             break;
             
           case 'NODE_REMOVE':
-            if (lastOperation.nodeId && lastOperation.previousValue) {
-              updateTextForNodeRemove(lastOperation.nodeId, lastOperation.previousValue);
+            if (lastOperation.nodeLabel && lastOperation.previousValue) {
+              updateTextForNodeRemove(lastOperation.nodeLabel, lastOperation.previousValue);
             }
             break;
             
           case 'EDGE_ADD':
-            if (lastOperation.edgeId) {
-              const newEdge = data.edges.find(edge => edge.id === lastOperation.edgeId);
+            if (lastOperation.edgeTuple) {
+              const [sourceLabel, targetLabel] = lastOperation.edgeTuple;
+              const newEdge = data.edges.find(edge => edge.source === sourceLabel && edge.target === targetLabel);
               if (newEdge) {
-                const sourceNode = data.nodes.find(node => node.id === newEdge.source);
-                const targetNode = data.nodes.find(node => node.id === newEdge.target);
-                if (sourceNode && targetNode) {
-                  updateTextForEdgeAdd(newEdge, sourceNode.label, targetNode.label);
-                }
+                updateTextForEdgeAdd(newEdge, sourceLabel, targetLabel);
               }
             }
             break;
             
           case 'EDGE_REMOVE':
-            if (lastOperation.edgeId && lastOperation.data) {
+            if (lastOperation.edgeTuple && lastOperation.data) {
               const { sourceLabel, targetLabel, weight } = lastOperation.data;
-              updateTextForEdgeRemove(lastOperation.edgeId, sourceLabel, targetLabel, weight);
+              updateTextForEdgeRemove(lastOperation.edgeTuple, sourceLabel, targetLabel, weight);
             }
             break;
             
           case 'EDGE_WEIGHT_CHANGE':
-            if (lastOperation.edgeId && lastOperation.previousValue !== undefined && lastOperation.newValue !== undefined && lastOperation.data) {
+            if (lastOperation.edgeTuple && lastOperation.previousValue !== undefined && lastOperation.newValue !== undefined && lastOperation.data) {
               const { sourceLabel, targetLabel } = lastOperation.data;
-              updateTextForEdgeWeightChange(lastOperation.edgeId, sourceLabel, targetLabel, lastOperation.previousValue, lastOperation.newValue);
+              updateTextForEdgeWeightChange(lastOperation.edgeTuple, sourceLabel, targetLabel, lastOperation.previousValue, lastOperation.newValue);
             }
             break;
             
@@ -326,12 +318,12 @@ const TextPanel: React.FC<TextPanelProps> = ({
 
   // Handle key events
   const handleGraphTextKeyDown = (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    // if (event.key === 'Escape') {
-    //   // Cancel editing and revert to previous text content
-    //   setIsEditing(false);
-    //   setGraphTextContent(previousTextContentRef.current);
-    //   setHasErrors(false);
-    // }
+    if (event.key === 'Escape') {
+      // Cancel editing and revert to original text content
+      setIsEditing(false);
+      setGraphTextContent(generateTextFromData(data));
+      setHasErrors(false);
+    }
   };
 
 
