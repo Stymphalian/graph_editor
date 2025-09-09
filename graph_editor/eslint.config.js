@@ -1,4 +1,5 @@
 import js from '@eslint/js';
+import globals from 'globals';
 import typescript from '@typescript-eslint/eslint-plugin';
 import typescriptParser from '@typescript-eslint/parser';
 import reactHooks from 'eslint-plugin-react-hooks';
@@ -19,9 +20,8 @@ export default [
         },
       },
       globals: {
-        console: 'readonly',
-        document: 'readonly',
-        window: 'readonly',
+        ...globals.browser,
+        ...globals.es2020,
         describe: 'readonly',
         it: 'readonly',
         expect: 'readonly',
@@ -30,9 +30,6 @@ export default [
         beforeAll: 'readonly',
         afterAll: 'readonly',
         jest: 'readonly',
-        SVGSVGElement: 'readonly',
-        SVGGElement: 'readonly',
-        SVGLineElement: 'readonly',
         __dirname: 'readonly',
       },
     },
@@ -66,6 +63,13 @@ export default [
       '**/test-utils.tsx',
       '**/setupTests.ts',
     ],
+    languageOptions: {
+      globals: {
+        ...globals.browser,
+        ...globals.es2020,
+        ...globals.jest,
+      },
+    },
     rules: {
       'react-refresh/only-export-components': 'off',
     },

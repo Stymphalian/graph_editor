@@ -26,9 +26,15 @@ describe('NodeIndexingControls', () => {
       />
     );
 
-    const zeroIndexedButton = screen.getByRole('button', { name: /Switch to 0-Indexed indexing/i });
-    const oneIndexedButton = screen.getByRole('button', { name: /Switch to 1-Indexed indexing/i });
-    const customButton = screen.getByRole('button', { name: /Switch to Custom indexing/i });
+    const zeroIndexedButton = screen.getByRole('button', {
+      name: /Switch to 0-Indexed indexing/i,
+    });
+    const oneIndexedButton = screen.getByRole('button', {
+      name: /Switch to 1-Indexed indexing/i,
+    });
+    const customButton = screen.getByRole('button', {
+      name: /Switch to Custom indexing/i,
+    });
 
     expect(zeroIndexedButton).toHaveClass('bg-blue-600', 'text-white');
     expect(oneIndexedButton).toHaveClass('bg-white', 'text-gray-700');
@@ -43,9 +49,15 @@ describe('NodeIndexingControls', () => {
       />
     );
 
-    const zeroIndexedButton = screen.getByRole('button', { name: /Switch to 0-Indexed indexing/i });
-    const oneIndexedButton = screen.getByRole('button', { name: /Switch to 1-Indexed indexing/i });
-    const customButton = screen.getByRole('button', { name: /Switch to Custom indexing/i });
+    const zeroIndexedButton = screen.getByRole('button', {
+      name: /Switch to 0-Indexed indexing/i,
+    });
+    const oneIndexedButton = screen.getByRole('button', {
+      name: /Switch to 1-Indexed indexing/i,
+    });
+    const customButton = screen.getByRole('button', {
+      name: /Switch to Custom indexing/i,
+    });
 
     expect(oneIndexedButton).toHaveClass('bg-blue-600', 'text-white');
     expect(zeroIndexedButton).toHaveClass('bg-white', 'text-gray-700');
@@ -60,9 +72,15 @@ describe('NodeIndexingControls', () => {
       />
     );
 
-    const zeroIndexedButton = screen.getByRole('button', { name: /Switch to 0-Indexed indexing/i });
-    const oneIndexedButton = screen.getByRole('button', { name: /Switch to 1-Indexed indexing/i });
-    const customButton = screen.getByRole('button', { name: /Switch to Custom indexing/i });
+    const zeroIndexedButton = screen.getByRole('button', {
+      name: /Switch to 0-Indexed indexing/i,
+    });
+    const oneIndexedButton = screen.getByRole('button', {
+      name: /Switch to 1-Indexed indexing/i,
+    });
+    const customButton = screen.getByRole('button', {
+      name: /Switch to Custom indexing/i,
+    });
 
     expect(customButton).toHaveClass('bg-blue-600', 'text-white');
     expect(zeroIndexedButton).toHaveClass('bg-white', 'text-gray-700');
@@ -159,15 +177,27 @@ describe('NodeIndexingControls', () => {
       />
     );
 
-    const zeroIndexedButton = screen.getByRole('button', { name: /Switch to 0-Indexed indexing/i });
-    const oneIndexedButton = screen.getByRole('button', { name: /Switch to 1-Indexed indexing/i });
-    const customButton = screen.getByRole('button', { name: /Switch to Custom indexing/i });
+    const zeroIndexedButton = screen.getByRole('button', {
+      name: /Switch to 0-Indexed indexing/i,
+    });
+    const oneIndexedButton = screen.getByRole('button', {
+      name: /Switch to 1-Indexed indexing/i,
+    });
+    const customButton = screen.getByRole('button', {
+      name: /Switch to Custom indexing/i,
+    });
 
     expect(zeroIndexedButton).toHaveAttribute('aria-pressed', 'true');
     expect(oneIndexedButton).toHaveAttribute('aria-pressed', 'false');
     expect(customButton).toHaveAttribute('aria-pressed', 'false');
-    expect(zeroIndexedButton).toHaveAttribute('title', 'Nodes labeled 0, 1, 2, 3...');
-    expect(oneIndexedButton).toHaveAttribute('title', 'Nodes labeled 1, 2, 3, 4...');
+    expect(zeroIndexedButton).toHaveAttribute(
+      'title',
+      'Nodes labeled 0, 1, 2, 3...'
+    );
+    expect(oneIndexedButton).toHaveAttribute(
+      'title',
+      'Nodes labeled 1, 2, 3, 4...'
+    );
     expect(customButton).toHaveAttribute('title', 'Custom labels (A, B, C...)');
   });
 });

@@ -25,8 +25,12 @@ describe('GraphControls', () => {
       />
     );
 
-    const directedButton = screen.getByRole('button', { name: /Switch to Directed graph/i });
-    const undirectedButton = screen.getByRole('button', { name: /Switch to Undirected graph/i });
+    const directedButton = screen.getByRole('button', {
+      name: /Switch to Directed graph/i,
+    });
+    const undirectedButton = screen.getByRole('button', {
+      name: /Switch to Undirected graph/i,
+    });
 
     expect(directedButton).toHaveClass('bg-blue-600', 'text-white');
     expect(undirectedButton).toHaveClass('bg-white', 'text-gray-700');
@@ -40,8 +44,12 @@ describe('GraphControls', () => {
       />
     );
 
-    const directedButton = screen.getByRole('button', { name: /Switch to Directed graph/i });
-    const undirectedButton = screen.getByRole('button', { name: /Switch to Undirected graph/i });
+    const directedButton = screen.getByRole('button', {
+      name: /Switch to Directed graph/i,
+    });
+    const undirectedButton = screen.getByRole('button', {
+      name: /Switch to Undirected graph/i,
+    });
 
     expect(undirectedButton).toHaveClass('bg-blue-600', 'text-white');
     expect(directedButton).toHaveClass('bg-white', 'text-gray-700');
@@ -93,8 +101,12 @@ describe('GraphControls', () => {
       />
     );
 
-    expect(screen.getByText('Edges have direction (A → B)')).toBeInTheDocument();
-    expect(screen.getByText('Edges are bidirectional (A ↔ B)')).toBeInTheDocument();
+    expect(
+      screen.getByText('Edges have direction (A → B)')
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText('Edges are bidirectional (A ↔ B)')
+    ).toBeInTheDocument();
   });
 
   it('applies custom className when provided', () => {
@@ -117,12 +129,22 @@ describe('GraphControls', () => {
       />
     );
 
-    const directedButton = screen.getByRole('button', { name: /Switch to Directed graph/i });
-    const undirectedButton = screen.getByRole('button', { name: /Switch to Undirected graph/i });
+    const directedButton = screen.getByRole('button', {
+      name: /Switch to Directed graph/i,
+    });
+    const undirectedButton = screen.getByRole('button', {
+      name: /Switch to Undirected graph/i,
+    });
 
     expect(directedButton).toHaveAttribute('aria-pressed', 'true');
     expect(undirectedButton).toHaveAttribute('aria-pressed', 'false');
-    expect(directedButton).toHaveAttribute('title', 'Edges have direction (A → B)');
-    expect(undirectedButton).toHaveAttribute('title', 'Edges are bidirectional (A ↔ B)');
+    expect(directedButton).toHaveAttribute(
+      'title',
+      'Edges have direction (A → B)'
+    );
+    expect(undirectedButton).toHaveAttribute(
+      'title',
+      'Edges are bidirectional (A ↔ B)'
+    );
   });
 });

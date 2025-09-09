@@ -1,7 +1,7 @@
-import { 
-  getNodeStyling, 
-  createNodeEventHandlers, 
-  applyNodeStyling, 
+import {
+  getNodeStyling,
+  createNodeEventHandlers,
+  applyNodeStyling,
   applyNodeNibs,
 } from './Node';
 import { D3Node } from '@/utils/d3Config';
@@ -18,7 +18,7 @@ describe('Node Utility Functions', () => {
   describe('getNodeStyling', () => {
     it('returns default styling for unselected node', () => {
       const styling = getNodeStyling(false);
-      
+
       expect(styling.fill).toBe('white');
       expect(styling.stroke).toBe('#000000');
       expect(styling.strokeWidth).toBe(2);
@@ -27,7 +27,7 @@ describe('Node Utility Functions', () => {
 
     it('returns selected styling for selected node', () => {
       const styling = getNodeStyling(true);
-      
+
       expect(styling.fill).toBe('#e3f2fd');
       expect(styling.stroke).toBe('#1976d2');
       expect(styling.strokeWidth).toBe(4);
@@ -43,17 +43,25 @@ describe('Node Utility Functions', () => {
       let mouseLeftNode: D3Node | undefined;
 
       const handlers = {
-        onNodeClick: (node: D3Node) => { clickedNode = node; },
-        onNodeDoubleClick: (node: D3Node) => { doubleClickedNode = node; },
-        onNodeMouseEnter: (node: D3Node) => { mouseEnteredNode = node; },
-        onNodeMouseLeave: (node: D3Node) => { mouseLeftNode = node; },
+        onNodeClick: (node: D3Node) => {
+          clickedNode = node;
+        },
+        onNodeDoubleClick: (node: D3Node) => {
+          doubleClickedNode = node;
+        },
+        onNodeMouseEnter: (node: D3Node) => {
+          mouseEnteredNode = node;
+        },
+        onNodeMouseLeave: (node: D3Node) => {
+          mouseLeftNode = node;
+        },
       };
 
       const eventHandlers = createNodeEventHandlers(mockNode, handlers);
-      
+
       // Test click handler (with timeout)
       eventHandlers.click(new Event('click'));
-      
+
       // Wait for timeout to complete
       await new Promise(resolve => setTimeout(resolve, 150));
       expect(clickedNode).toEqual(mockNode);
@@ -74,7 +82,7 @@ describe('Node Utility Functions', () => {
     it('handles missing event handlers gracefully', () => {
       const handlers = {};
       const eventHandlers = createNodeEventHandlers(mockNode, handlers);
-      
+
       // Should not throw errors
       expect(() => {
         eventHandlers.click(new Event('click'));
@@ -84,7 +92,6 @@ describe('Node Utility Functions', () => {
       }).not.toThrow();
     });
   });
-
 
   describe('applyNodeStyling', () => {
     it('applies styling to a mock D3 selection', () => {
@@ -116,15 +123,56 @@ describe('Node Utility Functions', () => {
       applyNodeStyling(mockSelection, true, 25);
 
       // Verify circle styling was applied
-      expect(calls.some(call => call.method === 'select' && call.args[0] === 'circle')).toBe(true);
-      expect(calls.some(call => call.method === 'attr' && call.args[0] === 'r' && call.args[1] === 25)).toBe(true);
-      expect(calls.some(call => call.method === 'attr' && call.args[0] === 'fill' && call.args[1] === '#e3f2fd')).toBe(true);
-      expect(calls.some(call => call.method === 'attr' && call.args[0] === 'stroke' && call.args[1] === '#1976d2')).toBe(true);
-      expect(calls.some(call => call.method === 'attr' && call.args[0] === 'stroke-width' && call.args[1] === 4)).toBe(true);
+      expect(
+        calls.some(
+          call => call.method === 'select' && call.args[0] === 'circle'
+        )
+      ).toBe(true);
+      expect(
+        calls.some(
+          call =>
+            call.method === 'attr' &&
+            call.args[0] === 'r' &&
+            call.args[1] === 25
+        )
+      ).toBe(true);
+      expect(
+        calls.some(
+          call =>
+            call.method === 'attr' &&
+            call.args[0] === 'fill' &&
+            call.args[1] === '#e3f2fd'
+        )
+      ).toBe(true);
+      expect(
+        calls.some(
+          call =>
+            call.method === 'attr' &&
+            call.args[0] === 'stroke' &&
+            call.args[1] === '#1976d2'
+        )
+      ).toBe(true);
+      expect(
+        calls.some(
+          call =>
+            call.method === 'attr' &&
+            call.args[0] === 'stroke-width' &&
+            call.args[1] === 4
+        )
+      ).toBe(true);
 
       // Verify text styling was applied
-      expect(calls.some(call => call.method === 'select' && call.args[0] === 'text')).toBe(true);
-      expect(calls.some(call => call.method === 'attr' && call.args[0] === 'fill' && call.args[1] === '#1976d2')).toBe(true);
+      expect(
+        calls.some(call => call.method === 'select' && call.args[0] === 'text')
+      ).toBe(true);
+      expect(
+        calls.some(
+          call =>
+            call.method === 'attr' &&
+            call.args[0] === 'fill' &&
+            call.args[1] === '#1976d2'
+        )
+      ).toBe(true);
     });
   });
 
@@ -168,10 +216,36 @@ describe('Node Utility Functions', () => {
       applyNodeNibs(mockSelection, true, 20);
 
       // Verify nib was created with correct attributes
-      expect(calls.some(call => call.method === 'attr' && call.args[0] === 'class' && call.args[1] === 'node-nib')).toBe(true);
-      expect(calls.some(call => call.method === 'attr' && call.args[0] === 'r' && call.args[1] === 6)).toBe(true);
-      expect(calls.some(call => call.method === 'attr' && call.args[0] === 'fill' && call.args[1] === '#000000')).toBe(true);
-      expect(calls.some(call => call.method === 'style' && call.args[0] === 'cursor' && call.args[1] === 'pointer')).toBe(true);
+      expect(
+        calls.some(
+          call =>
+            call.method === 'attr' &&
+            call.args[0] === 'class' &&
+            call.args[1] === 'node-nib'
+        )
+      ).toBe(true);
+      expect(
+        calls.some(
+          call =>
+            call.method === 'attr' && call.args[0] === 'r' && call.args[1] === 6
+        )
+      ).toBe(true);
+      expect(
+        calls.some(
+          call =>
+            call.method === 'attr' &&
+            call.args[0] === 'fill' &&
+            call.args[1] === '#000000'
+        )
+      ).toBe(true);
+      expect(
+        calls.some(
+          call =>
+            call.method === 'style' &&
+            call.args[0] === 'cursor' &&
+            call.args[1] === 'pointer'
+        )
+      ).toBe(true);
 
       // Verify hover event handlers were added
       expect(eventHandlers.mouseenter).toBeDefined();

@@ -5,12 +5,7 @@ describe('ModeControls', () => {
   const mockOnModeChange = () => {};
 
   it('renders all mode buttons', () => {
-    render(
-      <ModeControls
-        currentMode="edit"
-        onModeChange={mockOnModeChange}
-      />
-    );
+    render(<ModeControls currentMode="edit" onModeChange={mockOnModeChange} />);
 
     expect(screen.getByText('Edit')).toBeInTheDocument();
     expect(screen.getByText('Delete')).toBeInTheDocument();
@@ -19,10 +14,7 @@ describe('ModeControls', () => {
 
   it('shows current mode as active', () => {
     render(
-      <ModeControls
-        currentMode="delete"
-        onModeChange={mockOnModeChange}
-      />
+      <ModeControls currentMode="delete" onModeChange={mockOnModeChange} />
     );
 
     const deleteButton = screen.getByText('Delete').closest('button');
@@ -30,16 +22,11 @@ describe('ModeControls', () => {
   });
 
   it('shows non-current modes as inactive', () => {
-    render(
-      <ModeControls
-        currentMode="edit"
-        onModeChange={mockOnModeChange}
-      />
-    );
+    render(<ModeControls currentMode="edit" onModeChange={mockOnModeChange} />);
 
     const deleteButton = screen.getByText('Delete').closest('button');
     const viewForceButton = screen.getByText('View/Force').closest('button');
-    
+
     expect(deleteButton).toHaveClass('bg-white', 'text-gray-700');
     expect(viewForceButton).toHaveClass('bg-white', 'text-gray-700');
   });
@@ -50,12 +37,7 @@ describe('ModeControls', () => {
       calledWith = mode;
     };
 
-    render(
-      <ModeControls
-        currentMode="edit"
-        onModeChange={testOnModeChange}
-      />
-    );
+    render(<ModeControls currentMode="edit" onModeChange={testOnModeChange} />);
 
     const deleteButton = screen.getByText('Delete').closest('button');
     fireEvent.click(deleteButton!);
@@ -64,31 +46,24 @@ describe('ModeControls', () => {
   });
 
   it('displays mode description', () => {
-    render(
-      <ModeControls
-        currentMode="edit"
-        onModeChange={mockOnModeChange}
-      />
-    );
+    render(<ModeControls currentMode="edit" onModeChange={mockOnModeChange} />);
 
-    expect(screen.getByText('Create and modify nodes and edges')).toBeInTheDocument();
+    expect(
+      screen.getByText('Create and modify nodes and edges')
+    ).toBeInTheDocument();
   });
 
   it('updates description when mode changes', () => {
     const { rerender } = render(
-      <ModeControls
-        currentMode="edit"
-        onModeChange={mockOnModeChange}
-      />
+      <ModeControls currentMode="edit" onModeChange={mockOnModeChange} />
     );
 
-    expect(screen.getByText('Create and modify nodes and edges')).toBeInTheDocument();
+    expect(
+      screen.getByText('Create and modify nodes and edges')
+    ).toBeInTheDocument();
 
     rerender(
-      <ModeControls
-        currentMode="delete"
-        onModeChange={mockOnModeChange}
-      />
+      <ModeControls currentMode="delete" onModeChange={mockOnModeChange} />
     );
 
     expect(screen.getByText('Remove nodes and edges')).toBeInTheDocument();
@@ -107,12 +82,7 @@ describe('ModeControls', () => {
   });
 
   it('has proper accessibility attributes', () => {
-    render(
-      <ModeControls
-        currentMode="edit"
-        onModeChange={mockOnModeChange}
-      />
-    );
+    render(<ModeControls currentMode="edit" onModeChange={mockOnModeChange} />);
 
     const editButton = screen.getByText('Edit').closest('button');
     expect(editButton).toHaveAttribute('aria-pressed', 'true');

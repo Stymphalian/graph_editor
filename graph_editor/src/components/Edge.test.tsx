@@ -1,7 +1,7 @@
-import { 
-  getEdgeStyling, 
-  createEdgeEventHandlers, 
-  applyEdgeStyling, 
+import {
+  getEdgeStyling,
+  createEdgeEventHandlers,
+  applyEdgeStyling,
 } from './Edge';
 import { D3Edge } from '@/utils/d3Config';
 
@@ -13,33 +13,32 @@ const mockEdge: D3Edge = {
   weight: '5',
 };
 
-
 describe('Edge Utility Functions', () => {
   describe('getEdgeStyling', () => {
     it('returns default styling for unselected edge', () => {
       const styling = getEdgeStyling(false);
-      
+
       expect(styling.stroke).toBe('#000000');
       expect(styling.strokeWidth).toBe(2);
     });
 
     it('returns selected styling for selected edge', () => {
       const styling = getEdgeStyling(true);
-      
+
       expect(styling.stroke).toBe('#1976d2');
       expect(styling.strokeWidth).toBe(3);
     });
 
     it('uses custom stroke color and width', () => {
       const styling = getEdgeStyling(false, '#ff0000', 4);
-      
+
       expect(styling.stroke).toBe('#ff0000');
       expect(styling.strokeWidth).toBe(4);
     });
 
     it('applies selection styling to custom values', () => {
       const styling = getEdgeStyling(true, '#ff0000', 4);
-      
+
       expect(styling.stroke).toBe('#1976d2');
       expect(styling.strokeWidth).toBe(5);
     });
@@ -53,17 +52,25 @@ describe('Edge Utility Functions', () => {
       let mouseLeftEdge: D3Edge | undefined;
 
       const handlers = {
-        onEdgeClick: (edge: D3Edge) => { clickedEdge = edge; },
-        onEdgeDoubleClick: (edge: D3Edge) => { doubleClickedEdge = edge; },
-        onEdgeMouseEnter: (edge: D3Edge) => { mouseEnteredEdge = edge; },
-        onEdgeMouseLeave: (edge: D3Edge) => { mouseLeftEdge = edge; },
+        onEdgeClick: (edge: D3Edge) => {
+          clickedEdge = edge;
+        },
+        onEdgeDoubleClick: (edge: D3Edge) => {
+          doubleClickedEdge = edge;
+        },
+        onEdgeMouseEnter: (edge: D3Edge) => {
+          mouseEnteredEdge = edge;
+        },
+        onEdgeMouseLeave: (edge: D3Edge) => {
+          mouseLeftEdge = edge;
+        },
       };
 
       const eventHandlers = createEdgeEventHandlers(mockEdge, handlers);
-      
+
       // Test click handler (with timeout)
       eventHandlers.click(new Event('click'));
-      
+
       // Wait for timeout to complete
       await new Promise(resolve => setTimeout(resolve, 150));
       expect(clickedEdge).toEqual(mockEdge);
@@ -84,7 +91,7 @@ describe('Edge Utility Functions', () => {
     it('handles missing event handlers gracefully', () => {
       const handlers = {};
       const eventHandlers = createEdgeEventHandlers(mockEdge, handlers);
-      
+
       // Should not throw errors
       expect(() => {
         eventHandlers.click(new Event('click'));
@@ -94,7 +101,6 @@ describe('Edge Utility Functions', () => {
       }).not.toThrow();
     });
   });
-
 
   describe('applyEdgeStyling', () => {
     it('applies styling to a mock D3 selection', () => {
@@ -128,14 +134,51 @@ describe('Edge Utility Functions', () => {
       applyEdgeStyling(mockSelection, true, '#ff0000', 4, true);
 
       // Verify line styling was applied
-      expect(calls.some(call => call.method === 'attr' && call.args[0] === 'stroke' && call.args[1] === '#1976d2')).toBe(true);
-      expect(calls.some(call => call.method === 'attr' && call.args[0] === 'stroke-width' && call.args[1] === 5)).toBe(true);
-      expect(calls.some(call => call.method === 'attr' && call.args[0] === 'marker-end' && call.args[1] === 'url(#arrowhead-selected)')).toBe(true);
-      expect(calls.some(call => call.method === 'style' && call.args[0] === 'cursor' && call.args[1] === 'pointer')).toBe(true);
-      expect(calls.some(call => call.method === 'style' && call.args[0] === 'transition' && call.args[1] === 'all 0.2s ease-in-out')).toBe(true);
+      expect(
+        calls.some(
+          call =>
+            call.method === 'attr' &&
+            call.args[0] === 'stroke' &&
+            call.args[1] === '#1976d2'
+        )
+      ).toBe(true);
+      expect(
+        calls.some(
+          call =>
+            call.method === 'attr' &&
+            call.args[0] === 'stroke-width' &&
+            call.args[1] === 5
+        )
+      ).toBe(true);
+      expect(
+        calls.some(
+          call =>
+            call.method === 'attr' &&
+            call.args[0] === 'marker-end' &&
+            call.args[1] === 'url(#arrowhead-selected)'
+        )
+      ).toBe(true);
+      expect(
+        calls.some(
+          call =>
+            call.method === 'style' &&
+            call.args[0] === 'cursor' &&
+            call.args[1] === 'pointer'
+        )
+      ).toBe(true);
+      expect(
+        calls.some(
+          call =>
+            call.method === 'style' &&
+            call.args[0] === 'transition' &&
+            call.args[1] === 'all 0.2s ease-in-out'
+        )
+      ).toBe(true);
 
       // Verify weight text styling was applied
-      expect(calls.some(call => call.method === 'select' && call.args[0] === 'text')).toBe(true);
+      expect(
+        calls.some(call => call.method === 'select' && call.args[0] === 'text')
+      ).toBe(true);
     });
 
     it('removes arrow marker for undirected edges', () => {
@@ -161,7 +204,14 @@ describe('Edge Utility Functions', () => {
 
       applyEdgeStyling(mockSelection, false, '#000000', 2, false);
 
-      expect(calls.some(call => call.method === 'attr' && call.args[0] === 'marker-end' && call.args[1] === null)).toBe(true);
+      expect(
+        calls.some(
+          call =>
+            call.method === 'attr' &&
+            call.args[0] === 'marker-end' &&
+            call.args[1] === null
+        )
+      ).toBe(true);
     });
   });
 });
