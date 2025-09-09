@@ -3,9 +3,7 @@ import { d3, d3Utils, ForceSimulation, D3Node, D3Edge } from '@/utils/d3Config';
 import { GraphData, Node, Edge } from '@/types/graph';
 import { applyNodeStyling, createNodeEventHandlers, applyNodeNibs } from './Node';
 import { applyEdgeStyling, createEdgeEventHandlers } from './Edge';5
-// Constants
-const NODE_RADIUS = 20;
-const EDGE_STROKE_WIDTH = 2;
+// Constants are now passed as props
 
 interface GraphViewerProps {
   data: GraphData;
@@ -24,6 +22,8 @@ interface GraphViewerProps {
   newNodePosition?: { x: number; y: number } | null;
   onNewNodePositioned?: () => void;
   onModeTransitionCleanup?: () => void;
+  nodeRadius?: number;
+  edgeStrokeWidth?: number;
 }
 
 const GraphViewer: React.FC<GraphViewerProps> = ({
@@ -43,6 +43,8 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
   newNodePosition,
   onNewNodePositioned,
   onModeTransitionCleanup,
+  nodeRadius = 20,
+  edgeStrokeWidth = 2
 }) => {
   // Internal selection state
   const [selectionChange, setSelectionChange] = useState<boolean>(false);
@@ -183,6 +185,18 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
     height: Math.min(width || 800, height || 600)
   });
 
+  // Function to update drag behavior for existing nodes with new dimensions
+  const updateNodeDragBehavior = (newWidth: number, newHeight: number) => {
+    if (!d3InstanceRef.current) return;
+    
+    const { container, simulation } = d3InstanceRef.current;
+    if (!container || !simulation) return;
+    
+    // Update drag behavior for all existing nodes
+    container.selectAll('.node')
+      .call(d3Utils.createDrag(simulation, mode, newWidth, newHeight, nodeRadius));
+  };
+
   // Handle responsive resizing without destroying the graph
   useEffect(() => {
     const handleResize = () => {
@@ -207,9 +221,40 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
             svg.attr('width', newDimensions.width)
               .attr('height', newDimensions.height);
 
-            // Update simulation center force for new dimensions
+            // Update simulation forces for new dimensions
             simulation.force('center', d3.forceCenter(newDimensions.width / 2, newDimensions.height / 2).strength(0.05));
-            simulation.alpha(0.3).restart(); // Gentle restart to adjust to new center
+            simulation.force('x', d3.forceX(newDimensions.width / 2).strength(0.1));
+            simulation.force('y', d3.forceY(newDimensions.height / 2).strength(0.1));
+            
+            // Update boundary force with new dimensions
+            simulation.force('boundary', (_alpha: number) => {
+              const nodes = simulation.nodes() as D3Node[];
+              nodes.forEach(node => {
+                if (node.x !== undefined && node.y !== undefined) {
+                  // Left boundary
+                  if (node.x < nodeRadius) {
+                    node.x = nodeRadius;
+                  }
+                  // Right boundary
+                  if (node.x > newDimensions.width - nodeRadius) {
+                    node.x = newDimensions.width - nodeRadius;
+                  }
+                  // Top boundary
+                  if (node.y < nodeRadius) {
+                    node.y = nodeRadius;
+                  }
+                  // Bottom boundary
+                  if (node.y > newDimensions.height - nodeRadius) {
+                    node.y = newDimensions.height - nodeRadius;
+                  }
+                }
+              });
+            });
+            
+            simulation.alpha(0.3).restart(); // Gentle restart to adjust to new dimensions
+            
+            // Update drag behavior for existing nodes with new dimensions
+            updateNodeDragBehavior(newDimensions.width, newDimensions.height);
           }
         }
 
@@ -329,7 +374,7 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
       .attr('data-testid', 'graph-container');
 
     // Create force simulation with responsive dimensions
-    const simulation = d3Utils.createForceSimulation(dimensions.width, dimensions.height);
+    const simulation = d3Utils.createForceSimulation(dimensions.width, dimensions.height, nodeRadius);
 
     // Store D3 instance
     d3InstanceRef.current = {
@@ -622,7 +667,7 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
               d3InstanceRef.current.selectedEdgeTuple[0] === sourceLabel && 
               d3InstanceRef.current.selectedEdgeTuple[1] === targetLabel;
             const isDirected = data.type === 'directed';
-            applyEdgeStyling(visibleEdge, isSelected || false, '#000000', EDGE_STROKE_WIDTH, isDirected);
+            applyEdgeStyling(visibleEdge, isSelected || false, '#000000', edgeStrokeWidth, isDirected);
           });
 
           edgeEnter.each(function (this: any, d: D3Edge) {
@@ -638,7 +683,7 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
               onEdgeMouseEnter: (edge) => {
                 const edgeElement = d3.select(`[data-edge-source="${edge.source}"][data-edge-target="${edge.target}"] .graph-edge`);
                 const isDirected = data.type === 'directed';
-                applyEdgeStyling(edgeElement, false, '#000000', EDGE_STROKE_WIDTH, isDirected);
+                applyEdgeStyling(edgeElement, false, '#000000', edgeStrokeWidth, isDirected);
               },
               onEdgeMouseLeave: (edge) => {
                 const edgeElement = d3.select(`[data-edge-source="${edge.source}"][data-edge-target="${edge.target}"] .graph-edge`);
@@ -646,7 +691,7 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
                   d3InstanceRef.current.selectedEdgeTuple[0] === edge.source && 
                   d3InstanceRef.current.selectedEdgeTuple[1] === edge.target;
                 const isDirected = data.type === 'directed';
-                applyEdgeStyling(edgeElement, isSelected || false, '#000000', EDGE_STROKE_WIDTH, isDirected);
+                applyEdgeStyling(edgeElement, isSelected || false, '#000000', edgeStrokeWidth, isDirected);
               },
             });
 
@@ -680,7 +725,7 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
               d3InstanceRef.current.selectedEdgeTuple[0] === sourceLabel && 
               d3InstanceRef.current.selectedEdgeTuple[1] === targetLabel;
             const isDirected = data.type === 'directed';
-            applyEdgeStyling(visibleEdge, isSelected || false, '#000000', EDGE_STROKE_WIDTH, isDirected);
+            applyEdgeStyling(visibleEdge, isSelected || false, '#000000', edgeStrokeWidth, isDirected);
             
             // Update weight label text
             edgeContainer.select('.edge-weight-label')
@@ -697,7 +742,7 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
               onEdgeMouseEnter: (edge) => {
                 const edgeElement = d3.select(`[data-edge-source="${edge.source}"][data-edge-target="${edge.target}"] .graph-edge`);
                 const isDirected = data.type === 'directed';
-                applyEdgeStyling(edgeElement, false, '#000000', EDGE_STROKE_WIDTH, isDirected);
+                applyEdgeStyling(edgeElement, false, '#000000', edgeStrokeWidth, isDirected);
               },
               onEdgeMouseLeave: (edge) => {
                 const edgeElement = d3.select(`[data-edge-source="${edge.source}"][data-edge-target="${edge.target}"] .graph-edge`);
@@ -705,7 +750,7 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
                   d3InstanceRef.current.selectedEdgeTuple[0] === edge.source && 
                   d3InstanceRef.current.selectedEdgeTuple[1] === edge.target;
                 const isDirected = data.type === 'directed';
-                applyEdgeStyling(edgeElement, isSelected || false, '#000000', EDGE_STROKE_WIDTH, isDirected);
+                applyEdgeStyling(edgeElement, isSelected || false, '#000000', edgeStrokeWidth, isDirected);
               },
             });
 
@@ -745,7 +790,7 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
             .attr('class', 'node')
             .attr('data-node-label', (d: D3Node) => d.label)
             .attr('opacity', 1)
-            .call(d3Utils.createDrag(simulation!, mode));
+            .call(d3Utils.createDrag(simulation!, mode, dimensions.width, dimensions.height, nodeRadius));
 
           nodeEnter
             .append('circle')
@@ -765,8 +810,8 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
             const isEditMode = mode === 'edit';
             const isSource = d3InstanceRef.current?.edgeCreationSource === d.id;
 
-            applyNodeStyling(nodeSelection, isSelected, NODE_RADIUS, isSource);
-            applyNodeNibs(nodeSelection, isEditMode && isSelected && !isSource, NODE_RADIUS, (node) => {
+            applyNodeStyling(nodeSelection, isSelected, nodeRadius, isSource);
+            applyNodeNibs(nodeSelection, isEditMode && isSelected && !isSource, nodeRadius, (node) => {
               // Nib click starts edge creation mode
               if (mode === 'edit' && !d3InstanceRef.current?.edgeCreationSource) {
                 d3InstanceRef.current!.edgeCreationSource = node.label;
@@ -815,8 +860,8 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
               .select('text')
               .text(d.label);
 
-            applyNodeStyling(nodeSelection, isSelected, NODE_RADIUS, isSource);
-            applyNodeNibs(nodeSelection, isEditMode && isSelected && !isSource, NODE_RADIUS, (node) => {
+            applyNodeStyling(nodeSelection, isSelected, nodeRadius, isSource);
+            applyNodeNibs(nodeSelection, isEditMode && isSelected && !isSource, nodeRadius, (node) => {
               // Nib click starts edge creation mode
               if (mode === 'edit' && !d3InstanceRef.current?.edgeCreationSource) {
                 d3InstanceRef.current!.edgeCreationSource = node.label;
@@ -876,10 +921,10 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
             const unitY = dy / length;
             
             // Calculate endpoints at node circumference
-            const x1 = (source.x || 0) + unitX * NODE_RADIUS;
-            const y1 = (source.y || 0) + unitY * NODE_RADIUS;
-            const x2 = (target.x || 0) - unitX * NODE_RADIUS;
-            const y2 = (target.y || 0) - unitY * NODE_RADIUS;
+            const x1 = (source.x || 0) + unitX * nodeRadius;
+            const y1 = (source.y || 0) + unitY * nodeRadius;
+            const x2 = (target.x || 0) - unitX * nodeRadius;
+            const y2 = (target.y || 0) - unitY * nodeRadius;
             
             // Update both clickable and visible lines
             edgeContainer.selectAll('line')
@@ -1006,6 +1051,53 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
     updateD3Data();
   }, [data, mode, newNodePosition]);
 
+  // Recreate simulation when nodeRadius or edgeStrokeWidth changes
+  useEffect(() => {
+    if (d3InstanceRef.current?.simulation) {
+      const { simulation } = d3InstanceRef.current;
+      
+      // Update collision radius
+      simulation.force('collision', d3.forceCollide().radius(nodeRadius + 10));
+      
+      // Update boundary force
+      simulation.force('boundary', (_alpha: number) => {
+        const nodes = simulation.nodes() as D3Node[];
+        nodes.forEach(node => {
+          if (node.x !== undefined && node.y !== undefined) {
+            // Left boundary
+            if (node.x < nodeRadius) {
+              node.x = nodeRadius;
+            }
+            // Right boundary
+            if (node.x > dimensions.width - nodeRadius) {
+              node.x = dimensions.width - nodeRadius;
+            }
+            // Top boundary
+            if (node.y < nodeRadius) {
+              node.y = nodeRadius;
+            }
+            // Bottom boundary
+            if (node.y > dimensions.height - nodeRadius) {
+              node.y = dimensions.height - nodeRadius;
+            }
+          }
+        });
+      });
+      
+      // Update drag behavior for existing nodes
+      updateNodeDragBehavior(dimensions.width, dimensions.height);
+      
+      // Restart simulation with new settings
+      simulation.alpha(0.3).restart();
+    }
+  }, [nodeRadius, edgeStrokeWidth]);
+
+  // Update visual styling when nodeRadius or edgeStrokeWidth changes
+  useEffect(() => {
+    // Force a complete data update to ensure all styling is reapplied
+    updateD3Data();
+  }, [nodeRadius, edgeStrokeWidth]);
+
   // Clear selections and interactive states when graph structure changes
   // Only clear if the actual structure changed, not just data object recreation
   useEffect(() => {
@@ -1034,8 +1126,8 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
       const isEditMode = mode === 'edit';
       const isSource = d3InstanceRef.current?.edgeCreationSource === d.id;
 
-      applyNodeStyling(nodeSelection, isSelected, NODE_RADIUS, isSource);
-      applyNodeNibs(nodeSelection, isEditMode && isSelected && !isSource, NODE_RADIUS, (node) => {
+      applyNodeStyling(nodeSelection, isSelected, nodeRadius, isSource);
+      applyNodeNibs(nodeSelection, isEditMode && isSelected && !isSource, nodeRadius, (node) => {
         // Nib click starts edge creation mode
         if (mode === 'edit' && !d3InstanceRef.current?.edgeCreationSource) {
           d3InstanceRef.current!.edgeCreationSource = node.label;
@@ -1053,7 +1145,7 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
         d3InstanceRef.current.selectedEdgeTuple[0] === sourceLabel && 
         d3InstanceRef.current.selectedEdgeTuple[1] === targetLabel;
       const isDirected = data.type === 'directed';
-      applyEdgeStyling(visibleEdge, isSelected || false, '#000000', EDGE_STROKE_WIDTH, isDirected);
+      applyEdgeStyling(visibleEdge, isSelected || false, '#000000', edgeStrokeWidth, isDirected);
     });
   }, [selectionChange, mode]);
 

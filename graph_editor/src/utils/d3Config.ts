@@ -66,7 +66,7 @@ export const d3Utils = {
 
 
   // Drag behavior for nodes
-  createDrag: (simulation?: ForceSimulation, mode?: string) =>
+  createDrag: (simulation?: ForceSimulation, mode?: string, width?: number, height?: number, nodeRadius?: number) =>
     d3
       .drag<SVGGElement, D3Node, unknown>()
       .on('start', (event, d) => {
@@ -88,8 +88,33 @@ export const d3Utils = {
       .on('drag', (event, d) => {
         // Prevent click events during drag
         event.sourceEvent?.stopPropagation();
-        d.fx = event.x;
-        d.fy = event.y;
+        
+        const radius = (nodeRadius || 15);
+        let newX = event.x;
+        let newY = event.y;
+        
+        // Apply boundary constraints during drag
+        if (width && height) {
+          // Left boundary
+          if (newX < radius) {
+            newX = radius;
+          }
+          // Right boundary
+          if (newX > width - radius) {
+            newX = width - radius;
+          }
+          // Top boundary
+          if (newY < radius) {
+            newY = radius;
+          }
+          // Bottom boundary
+          if (newY > height - radius) {
+            newY = height - radius;
+          }
+        }
+        
+        d.fx = newX;
+        d.fy = newY;
       })
       .on('end', (event, d) => {
         // Prevent click events from firing after drag
@@ -109,14 +134,41 @@ export const d3Utils = {
       }),
 
   // Force simulation configuration
-  createForceSimulation: (width: number, height: number) => {
-    return forceSimulation<D3Node, D3Edge>()
+  createForceSimulation: (width: number, height: number, nodeRadius: number = 15) => {
+    
+    const simulation = forceSimulation<D3Node, D3Edge>()
       .force('link', forceLink<D3Node, D3Edge>().id((d: D3Node) => d.id).distance(120).strength(0.8)) // Stronger link force for better connectivity
       .force('charge', forceManyBody<D3Node>().strength(20)) // Gentle charge strength to minimize repulsion on new nodes
-      .force('collision', forceCollide<D3Node>().radius(25)) // Smaller collision radius to reduce repulsion
+      .force('collision', forceCollide<D3Node>().radius(nodeRadius + 10)) // Collision radius based on node radius
       .force('center', forceCenter<D3Node>(width / 2, height / 2).strength(0.02)) // Reduced center force to minimize disruption
-      // .force('x', forceX<D3Node>(width / 2).strength(0.05)) // X position force configuration
-      // .force('y', forceY<D3Node>(height / 2).strength(0.05)); // Y position force configuration
+      .force('x', forceX<D3Node>(width / 2).strength(0.1)) // X position force to keep nodes centered
+      .force('y', forceY<D3Node>(height / 2).strength(0.1)) // Y position force to keep nodes centered
+      .force('boundary', (_alpha: number) => {
+        // Custom boundary force to keep nodes within SVG bounds
+        const nodes = simulation.nodes() as D3Node[];
+        nodes.forEach(node => {
+          if (node.x !== undefined && node.y !== undefined) {
+            // Left boundary
+            if (node.x < nodeRadius) {
+              node.x = nodeRadius;
+            }
+            // Right boundary
+            if (node.x > width - nodeRadius) {
+              node.x = width - nodeRadius;
+            }
+            // Top boundary
+            if (node.y < nodeRadius) {
+              node.y = nodeRadius;
+            }
+            // Bottom boundary
+            if (node.y > height - nodeRadius) {
+              node.y = height - nodeRadius;
+            }
+          }
+        });
+      });
+    
+    return simulation;
   },
 
   // Viewport management utilities

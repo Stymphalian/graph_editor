@@ -4,6 +4,7 @@ import TextPanel from './components/TextPanel';
 import ModeControls from './components/ModeControls';
 import GraphControls from './components/GraphControls';
 import NodeIndexingControls from './components/NodeIndexingControls';
+import VisualizationSettings from './components/VisualizationSettings';
 import { Graph } from './models/Graph';
 import { GraphData, GraphType, NodeIndexingMode, GraphOperation } from './types/graph';
 import { Mode } from './components/ModeControls';
@@ -35,6 +36,8 @@ function App() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [currentMode, setCurrentMode] = useState<Mode>('edit');
   const [lastOperation, setLastOperation] = useState<GraphOperation | undefined>(undefined);
+  const [nodeRadius, setNodeRadius] = useState<number>(20);
+  const [edgeStrokeWidth, setEdgeStrokeWidth] = useState<number>(2);
 
   const handleNodeCreate = (x: number, y: number) => {
     console.log('Creating node at:', x, y);
@@ -349,6 +352,8 @@ function App() {
                     newNodePosition={newNodePosition}
                     onNewNodePositioned={() => setNewNodePosition(null)}
                     onModeTransitionCleanup={handleModeTransitionCleanup}
+                    nodeRadius={nodeRadius}
+                    edgeStrokeWidth={edgeStrokeWidth}
                   />
                 </div>
                 <p className="graph-editor-help-text mt-4">
@@ -378,6 +383,13 @@ function App() {
                   <NodeIndexingControls
                     nodeIndexingMode={graphData.nodeIndexingMode}
                     onNodeIndexingModeChange={handleNodeIndexingModeChange}
+                    className="w-full"
+                  />
+                  <VisualizationSettings
+                    nodeRadius={nodeRadius}
+                    edgeStrokeWidth={edgeStrokeWidth}
+                    onNodeRadiusChange={setNodeRadius}
+                    onEdgeStrokeWidthChange={setEdgeStrokeWidth}
                     className="w-full"
                   />
                 </div>
