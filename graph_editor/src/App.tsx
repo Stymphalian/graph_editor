@@ -180,8 +180,6 @@ function App() {
   };
 
   const handleEdgeWeightEdit = (sourceLabel: string, targetLabel: string, newWeight: string) => {
-    console.log('Editing edge weight:', sourceLabel, '->', targetLabel, 'weight:', newWeight);
-    
     // Get the current edge to find the old weight
     const currentEdge = currentGraph.getEdges().find(edge => edge.source === sourceLabel && edge.target === targetLabel);
     const oldWeight = currentEdge?.weight;
@@ -197,19 +195,18 @@ function App() {
     const success = currentGraph.updateEdgeWeightByNodes(sourceLabel, targetLabel, newWeight);
     
     if (success) {
-      console.log('Edge weight updated successfully');
       // Set the operation for partial text updates
-      setLastOperation({
-        type: 'EDGE_WEIGHT_CHANGE',
-        edgeTuple: [sourceLabel, targetLabel],
+      const operation = {
+        type: 'EDGE_WEIGHT_CHANGE' as const,
+        edgeTuple: [sourceLabel, targetLabel] as [string, string],
         previousValue: oldWeight,
         newValue: newWeight,
         data: edgeData
-      });
+      };
+      setLastOperation(operation);
       // Update the graph data state to trigger re-render
       setGraphData(currentGraph.getData());
     } else {
-      console.error('Failed to update edge weight:', currentGraph.getError());
       // Show error to user via the error callback
       const errorMessage = currentGraph.getError() || 'Failed to update edge weight';
       handleError(errorMessage);

@@ -136,6 +136,7 @@ const TextPanel: React.FC<TextPanelProps> = ({
   const updateTextForEdgeWeightChange = (_edgeTuple: [string, string], sourceLabel: string, targetLabel: string, oldWeight: string | undefined, newWeight: string | undefined): void => {
     const lines = graphTextContent.split('\n');
     const updatedLines: string[] = [];
+    let found = false;
     
     for (const line of lines) {
       const trimmedLine = line.trim();
@@ -151,18 +152,29 @@ const TextPanel: React.FC<TextPanelProps> = ({
         const isMatch = (lineSourceLabel === sourceLabel && lineTargetLabel === targetLabel) ||
                        (data.type === 'undirected' && lineSourceLabel === targetLabel && lineTargetLabel === sourceLabel);
         
-        // Also check weight if specified
-        const weightMatch = oldWeight === undefined || lineWeight === oldWeight;
+        // For weight matching, be more flexible:
+        // - If oldWeight is undefined, match any line (with or without weight)
+        // - If oldWeight is defined, match lines with the same weight
+        const weightMatch = oldWeight === undefined || 
+                           (oldWeight === lineWeight) ||
+                           (oldWeight !== undefined && lineWeight === undefined && oldWeight === '1');
         
         if (isMatch && weightMatch) {
           // Update this line with the new weight
           const newLine = `${lineSourceLabel} ${lineTargetLabel}${newWeight ? ` ${newWeight}` : ''}`;
           updatedLines.push(newLine);
+          found = true;
           continue;
         }
       }
       
       updatedLines.push(line);
+    }
+    
+    if (!found) {
+      // If the edge wasn't found, add it as a new line
+      const newLine = `${sourceLabel} ${targetLabel}${newWeight ? ` ${newWeight}` : ''}`;
+      updatedLines.push(newLine);
     }
     
     setGraphTextContent(updatedLines.join('\n'));
@@ -229,8 +241,8 @@ const TextPanel: React.FC<TextPanelProps> = ({
             }
             break;
             
-          case 'EDGE_WEIGHT_CHANGE':
-            if (lastOperation.edgeTuple && lastOperation.previousValue !== undefined && lastOperation.newValue !== undefined && lastOperation.data) {
+            case 'EDGE_WEIGHT_CHANGE':
+            if (lastOperation.edgeTuple && lastOperation.data) {
               const { sourceLabel, targetLabel } = lastOperation.data;
               updateTextForEdgeWeightChange(lastOperation.edgeTuple, sourceLabel, targetLabel, lastOperation.previousValue, lastOperation.newValue);
             }

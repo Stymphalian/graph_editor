@@ -135,8 +135,28 @@ export class Graph {
    * Re-label all nodes based on current indexing mode and their order in the array
    */
   private relabelNodes(): void {
+    // Create a mapping of old labels to new labels
+    const labelMapping = new Map<string, string>();
+    
+    // First pass: create the mapping and update node labels
     this.state.data.nodes.forEach((node, index) => {
-      node.label = this.generateNodeLabel(index);
+      const oldLabel = node.label;
+      const newLabel = this.generateNodeLabel(index);
+      labelMapping.set(oldLabel, newLabel);
+      node.label = newLabel;
+    });
+    
+    // Second pass: update all edge references to use the new labels
+    this.state.data.edges.forEach(edge => {
+      const newSourceLabel = labelMapping.get(edge.source);
+      const newTargetLabel = labelMapping.get(edge.target);
+      
+      if (newSourceLabel) {
+        edge.source = newSourceLabel;
+      }
+      if (newTargetLabel) {
+        edge.target = newTargetLabel;
+      }
     });
   }
 

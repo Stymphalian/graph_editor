@@ -1,4 +1,4 @@
-import { D3Node } from '@/utils/d3Config';
+import { d3, D3Node } from '@/utils/d3Config';
 
 export interface NodeConfig {
   isSelected?: boolean;
@@ -138,6 +138,9 @@ export const applyNodeNibs = (nodeSelection: any, showNibs: boolean, radius: num
   
   if (showNibs) {
     const nibRadius = 6; // Larger nib for easier selection
+    const hoverRadius = 8; // Expanded radius on hover
+    const hoverFill = '#1976d2'; // Blue highlight color
+    const normalFill = '#000000'; // Black color
     
     const nib = nodeSelection
       .append('circle')
@@ -145,11 +148,30 @@ export const applyNodeNibs = (nodeSelection: any, showNibs: boolean, radius: num
       .attr('cx', radius + nibRadius) // Position at right edge of main circle
       .attr('cy', 0) // Center vertically
       .attr('r', nibRadius)
-      .attr('fill', '#000000') // Black color
+      .attr('fill', normalFill)
       .attr('stroke', 'none')
       .style('pointer-events', 'all')
       .style('cursor', 'pointer')
       .style('transition', 'all 0.2s ease-in-out');
+    
+    // Add hover effects
+    nib
+      .on('mouseenter', function() {
+        d3.select(this as any)
+          .transition()
+          .duration(200)
+          .attr('r', hoverRadius)
+          .attr('fill', hoverFill)
+          .style('filter', 'drop-shadow(0 0 4px rgba(25, 118, 210, 0.6))');
+      })
+      .on('mouseleave', function() {
+        d3.select(this as any)
+          .transition()
+          .duration(200)
+          .attr('r', nibRadius)
+          .attr('fill', normalFill)
+          .style('filter', 'none');
+      });
     
     // Add click handler for the nib
     if (onNibClick) {
@@ -167,6 +189,9 @@ export const applyNodeNibs = (nodeSelection: any, showNibs: boolean, radius: num
  */
 export const createNodeNibs = (_node: D3Node, radius: number = 20) => {
   const nibRadius = 3; // Smaller nib
+  const hoverRadius = 5; // Expanded radius on hover
+  const hoverFill = '#1976d2'; // Blue highlight color
+  const normalFill = '#000000'; // Black color
   
   return [{
     tag: 'circle',
@@ -175,10 +200,28 @@ export const createNodeNibs = (_node: D3Node, radius: number = 20) => {
       cx: radius + nibRadius, // Position at right edge of main circle
       cy: 0, // Center vertically
       r: nibRadius,
-      fill: '#000000', // Black color
+      fill: normalFill,
       stroke: 'none',
-      style: 'pointer-events: none; transition: all 0.2s ease-in-out;',
+      style: 'pointer-events: all; cursor: pointer; transition: all 0.2s ease-in-out;',
     },
+    eventHandlers: {
+      mouseenter: function() {
+        d3.select(this as any)
+          .transition()
+          .duration(200)
+          .attr('r', hoverRadius)
+          .attr('fill', hoverFill)
+          .style('filter', 'drop-shadow(0 0 4px rgba(25, 118, 210, 0.6))');
+      },
+      mouseleave: function() {
+        d3.select(this as any)
+          .transition()
+          .duration(200)
+          .attr('r', nibRadius)
+          .attr('fill', normalFill)
+          .style('filter', 'none');
+      }
+    }
   }];
 };
 

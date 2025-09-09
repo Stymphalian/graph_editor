@@ -460,7 +460,24 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
       const originalEdge = data.edges.find(e => e.source === sourceLabel && e.target === targetLabel);
       if (originalEdge) {
         handleEdgeClick(originalEdge);
-      } else {
+      }
+    }
+  };
+
+  // Helper function to handle edge double-click logic
+  const handleEdgeDoubleClickLogic = (edge: D3Edge) => {
+    // Check if this event should be processed based on mode
+    if (!shouldProcessEvent('dblclick', 'edge')) {
+      return;
+    }
+
+    // Only allow edge weight editing in edit mode
+    if (mode === 'edit') {
+      const sourceLabel = typeof edge.source === 'string' ? edge.source : edge.source.label;
+      const targetLabel = typeof edge.target === 'string' ? edge.target : edge.target.label;
+      const originalEdge = data.edges.find(e => e.source === sourceLabel && e.target === targetLabel);
+      if (originalEdge) {
+        handleEdgeWeightEdit(originalEdge);
       }
     }
   };
@@ -610,11 +627,7 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
                 handleEdgeClickLogic(edge);
               },
               onEdgeDoubleClick: (edge) => {
-                // Double-click for edge weight editing
-                const originalEdge = data.edges.find(e => e.source === edge.source && e.target === edge.target);
-                if (originalEdge) {
-                  handleEdgeWeightEdit(originalEdge);
-                }
+                handleEdgeDoubleClickLogic(edge);
               },
               onEdgeMouseEnter: (edge) => {
                 const edgeElement = d3.select(`[data-edge-source="${edge.source}"][data-edge-target="${edge.target}"] .graph-edge`);
@@ -646,9 +659,11 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
             const edgeContainer = d3.select(this);
             const visibleEdge = edgeContainer.select('.graph-edge');
             const clickableEdge = edgeContainer.select('.edge-clickable');
+            const sourceLabel = typeof d.source === 'string' ? d.source : d.source.label;
+            const targetLabel = typeof d.target === 'string' ? d.target : d.target.label;
             const isSelected = d3InstanceRef.current?.selectedEdgeTuple && 
-              d3InstanceRef.current.selectedEdgeTuple[0] === d.source && 
-              d3InstanceRef.current.selectedEdgeTuple[1] === d.target;
+              d3InstanceRef.current.selectedEdgeTuple[0] === sourceLabel && 
+              d3InstanceRef.current.selectedEdgeTuple[1] === targetLabel;
             const isDirected = data.type === 'directed';
             applyEdgeStyling(visibleEdge, isSelected || false, '#000000', EDGE_STROKE_WIDTH, isDirected);
             
@@ -662,11 +677,7 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
                 handleEdgeClickLogic(edge);
               },
               onEdgeDoubleClick: (edge) => {
-                // Double-click for edge weight editing
-                const originalEdge = data.edges.find(e => e.source === edge.source && e.target === edge.target);
-                if (originalEdge) {
-                  handleEdgeWeightEdit(originalEdge);
-                }
+                handleEdgeDoubleClickLogic(edge);
               },
               onEdgeMouseEnter: (edge) => {
                 const edgeElement = d3.select(`[data-edge-source="${edge.source}"][data-edge-target="${edge.target}"] .graph-edge`);
@@ -978,9 +989,11 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
     container.selectAll('.edge-container').each(function (this: any, d: any) {
       const edgeContainer = d3.select(this);
       const visibleEdge = edgeContainer.select('.graph-edge');
+      const sourceLabel = typeof d.source === 'string' ? d.source : d.source.label;
+      const targetLabel = typeof d.target === 'string' ? d.target : d.target.label;
       const isSelected = d3InstanceRef.current?.selectedEdgeTuple && 
-        d3InstanceRef.current.selectedEdgeTuple[0] === d.source && 
-        d3InstanceRef.current.selectedEdgeTuple[1] === d.target;
+        d3InstanceRef.current.selectedEdgeTuple[0] === sourceLabel && 
+        d3InstanceRef.current.selectedEdgeTuple[1] === targetLabel;
       const isDirected = data.type === 'directed';
       applyEdgeStyling(visibleEdge, isSelected || false, '#000000', EDGE_STROKE_WIDTH, isDirected);
     });
