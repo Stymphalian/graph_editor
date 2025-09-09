@@ -42,6 +42,9 @@ interface GraphViewerProps {
   edgeStrokeWidth?: number;
 }
 
+const WIDTH = 600;
+const HEIGHT = 400;
+
 const GraphViewer: React.FC<GraphViewerProps> = ({
   data,
   onNodeCreate,
@@ -114,16 +117,6 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
     return {width: containerWidth, height: containerHeight};
   }
 
-  // Track dimensions using useRef instead of React state
-  const dimensionsRef = useRef<{
-    current: { width: number; height: number };
-    previous: { width: number; height: number } | null;
-  }>({
-    current: { width: 400, height: 400 }, // fallback initial
-    previous: null
-  });
-
-  const dimensionsInitializedRef = useRef(false);
 
   // Internal click handlers
   const handleNodeClick = (node: Node) => {
@@ -289,17 +282,8 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
       }
     });
 
-    // d3InstanceRef.current.container.selectAll('.node').attr(
-    //   'transform',
-    //   (d: D3Node) => `translate(${d.x || 0},${d.y || 0})`
-    // );
-
     console.log("@@@@ updatedPositions", updatedPositions);
-    
-    // // Update the graphData positions through the callback
-    // if (updatedPositions.length > 0 && onNodePositionUpdate) {
-    //   onNodePositionUpdate(updatedPositions);
-    // }
+
   };
 
   // Function to update drag behavior for existing nodes with new dimensions
@@ -426,8 +410,8 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
       data.edges.length
     );
     const simulation = d3Utils.createForceSimulation(
-      dimensionsRef.current.current.width,
-      dimensionsRef.current.current.height,
+      WIDTH,
+      HEIGHT,
       nodeRadius,
       svgRef.current,
       optimalPreset
@@ -938,8 +922,8 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
               d3Utils.createDrag(
                 simulation!,
                 mode,
-                dimensionsRef.current.current.width,
-                dimensionsRef.current.current.height,
+                WIDTH,
+                HEIGHT,
                 nodeRadius,
                 svgRef.current
               )
@@ -1253,7 +1237,7 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
       );
 
       // Update drag behavior for existing nodes
-      updateNodeDragBehavior(dimensionsRef.current.current.width, dimensionsRef.current.current.height);
+      updateNodeDragBehavior(WIDTH, HEIGHT);
 
       // Restart simulation with new settings
       simulation.alpha(0.3).restart();
@@ -1478,12 +1462,12 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
       </div>
       <svg
         ref={svgRef}
-        width={dimensionsRef.current.current.width}
-        height={dimensionsRef.current.current.height}
+        width={WIDTH}
+        height={HEIGHT}
         className={`graph-svg border border-gray-200 rounded-lg bg-white cursor-${getModeCursor().replace('-', '-')}`}
         style={{
-          width: `${dimensionsRef.current.current.width}px`,
-          height: `${dimensionsRef.current.current.height}px`,
+          width: `${WIDTH}px`,
+          height: `${HEIGHT}px`,
         }}
       />
 
