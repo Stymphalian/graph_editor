@@ -8,7 +8,7 @@ import { D3Node } from '@/utils/d3Config';
 
 // Mock D3Node for testing
 const mockNode: D3Node = {
-  id: 1,
+  id: '1',
   label: 'A',
   x: 100,
   y: 100,

@@ -122,10 +122,10 @@ export class Graph {
   setNodeIndexingMode(mode: NodeIndexingMode): void {
     if (this.state.data.nodeIndexingMode !== mode) {
       this.state.data.nodeIndexingMode = mode;
-      
+
       // Re-label existing nodes based on their order in the array
       this.relabelNodes();
-      
+
       this.state.isModified = true;
       this.clearError();
     }
@@ -137,7 +137,7 @@ export class Graph {
   private relabelNodes(): void {
     // Create a mapping of old labels to new labels
     const labelMapping = new Map<string, string>();
-    
+
     // First pass: create the mapping and update node labels
     this.state.data.nodes.forEach((node, index) => {
       const oldLabel = node.label;
@@ -145,12 +145,12 @@ export class Graph {
       labelMapping.set(oldLabel, newLabel);
       node.label = newLabel;
     });
-    
+
     // Second pass: update all edge references to use the new labels
     this.state.data.edges.forEach(edge => {
       const newSourceLabel = labelMapping.get(edge.source);
       const newTargetLabel = labelMapping.get(edge.target);
-      
+
       if (newSourceLabel) {
         edge.source = newSourceLabel;
       }
@@ -173,7 +173,6 @@ export class Graph {
   isUndirected(): boolean {
     return this.state.data.type === 'undirected';
   }
-
 
   /**
    * Generate a node label based on indexing mode
@@ -198,7 +197,7 @@ export class Graph {
    */
   private getNextAvailableIndex(): number {
     const existingLabels = this.state.data.nodes.map(node => node.label);
-    
+
     // Find the highest numeric index that exists
     let maxIndex = -1;
     for (const label of existingLabels) {
@@ -207,20 +206,19 @@ export class Graph {
         maxIndex = Math.max(maxIndex, numericValue);
       }
     }
-    
+
     // If no numeric labels exist, use the number of existing nodes
     if (maxIndex === -1) {
       return this.state.data.nodes.length;
     }
 
-    if (this.getNodeIndexingMode() == "1-indexed") {
+    if (this.getNodeIndexingMode() == '1-indexed') {
       return maxIndex;
     } else {
       // Start from the next index after the highest existing numeric label
       return maxIndex + 1;
     }
   }
-
 
   /**
    * Find a node by label
@@ -232,7 +230,10 @@ export class Graph {
   /**
    * Find edges by source and target node labels
    */
-  private findEdgesByNodeLabels(sourceLabel: string, targetLabel: string): Edge[] {
+  private findEdgesByNodeLabels(
+    sourceLabel: string,
+    targetLabel: string
+  ): Edge[] {
     return this.state.data.edges.filter(
       edge =>
         (edge.source === sourceLabel && edge.target === targetLabel) ||
@@ -334,7 +335,11 @@ export class Graph {
   addNodeWithAutoLabel(x?: number, y?: number): Node | null {
     const index = this.getNextAvailableIndex();
     const label = this.generateNodeLabel(index);
-    return this.addNode({ label, ...(x !== undefined && { x }), ...(y !== undefined && { y }) });
+    return this.addNode({
+      label,
+      ...(x !== undefined && { x }),
+      ...(y !== undefined && { y }),
+    });
   }
 
   /**
@@ -484,9 +489,11 @@ export class Graph {
   /**
    * Update multiple node positions at once
    */
-  updateNodePositions(positions: Array<{ label: string; x: number; y: number }>): boolean {
+  updateNodePositions(
+    positions: Array<{ label: string; x: number; y: number }>
+  ): boolean {
     let hasChanges = false;
-    
+
     for (const { label, x, y } of positions) {
       const node = this.findNodeByLabel(label);
       if (node) {
@@ -494,8 +501,11 @@ export class Graph {
         const currentX = node.x || 0;
         const currentY = node.y || 0;
         const threshold = 1; // Only update if change is more than 1 pixel
-        
-        if (Math.abs(currentX - x) > threshold || Math.abs(currentY - y) > threshold) {
+
+        if (
+          Math.abs(currentX - x) > threshold ||
+          Math.abs(currentY - y) > threshold
+        ) {
           const success = this.updateNodePosition(label, x, y);
           if (success) {
             hasChanges = true;
@@ -503,7 +513,7 @@ export class Graph {
         }
       }
     }
-    
+
     return hasChanges;
   }
 
@@ -577,14 +587,22 @@ export class Graph {
 
   addEdgeWithLabels(edgeData: EdgeCreationDataWithLabels): Edge | null {
     if (!this.findNodeByLabel(edgeData.sourceLabel)) {
-      this.setError(`Cannot add edge: source node '${edgeData.sourceLabel}' not found`);
+      this.setError(
+        `Cannot add edge: source node '${edgeData.sourceLabel}' not found`
+      );
       return null;
     }
     if (!this.findNodeByLabel(edgeData.targetLabel)) {
-      this.setError(`Cannot add edge: target node '${edgeData.targetLabel}' not found`);
+      this.setError(
+        `Cannot add edge: target node '${edgeData.targetLabel}' not found`
+      );
       return null;
     }
-    return this.addEdge({ source: edgeData.sourceLabel, target: edgeData.targetLabel, ...(edgeData.weight && { weight: edgeData.weight }) });
+    return this.addEdge({
+      source: edgeData.sourceLabel,
+      target: edgeData.targetLabel,
+      ...(edgeData.weight && { weight: edgeData.weight }),
+    });
   }
 
   /**
@@ -595,7 +613,9 @@ export class Graph {
       edge => edge.source === sourceLabel && edge.target === targetLabel
     );
     if (edgeIndex === -1) {
-      this.setError(`Cannot remove edge: edge between '${sourceLabel}' and '${targetLabel}' not found`);
+      this.setError(
+        `Cannot remove edge: edge between '${sourceLabel}' and '${targetLabel}' not found`
+      );
       return false;
     }
 
@@ -643,7 +663,9 @@ export class Graph {
       edge => edge.source === sourceLabel && edge.target === targetLabel
     );
     if (edgeIndex === -1) {
-      this.setError(`Cannot update edge: edge between '${sourceLabel}' and '${targetLabel}' not found`);
+      this.setError(
+        `Cannot update edge: edge between '${sourceLabel}' and '${targetLabel}' not found`
+      );
       return null;
     }
 
@@ -682,7 +704,9 @@ export class Graph {
    * Get edges between two specific nodes
    */
   getEdgesBetweenNodes(sourceLabel: string, targetLabel: string): Edge[] {
-    return this.findEdgesByNodeLabels(sourceLabel, targetLabel).map(edge => ({ ...edge }));
+    return this.findEdgesByNodeLabels(sourceLabel, targetLabel).map(edge => ({
+      ...edge,
+    }));
   }
 
   /**
@@ -709,7 +733,11 @@ export class Graph {
   /**
    * Update edge weight by source and target node labels
    */
-  updateEdgeWeightByNodes(sourceLabel: string, targetLabel: string, weight: string): boolean {
+  updateEdgeWeightByNodes(
+    sourceLabel: string,
+    targetLabel: string,
+    weight: string
+  ): boolean {
     const result = this.updateEdgeByNodes(sourceLabel, targetLabel, { weight });
     return result !== null;
   }
@@ -720,11 +748,15 @@ export class Graph {
   removeEdgeWeightByNodes(sourceLabel: string, targetLabel: string): boolean {
     const edge = this.getEdgeByNodes(sourceLabel, targetLabel);
     if (!edge) {
-      this.setError(`Cannot remove weight: edge between '${sourceLabel}' and '${targetLabel}' not found`);
+      this.setError(
+        `Cannot remove weight: edge between '${sourceLabel}' and '${targetLabel}' not found`
+      );
       return false;
     }
 
-    const result = this.updateEdgeByNodes(sourceLabel, targetLabel, { weight: undefined as any });
+    const result = this.updateEdgeByNodes(sourceLabel, targetLabel, {
+      weight: undefined as any,
+    });
     return result !== null;
   }
 
@@ -778,7 +810,10 @@ export class Graph {
    * - Three elements: edge with weight
    * Invalid lines are ignored (duplicates, malformed lines)
    */
-  static parseFromText(text: string, graph: Graph): {
+  static parseFromText(
+    text: string,
+    graph: Graph
+  ): {
     success: boolean;
     graph?: Graph;
     error?: string;
@@ -803,7 +838,7 @@ export class Graph {
         if (line.length === 0) continue;
 
         const parts = line.split(/\s+/);
-        
+
         // Skip lines with too many parts (>3)
         if (parts.length > 3) {
           continue;
@@ -812,7 +847,7 @@ export class Graph {
         if (parts.length === 1) {
           // Single element: node label
           const label = parts[0]!;
-          
+
           // Skip if node already exists
           if (processedNodes.has(label)) {
             continue;
@@ -831,7 +866,7 @@ export class Graph {
 
           // Create edge key for duplicate detection
           const edgeKey = `${sourceLabel}->${targetLabel}`;
-          
+
           // Skip if edge already exists
           if (processedEdges.has(edgeKey)) {
             continue;

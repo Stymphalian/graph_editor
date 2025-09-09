@@ -41,12 +41,12 @@ export const createEdgeEventHandlers = (
   return {
     click: (event: Event) => {
       event.stopPropagation();
-      
+
       // Clear any existing timeout
       if (clickTimeout) {
         clearTimeout(clickTimeout);
       }
-      
+
       // Delay click handling to allow for double-click detection
       clickTimeout = setTimeout(() => {
         handlers.onEdgeClick?.(edge);
@@ -54,13 +54,13 @@ export const createEdgeEventHandlers = (
     },
     dblclick: (event: Event) => {
       event.stopPropagation();
-      
+
       // Clear click timeout to prevent single click from firing
       if (clickTimeout) {
         clearTimeout(clickTimeout);
         clickTimeout = null;
       }
-      
+
       handlers.onEdgeDoubleClick?.(edge);
     },
     mouseenter: (event: Event) => {
@@ -85,7 +85,7 @@ export const applyEdgeStyling = (
   isDirected: boolean = false
 ) => {
   const styling = getEdgeStyling(isSelected, strokeColor, strokeWidth);
-  
+
   // Style the line
   edgeSelection
     .attr('stroke', styling.stroke)
@@ -116,4 +116,3 @@ export const applyEdgeStyling = (
       .style('transition', 'all 0.2s ease-in-out');
   }
 };
-

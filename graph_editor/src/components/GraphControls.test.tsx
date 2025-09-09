@@ -1,4 +1,3 @@
-import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import GraphControls from './GraphControls';
 import { GraphType } from '../types/graph';

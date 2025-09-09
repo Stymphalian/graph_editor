@@ -13,7 +13,7 @@ const VisualizationSettings: React.FC<VisualizationSettingsProps> = ({
   edgeStrokeWidth,
   onNodeRadiusChange,
   onEdgeStrokeWidthChange,
-  className = ''
+  className = '',
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
 
@@ -47,7 +47,7 @@ const VisualizationSettings: React.FC<VisualizationSettingsProps> = ({
           />
         </svg>
       </button>
-      
+
       {isExpanded && (
         <div className="px-3 pb-2">
           <div className="space-y-3">
@@ -62,7 +62,7 @@ const VisualizationSettings: React.FC<VisualizationSettingsProps> = ({
                 max="30"
                 step="1"
                 value={nodeRadius}
-                onChange={(e) => onNodeRadiusChange(parseInt(e.target.value))}
+                onChange={e => onNodeRadiusChange(parseInt(e.target.value))}
                 className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
               />
               <div className="flex justify-between text-xs text-gray-500 mt-1">
@@ -82,7 +82,9 @@ const VisualizationSettings: React.FC<VisualizationSettingsProps> = ({
                 max="5"
                 step="0.5"
                 value={edgeStrokeWidth}
-                onChange={(e) => onEdgeStrokeWidthChange(parseFloat(e.target.value))}
+                onChange={e =>
+                  onEdgeStrokeWidthChange(parseFloat(e.target.value))
+                }
                 className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
               />
               <div className="flex justify-between text-xs text-gray-500 mt-1">

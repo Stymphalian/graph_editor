@@ -55,7 +55,7 @@ const TextAreaWithLineNumbers: React.FC<TextAreaWithLineNumbersProps> = ({
 
   return (
     <div className={`text-panel-editor ${className}`}>
-      <div 
+      <div
         ref={lineNumbersRef}
         className={`text-panel-line-numbers ${lineNumbersClassName}`}
         onScroll={handleLineNumbersScroll}

@@ -1,8 +1,22 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { d3, d3Utils, createBoundaryForce, ForceSimulation, D3Node, D3Edge, ForceSimulationPreset, ForceSimulationPresets } from '@/utils/d3Config';
+import {
+  d3,
+  d3Utils,
+  createBoundaryForce,
+  ForceSimulation,
+  D3Node,
+  D3Edge,
+  ForceSimulationPreset,
+  ForceSimulationPresets,
+} from '@/utils/d3Config';
 import { GraphData, Node, Edge } from '@/types/graph';
-import { applyNodeStyling, createNodeEventHandlers, applyNodeNibs } from './Node';
-import { applyEdgeStyling, createEdgeEventHandlers } from './Edge';5
+import {
+  applyNodeStyling,
+  createNodeEventHandlers,
+  applyNodeNibs,
+} from './Node';
+import { applyEdgeStyling, createEdgeEventHandlers } from './Edge';
+5;
 // Constants are now passed as props
 
 interface GraphViewerProps {
@@ -10,10 +24,16 @@ interface GraphViewerProps {
   onNodeCreate?: (x: number, y: number) => void;
   onEdgeCreate?: (sourceLabel: string, targetLabel: string) => void;
   onNodeLabelEdit?: (nodeLabel: string, newLabel: string) => void;
-  onEdgeWeightEdit?: (sourceLabel: string, targetLabel: string, newWeight: string) => void;
+  onEdgeWeightEdit?: (
+    sourceLabel: string,
+    targetLabel: string,
+    newWeight: string
+  ) => void;
   onNodeDelete?: (nodeLabel: string) => void;
   onEdgeDelete?: (sourceLabel: string, targetLabel: string) => void;
-  onNodePositionUpdate?: (positions: Array<{ label: string; x: number; y: number }>) => void;
+  onNodePositionUpdate?: (
+    positions: Array<{ label: string; x: number; y: number }>
+  ) => void;
   onError?: (message: string) => void;
   errorMessage?: string | null;
   mode?: 'edit' | 'delete' | 'view-force';
@@ -40,31 +60,42 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
   onNewNodePositioned,
   onModeTransitionCleanup,
   nodeRadius = 20,
-  edgeStrokeWidth = 2
+  edgeStrokeWidth = 2,
 }) => {
   // Internal selection state
   const [selectionChange, setSelectionChange] = useState<boolean>(false);
   const [edgeCreationCancel, setEdgeCreationCancel] = useState<boolean>(false);
   const [showClickableAreas, setShowClickableAreas] = useState<boolean>(false);
   const [editingNodeLabel, setEditingNodeLabel] = useState<string | null>(null);
-  
+
   // Force simulation state
-  const [forceSimulationActive, setForceSimulationActive] = useState<boolean>(false);
-  const [forceSimulationPreset, setForceSimulationPreset] = useState<ForceSimulationPreset>('default');
-  const [forceSimulationPaused, setForceSimulationPaused] = useState<boolean>(false);
+  const [forceSimulationActive, setForceSimulationActive] =
+    useState<boolean>(false);
+  const [forceSimulationPreset, setForceSimulationPreset] =
+    useState<ForceSimulationPreset>('default');
+  const [forceSimulationPaused, setForceSimulationPaused] =
+    useState<boolean>(false);
   const [simulationAlpha, setSimulationAlpha] = useState<number>(0);
-  
+
   // Debug panel state
   const [debugPanelExpanded, setDebugPanelExpanded] = useState<boolean>(false);
-  
+
   // Throttling for position updates
   const lastPositionUpdateRef = useRef<number>(0);
   const positionUpdateThrottle = 50; // Update positions max every 50ms
   const [editingLabel, setEditingLabel] = useState<string>('');
-  const [editingPosition, setEditingPosition] = useState<{ x: number; y: number } | null>(null);
-  const [editingEdgeTuple, setEditingEdgeTuple] = useState<[string, string] | null>(null);
+  const [editingPosition, setEditingPosition] = useState<{
+    x: number;
+    y: number;
+  } | null>(null);
+  const [editingEdgeTuple, setEditingEdgeTuple] = useState<
+    [string, string] | null
+  >(null);
   const [editingWeight, setEditingWeight] = useState<string>('');
-  const [editingEdgePosition, setEditingEdgePosition] = useState<{ x: number; y: number } | null>(null);
+  const [editingEdgePosition, setEditingEdgePosition] = useState<{
+    x: number;
+    y: number;
+  } | null>(null);
 
   const svgRef = useRef<SVGSVGElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -79,7 +110,7 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
   } | null>(null);
   const [dimensions, setDimensions] = useState({
     width: 400, // Default fallback
-    height: 400  // Default fallback
+    height: 400, // Default fallback
   });
 
   // Internal click handlers
@@ -97,11 +128,13 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
 
   const handleNodeLabelEdit = (node: Node) => {
     // Find the node's current position in the D3 simulation
-    const d3Node = d3InstanceRef.current?.simulation?.nodes()?.find((n: any) => n.id === node.label);
+    const d3Node = d3InstanceRef.current?.simulation
+      ?.nodes()
+      ?.find((n: any) => n.id === node.label);
     if (d3Node && d3Node.x !== undefined && d3Node.y !== undefined) {
       setEditingNodeLabel(node.label);
       setEditingLabel(node.label);
-      
+
       // Calculate position relative to the container, accounting for SVG centering
       const containerRect = containerRef.current?.getBoundingClientRect();
       const svgRect = svgRef.current?.getBoundingClientRect();
@@ -140,20 +173,28 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
 
   const handleEdgeWeightEdit = (edge: Edge) => {
     // Find the source and target nodes for this edge
-    const sourceNode = d3InstanceRef.current?.simulation?.nodes()?.find((n: any) => n.id === edge.source);
-    const targetNode = d3InstanceRef.current?.simulation?.nodes()?.find((n: any) => n.id === edge.target);
-    
-    if (sourceNode && targetNode && 
-        sourceNode.x !== undefined && sourceNode.y !== undefined &&
-        targetNode.x !== undefined && targetNode.y !== undefined) {
-      
+    const sourceNode = d3InstanceRef.current?.simulation
+      ?.nodes()
+      ?.find((n: any) => n.id === edge.source);
+    const targetNode = d3InstanceRef.current?.simulation
+      ?.nodes()
+      ?.find((n: any) => n.id === edge.target);
+
+    if (
+      sourceNode &&
+      targetNode &&
+      sourceNode.x !== undefined &&
+      sourceNode.y !== undefined &&
+      targetNode.x !== undefined &&
+      targetNode.y !== undefined
+    ) {
       setEditingEdgeTuple([edge.source, edge.target]);
       setEditingWeight(edge.weight || '');
-      
+
       // Calculate the midpoint of the edge
       const midX = (sourceNode.x + targetNode.x) / 2;
       const midY = (sourceNode.y + targetNode.y) / 2;
-      
+
       // Calculate position relative to the container, accounting for SVG centering
       const containerRect = containerRef.current?.getBoundingClientRect();
       const svgRect = svgRef.current?.getBoundingClientRect();
@@ -169,7 +210,11 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
 
   const handleWeightEditSave = () => {
     if (editingEdgeTuple) {
-      onEdgeWeightEdit?.(editingEdgeTuple[0], editingEdgeTuple[1], editingWeight.trim());
+      onEdgeWeightEdit?.(
+        editingEdgeTuple[0],
+        editingEdgeTuple[1],
+        editingWeight.trim()
+      );
     }
     setEditingEdgeTuple(null);
     setEditingWeight('');
@@ -190,17 +235,26 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
     }
   };
 
-
   // Function to update drag behavior for existing nodes with new dimensions
   const updateNodeDragBehavior = (newWidth: number, newHeight: number) => {
     if (!d3InstanceRef.current) return;
-    
+
     const { container, simulation } = d3InstanceRef.current;
     if (!container || !simulation) return;
-    
+
     // Update drag behavior for all existing nodes
-    container.selectAll('.node')
-      .call(d3Utils.createDrag(simulation, mode, newWidth, newHeight, nodeRadius, svgRef.current));
+    container
+      .selectAll('.node')
+      .call(
+        d3Utils.createDrag(
+          simulation,
+          mode,
+          newWidth,
+          newHeight,
+          nodeRadius,
+          svgRef.current
+        )
+      );
   };
 
   // Handle responsive resizing without destroying the graph
@@ -208,14 +262,15 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
     const handleResize = () => {
       if (containerRef.current) {
         const rect = containerRef.current.getBoundingClientRect();
-        
+
         // Get the parent container's height if available (the one with h-[calc(100vh-200px)])
         const parentElement = containerRef.current.parentElement;
         const parentRect = parentElement?.getBoundingClientRect();
-        
+
         // Use parent height if available and valid, otherwise fall back to container height
-        const effectiveHeight = parentRect && parentRect.height > 0 ? parentRect.height : rect.height;
-        
+        const effectiveHeight =
+          parentRect && parentRect.height > 0 ? parentRect.height : rect.height;
+
         // Ensure container has minimum dimensions and use actual container size
         const containerWidth = Math.max(300, rect.width);
         const containerHeight = Math.max(300, effectiveHeight);
@@ -230,21 +285,36 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
         if (d3InstanceRef.current) {
           const { svg, simulation } = d3InstanceRef.current;
           if (svg && simulation) {
-            svg.attr('width', newDimensions.width)
+            svg
+              .attr('width', newDimensions.width)
               .attr('height', newDimensions.height);
 
             // Update simulation forces for new dimensions
-            simulation.force('center', d3.forceCenter(newDimensions.width / 2, newDimensions.height / 2).strength(0.05));
-            simulation.force('x', d3.forceX(newDimensions.width / 2).strength(0.1));
-            simulation.force('y', d3.forceY(newDimensions.height / 2).strength(0.1));
-            
+            simulation.force(
+              'center',
+              d3
+                .forceCenter(newDimensions.width / 2, newDimensions.height / 2)
+                .strength(0.05)
+            );
+            simulation.force(
+              'x',
+              d3.forceX(newDimensions.width / 2).strength(0.1)
+            );
+            simulation.force(
+              'y',
+              d3.forceY(newDimensions.height / 2).strength(0.1)
+            );
+
             // Update boundary force with new dimensions and padding
-            simulation.force('boundary', createBoundaryForce(simulation, svgRef.current, nodeRadius));
-            
+            simulation.force(
+              'boundary',
+              createBoundaryForce(simulation, svgRef.current, nodeRadius)
+            );
+
             simulation.alpha(0.3).restart(); // Gentle restart to adjust to new dimensions
             // Re-fix nodes after restart to maintain current mode behavior
             fixAllNodes(mode !== 'view-force');
-            
+
             // Update drag behavior for existing nodes with new dimensions
             updateNodeDragBehavior(newDimensions.width, newDimensions.height);
           }
@@ -261,9 +331,9 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
         handleResize();
       });
     };
-    
+
     initialResize();
-    
+
     // Fallback timeout to ensure resize happens even if requestAnimationFrame fails
     const timeoutId = setTimeout(() => {
       handleResize();
@@ -293,7 +363,7 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
   // Setup SVG event handlers
   const setupSVGEventHandlers = () => {
     const svg = d3.select(svgRef.current);
-    
+
     // Add mouse tracking for edge creation preview
     svg.on('mousemove', (event: any) => {
       if (d3InstanceRef.current?.edgeCreationSource) {
@@ -309,7 +379,8 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
             .selectAll('.node')
             .data()
             .find((d: D3Node) => {
-              if (d.id === d3InstanceRef.current?.edgeCreationSource) return false;
+              if (d.id === d3InstanceRef.current?.edgeCreationSource)
+                return false;
               const dx = (d.x || 0) - x;
               const dy = (d.y || 0) - y;
               const distance = Math.sqrt(dx * dx + dy * dy);
@@ -352,7 +423,10 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
           return;
         }
 
-        if (d3InstanceRef.current?.selectedNodeId || d3InstanceRef.current?.selectedEdgeTuple) {
+        if (
+          d3InstanceRef.current?.selectedNodeId ||
+          d3InstanceRef.current?.selectedEdgeTuple
+        ) {
           d3InstanceRef.current.selectedNodeId = null;
           d3InstanceRef.current.selectedEdgeTuple = null;
           setSelectionChange(val => !val);
@@ -383,9 +457,18 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
       .attr('data-testid', 'graph-container');
 
     // Create force simulation with responsive dimensions and optimal preset
-    const optimalPreset = d3Utils.getOptimalPreset(data.nodes.length, data.edges.length);
+    const optimalPreset = d3Utils.getOptimalPreset(
+      data.nodes.length,
+      data.edges.length
+    );
     setForceSimulationPreset(optimalPreset);
-    const simulation = d3Utils.createForceSimulation(dimensions.width, dimensions.height, nodeRadius, svgRef.current, optimalPreset);
+    const simulation = d3Utils.createForceSimulation(
+      dimensions.width,
+      dimensions.height,
+      nodeRadius,
+      svgRef.current,
+      optimalPreset
+    );
 
     // Store D3 instance
     d3InstanceRef.current = {
@@ -436,7 +519,8 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
         const lineOpacity = targetNode ? 0.9 : 0.7;
 
         // Add new preview line
-        svg.append('line')
+        svg
+          .append('line')
           .attr('class', 'preview-line')
           .attr('x1', sourceNode.x || 0)
           .attr('y1', sourceNode.y || 0)
@@ -447,7 +531,10 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
           .attr('stroke-dasharray', '5,5')
           .attr('opacity', lineOpacity)
           .style('pointer-events', 'none')
-          .style('transition', 'stroke 0.2s ease-in-out, opacity 0.2s ease-in-out');
+          .style(
+            'transition',
+            'stroke 0.2s ease-in-out, opacity 0.2s ease-in-out'
+          );
       }
     }
   };
@@ -512,14 +599,20 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
 
     if (mode === 'delete') {
       // Handle edge deletion in delete mode
-      const sourceLabel = typeof edge.source === 'string' ? edge.source : edge.source.label;
-      const targetLabel = typeof edge.target === 'string' ? edge.target : edge.target.label;
+      const sourceLabel =
+        typeof edge.source === 'string' ? edge.source : edge.source.label;
+      const targetLabel =
+        typeof edge.target === 'string' ? edge.target : edge.target.label;
       onEdgeDelete?.(sourceLabel, targetLabel);
     } else {
       // Handle edge selection/deselection in non-delete modes
-      const sourceLabel = typeof edge.source === 'string' ? edge.source : edge.source.label;
-      const targetLabel = typeof edge.target === 'string' ? edge.target : edge.target.label;
-      const originalEdge = data.edges.find(e => e.source === sourceLabel && e.target === targetLabel);
+      const sourceLabel =
+        typeof edge.source === 'string' ? edge.source : edge.source.label;
+      const targetLabel =
+        typeof edge.target === 'string' ? edge.target : edge.target.label;
+      const originalEdge = data.edges.find(
+        e => e.source === sourceLabel && e.target === targetLabel
+      );
       if (originalEdge) {
         handleEdgeClick(originalEdge);
       }
@@ -535,9 +628,13 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
 
     // Only allow edge weight editing in edit mode
     if (mode === 'edit') {
-      const sourceLabel = typeof edge.source === 'string' ? edge.source : edge.source.label;
-      const targetLabel = typeof edge.target === 'string' ? edge.target : edge.target.label;
-      const originalEdge = data.edges.find(e => e.source === sourceLabel && e.target === targetLabel);
+      const sourceLabel =
+        typeof edge.source === 'string' ? edge.source : edge.source.label;
+      const targetLabel =
+        typeof edge.target === 'string' ? edge.target : edge.target.label;
+      const originalEdge = data.edges.find(
+        e => e.source === sourceLabel && e.target === targetLabel
+      );
       if (originalEdge) {
         handleEdgeWeightEdit(originalEdge);
       }
@@ -545,7 +642,10 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
   };
 
   // Helper function to determine if an event should be processed based on mode
-  const shouldProcessEvent = (eventType: 'click' | 'dblclick' | 'drag', target: 'node' | 'edge' | 'empty'): boolean => {
+  const shouldProcessEvent = (
+    eventType: 'click' | 'dblclick' | 'drag',
+    target: 'node' | 'edge' | 'empty'
+  ): boolean => {
     switch (mode) {
       case 'edit':
         // In edit mode, all events are allowed for full editing capabilities
@@ -553,7 +653,9 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
       case 'delete':
         // In delete mode, only clicks for deletion are allowed
         // No node creation, edge creation, or editing
-        return eventType === 'click' && (target === 'node' || target === 'edge');
+        return (
+          eventType === 'click' && (target === 'node' || target === 'edge')
+        );
       case 'view-force':
         // In view-force mode, only drag events for node movement are allowed
         // No creation, editing, or deletion
@@ -576,7 +678,6 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
         return 'default';
     }
   };
-
 
   // Function to fix or unfix all nodes in the simulation
   const fixAllNodes = (fix: boolean) => {
@@ -630,7 +731,11 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
 
   const changeForceSimulationPreset = (newPreset: ForceSimulationPreset) => {
     if (d3InstanceRef.current?.simulation) {
-      d3Utils.updateForceSimulationPreset(d3InstanceRef.current.simulation, newPreset, nodeRadius);
+      d3Utils.updateForceSimulationPreset(
+        d3InstanceRef.current.simulation,
+        newPreset,
+        nodeRadius
+      );
       setForceSimulationPreset(newPreset);
       if (forceSimulationActive && !forceSimulationPaused) {
         d3InstanceRef.current.simulation.alpha(0.3).restart();
@@ -647,16 +752,17 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
     const { container, simulation } = d3InstanceRef.current;
     const d3Data = convertToD3Data(data);
 
-    console.log("@@@@ updated d3Data");
+    console.log('@@@@ updated d3Data');
 
     // Handle arrow markers for directed graphs (only add if not already present)
     if (data.type === 'directed') {
       const existingDefs = container.select('defs');
       if (existingDefs.empty()) {
         const defs = container.append('defs');
-        
+
         // Default arrow marker (black)
-        defs.append('marker')
+        defs
+          .append('marker')
           .attr('id', 'arrowhead')
           .attr('viewBox', '0 -5 10 10')
           .attr('refX', 8)
@@ -667,9 +773,10 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
           .append('path')
           .attr('d', 'M0,-5L10,0L0,5')
           .attr('fill', '#000000');
-          
+
         // Selected arrow marker (blue)
-        defs.append('marker')
+        defs
+          .append('marker')
           .attr('id', 'arrowhead-selected')
           .attr('viewBox', '0 -5 10 10')
           .attr('refX', 8)
@@ -706,7 +813,10 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
           edgeEnter
             .append('line')
             .attr('class', 'edge-clickable')
-            .attr('stroke', showClickableAreas ? 'rgba(255, 0, 0, 0.3)' : 'transparent')
+            .attr(
+              'stroke',
+              showClickableAreas ? 'rgba(255, 0, 0, 0.3)' : 'transparent'
+            )
             .attr('stroke-width', 15)
             .style('cursor', 'pointer');
 
@@ -732,48 +842,74 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
           edgeEnter.each(function (this: any, d: D3Edge) {
             const edgeContainer = d3.select(this);
             const visibleEdge = edgeContainer.select('.graph-edge');
-            const sourceLabel = typeof d.source === 'string' ? d.source : d.source.label;
-            const targetLabel = typeof d.target === 'string' ? d.target : d.target.label;
-            const isSelected = d3InstanceRef.current?.selectedEdgeTuple && 
-              d3InstanceRef.current.selectedEdgeTuple[0] === sourceLabel && 
+            const sourceLabel =
+              typeof d.source === 'string' ? d.source : d.source.label;
+            const targetLabel =
+              typeof d.target === 'string' ? d.target : d.target.label;
+            const isSelected =
+              d3InstanceRef.current?.selectedEdgeTuple &&
+              d3InstanceRef.current.selectedEdgeTuple[0] === sourceLabel &&
               d3InstanceRef.current.selectedEdgeTuple[1] === targetLabel;
             const isDirected = data.type === 'directed';
-            applyEdgeStyling(visibleEdge, isSelected || false, '#000000', edgeStrokeWidth, isDirected);
+            applyEdgeStyling(
+              visibleEdge,
+              isSelected || false,
+              '#000000',
+              edgeStrokeWidth,
+              isDirected
+            );
           });
 
           edgeEnter.each(function (this: any, d: D3Edge) {
             const edgeContainer = d3.select(this);
             const clickableEdge = edgeContainer.select('.edge-clickable');
             const eventHandlers = createEdgeEventHandlers(d, {
-              onEdgeClick: (edge) => {
+              onEdgeClick: edge => {
                 handleEdgeClickLogic(edge);
               },
-              onEdgeDoubleClick: (edge) => {
+              onEdgeDoubleClick: edge => {
                 handleEdgeDoubleClickLogic(edge);
               },
-              onEdgeMouseEnter: (edge) => {
-                const edgeElement = d3.select(`[data-edge-source="${edge.source}"][data-edge-target="${edge.target}"] .graph-edge`);
+              onEdgeMouseEnter: edge => {
+                const edgeElement = d3.select(
+                  `[data-edge-source="${edge.source}"][data-edge-target="${edge.target}"] .graph-edge`
+                );
                 const isDirected = data.type === 'directed';
-                applyEdgeStyling(edgeElement, false, '#000000', edgeStrokeWidth, isDirected);
+                applyEdgeStyling(
+                  edgeElement,
+                  false,
+                  '#000000',
+                  edgeStrokeWidth,
+                  isDirected
+                );
               },
-              onEdgeMouseLeave: (edge) => {
-                const edgeElement = d3.select(`[data-edge-source="${edge.source}"][data-edge-target="${edge.target}"] .graph-edge`);
-                const isSelected = d3InstanceRef.current?.selectedEdgeTuple && 
-                  d3InstanceRef.current.selectedEdgeTuple[0] === edge.source && 
+              onEdgeMouseLeave: edge => {
+                const edgeElement = d3.select(
+                  `[data-edge-source="${edge.source}"][data-edge-target="${edge.target}"] .graph-edge`
+                );
+                const isSelected =
+                  d3InstanceRef.current?.selectedEdgeTuple &&
+                  d3InstanceRef.current.selectedEdgeTuple[0] === edge.source &&
                   d3InstanceRef.current.selectedEdgeTuple[1] === edge.target;
                 const isDirected = data.type === 'directed';
-                applyEdgeStyling(edgeElement, isSelected || false, '#000000', edgeStrokeWidth, isDirected);
+                applyEdgeStyling(
+                  edgeElement,
+                  isSelected || false,
+                  '#000000',
+                  edgeStrokeWidth,
+                  isDirected
+                );
               },
             });
 
             const visibleEdge = edgeContainer.select('.graph-edge');
-            
+
             clickableEdge
               .on('click', eventHandlers.click)
               .on('dblclick', eventHandlers.dblclick)
               .on('mouseenter', eventHandlers.mouseenter)
               .on('mouseleave', eventHandlers.mouseleave);
-              
+
             // Also attach event handlers to the visible edge line
             visibleEdge
               .on('click', eventHandlers.click)
@@ -782,7 +918,6 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
               .on('mouseleave', eventHandlers.mouseleave);
           });
 
-
           return edgeEnter;
         },
         (update: any) => {
@@ -790,38 +925,63 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
             const edgeContainer = d3.select(this);
             const visibleEdge = edgeContainer.select('.graph-edge');
             const clickableEdge = edgeContainer.select('.edge-clickable');
-            const sourceLabel = typeof d.source === 'string' ? d.source : d.source.label;
-            const targetLabel = typeof d.target === 'string' ? d.target : d.target.label;
-            const isSelected = d3InstanceRef.current?.selectedEdgeTuple && 
-              d3InstanceRef.current.selectedEdgeTuple[0] === sourceLabel && 
+            const sourceLabel =
+              typeof d.source === 'string' ? d.source : d.source.label;
+            const targetLabel =
+              typeof d.target === 'string' ? d.target : d.target.label;
+            const isSelected =
+              d3InstanceRef.current?.selectedEdgeTuple &&
+              d3InstanceRef.current.selectedEdgeTuple[0] === sourceLabel &&
               d3InstanceRef.current.selectedEdgeTuple[1] === targetLabel;
             const isDirected = data.type === 'directed';
-            applyEdgeStyling(visibleEdge, isSelected || false, '#000000', edgeStrokeWidth, isDirected);
-            
+            applyEdgeStyling(
+              visibleEdge,
+              isSelected || false,
+              '#000000',
+              edgeStrokeWidth,
+              isDirected
+            );
+
             // Update weight label text
-            edgeContainer.select('.edge-weight-label')
-              .text(d.weight || '');
+            edgeContainer.select('.edge-weight-label').text(d.weight || '');
 
             // Re-attach event handlers for existing edges
             const eventHandlers = createEdgeEventHandlers(d, {
-              onEdgeClick: (edge) => {
+              onEdgeClick: edge => {
                 handleEdgeClickLogic(edge);
               },
-              onEdgeDoubleClick: (edge) => {
+              onEdgeDoubleClick: edge => {
                 handleEdgeDoubleClickLogic(edge);
               },
-              onEdgeMouseEnter: (edge) => {
-                const edgeElement = d3.select(`[data-edge-source="${edge.source}"][data-edge-target="${edge.target}"] .graph-edge`);
+              onEdgeMouseEnter: edge => {
+                const edgeElement = d3.select(
+                  `[data-edge-source="${edge.source}"][data-edge-target="${edge.target}"] .graph-edge`
+                );
                 const isDirected = data.type === 'directed';
-                applyEdgeStyling(edgeElement, false, '#000000', edgeStrokeWidth, isDirected);
+                applyEdgeStyling(
+                  edgeElement,
+                  false,
+                  '#000000',
+                  edgeStrokeWidth,
+                  isDirected
+                );
               },
-              onEdgeMouseLeave: (edge) => {
-                const edgeElement = d3.select(`[data-edge-source="${edge.source}"][data-edge-target="${edge.target}"] .graph-edge`);
-                const isSelected = d3InstanceRef.current?.selectedEdgeTuple && 
-                  d3InstanceRef.current.selectedEdgeTuple[0] === edge.source && 
+              onEdgeMouseLeave: edge => {
+                const edgeElement = d3.select(
+                  `[data-edge-source="${edge.source}"][data-edge-target="${edge.target}"] .graph-edge`
+                );
+                const isSelected =
+                  d3InstanceRef.current?.selectedEdgeTuple &&
+                  d3InstanceRef.current.selectedEdgeTuple[0] === edge.source &&
                   d3InstanceRef.current.selectedEdgeTuple[1] === edge.target;
                 const isDirected = data.type === 'directed';
-                applyEdgeStyling(edgeElement, isSelected || false, '#000000', edgeStrokeWidth, isDirected);
+                applyEdgeStyling(
+                  edgeElement,
+                  isSelected || false,
+                  '#000000',
+                  edgeStrokeWidth,
+                  isDirected
+                );
               },
             });
 
@@ -830,7 +990,7 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
               .on('dblclick', eventHandlers.dblclick)
               .on('mouseenter', eventHandlers.mouseenter)
               .on('mouseleave', eventHandlers.mouseleave);
-              
+
             // Also attach event handlers to the visible edge line
             visibleEdge
               .on('click', eventHandlers.click)
@@ -841,8 +1001,7 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
           return update;
         },
         (exit: any) => {
-          return exit
-            .remove();
+          return exit.remove();
         }
       );
 
@@ -861,11 +1020,18 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
             .attr('class', 'node')
             .attr('data-node-label', (d: D3Node) => d.label)
             .attr('opacity', 1)
-            .call(d3Utils.createDrag(simulation!, mode, dimensions.width, dimensions.height, nodeRadius, svgRef.current));
+            .call(
+              d3Utils.createDrag(
+                simulation!,
+                mode,
+                dimensions.width,
+                dimensions.height,
+                nodeRadius,
+                svgRef.current
+              )
+            );
 
-          nodeEnter
-            .append('circle')
-            .attr('class', 'graph-node');
+          nodeEnter.append('circle').attr('class', 'graph-node');
 
           nodeEnter
             .append('text')
@@ -882,21 +1048,31 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
             const isSource = d3InstanceRef.current?.edgeCreationSource === d.id;
 
             applyNodeStyling(nodeSelection, isSelected, nodeRadius, isSource);
-            applyNodeNibs(nodeSelection, isEditMode && isSelected && !isSource, nodeRadius, (node) => {
-              // Nib click starts edge creation mode
-              if (mode === 'edit' && !d3InstanceRef.current?.edgeCreationSource) {
-                d3InstanceRef.current!.edgeCreationSource = node.label;
+            applyNodeNibs(
+              nodeSelection,
+              isEditMode && isSelected && !isSource,
+              nodeRadius,
+              node => {
+                // Nib click starts edge creation mode
+                if (
+                  mode === 'edit' &&
+                  !d3InstanceRef.current?.edgeCreationSource
+                ) {
+                  d3InstanceRef.current!.edgeCreationSource = node.label;
+                }
               }
-            });
+            );
           });
 
           nodeEnter.each(function (this: any, d: D3Node) {
             const nodeSelection = d3.select(this);
             const eventHandlers = createNodeEventHandlers(d, {
-              onNodeClick: (node) => handleNodeClickLogic(node),
-              onNodeDoubleClick: (node) => {
+              onNodeClick: node => handleNodeClickLogic(node),
+              onNodeDoubleClick: node => {
                 // Double-click for node label editing
-                const originalNode = data.nodes.find(n => n.label === node.label);
+                const originalNode = data.nodes.find(
+                  n => n.label === node.label
+                );
                 if (originalNode) {
                   handleNodeLabelEdit(originalNode);
                 }
@@ -915,11 +1091,10 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
               .on('dragstart', eventHandlers.dragstart);
           });
 
-
           return nodeEnter;
         },
         (update: any) => {
-          console.log("@@@@ updated node", update);
+          console.log('@@@@ updated node', update);
           update.each(function (this: any, d: D3Node) {
             const nodeSelection = d3.select(this);
             const isSelected = d3InstanceRef.current?.selectedNodeId === d.id;
@@ -933,19 +1108,29 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
               .text(d.label);
 
             applyNodeStyling(nodeSelection, isSelected, nodeRadius, isSource);
-            applyNodeNibs(nodeSelection, isEditMode && isSelected && !isSource, nodeRadius, (node) => {
-              // Nib click starts edge creation mode
-              if (mode === 'edit' && !d3InstanceRef.current?.edgeCreationSource) {
-                d3InstanceRef.current!.edgeCreationSource = node.label;
+            applyNodeNibs(
+              nodeSelection,
+              isEditMode && isSelected && !isSource,
+              nodeRadius,
+              node => {
+                // Nib click starts edge creation mode
+                if (
+                  mode === 'edit' &&
+                  !d3InstanceRef.current?.edgeCreationSource
+                ) {
+                  d3InstanceRef.current!.edgeCreationSource = node.label;
+                }
               }
-            });
+            );
 
             // Re-attach event handlers for existing nodes
             const eventHandlers = createNodeEventHandlers(d, {
-              onNodeClick: (node) => handleNodeClickLogic(node),
-              onNodeDoubleClick: (node) => {
+              onNodeClick: node => handleNodeClickLogic(node),
+              onNodeDoubleClick: node => {
                 // Double-click for node label editing
-                const originalNode = data.nodes.find(n => n.label === node.label);
+                const originalNode = data.nodes.find(
+                  n => n.label === node.label
+                );
                 if (originalNode) {
                   handleNodeLabelEdit(originalNode);
                 }
@@ -966,12 +1151,12 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
           return update;
         },
         (exit: any) => {
-          console.log("@@@@ removed node", exit);
+          console.log('@@@@ removed node', exit);
           return exit.remove();
         }
       );
 
-    console.log("@@@@ updated nodes");
+    console.log('@@@@ updated nodes');
 
     // Update simulation with new data - all forces are configured in d3Config.ts
     if (simulation) {
@@ -982,29 +1167,30 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
       simulation.on('tick', () => {
         // Update simulation state
         setSimulationAlpha(simulation.alpha());
-        edges.each(function(this: any, d: D3Edge) {
+        edges.each(function (this: any, d: D3Edge) {
           const edgeContainer = d3.select(this);
           const source = d.source as D3Node;
           const target = d.target as D3Node;
-          
+
           // Calculate line endpoints at node circumference
           const dx = (target.x || 0) - (source.x || 0);
           const dy = (target.y || 0) - (source.y || 0);
           const length = Math.sqrt(dx * dx + dy * dy);
-          
+
           if (length > 0) {
             // Calculate unit vector
             const unitX = dx / length;
             const unitY = dy / length;
-            
+
             // Calculate endpoints at node circumference
             const x1 = (source.x || 0) + unitX * nodeRadius;
             const y1 = (source.y || 0) + unitY * nodeRadius;
             const x2 = (target.x || 0) - unitX * nodeRadius;
             const y2 = (target.y || 0) - unitY * nodeRadius;
-            
+
             // Update both clickable and visible lines
-            edgeContainer.selectAll('line')
+            edgeContainer
+              .selectAll('line')
               .attr('x1', x1)
               .attr('y1', y1)
               .attr('x2', x2)
@@ -1013,7 +1199,8 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
             // Update weight label position (midpoint of the edge)
             const midX = (x1 + x2) / 2;
             const midY = (y1 + y2) / 2;
-            edgeContainer.select('.edge-weight-label')
+            edgeContainer
+              .select('.edge-weight-label')
               .attr('x', midX)
               .attr('y', midY);
           }
@@ -1052,7 +1239,7 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
           onNodePositionUpdate(positions);
         }
       });
-    
+
       if (mode === 'edit' || mode === 'delete') {
         simulation.alpha(0).restart(); // Very gentle restart to minimize disruption when adding/removing nodes/edges
         // Re-fix nodes after restart to maintain edit/delete mode behavior
@@ -1060,14 +1247,16 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
       }
     }
 
-    console.log("@@@@ simulation updated");
+    console.log('@@@@ simulation updated');
   };
 
   // Convert Graph model data to D3 format
   const convertToD3Data = (graphData: GraphData) => {
     // Get existing node positions from the simulation if it exists
     const existingNodes = d3InstanceRef.current?.simulation?.nodes() || [];
-    const existingNodeMap = new Map(existingNodes.map((node: any) => [node.label, { x: node.x, y: node.y }]));
+    const existingNodeMap = new Map(
+      existingNodes.map((node: any) => [node.label, { x: node.x, y: node.y }])
+    );
 
     const d3Nodes: D3Node[] = graphData.nodes.map((node, index) => {
       // First priority: Use stored position from Graph model
@@ -1079,10 +1268,14 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
           y: node.y,
         };
       }
-      
+
       // Second priority: Preserve existing position from simulation if available
       const existingPos = existingNodeMap.get(node.label);
-      if (existingPos && existingPos.x !== undefined && existingPos.y !== undefined) {
+      if (
+        existingPos &&
+        existingPos.x !== undefined &&
+        existingPos.y !== undefined
+      ) {
         return {
           id: node.label, // Use label as ID for D3
           label: node.label,
@@ -1090,7 +1283,7 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
           y: existingPos.y,
         };
       }
-      
+
       // Third priority: Check if this is the newest node and we have a position for it
       const isNewestNode = index === graphData.nodes.length - 1;
       if (isNewestNode && newNodePosition) {
@@ -1101,7 +1294,7 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
           y: newNodePosition.y,
         };
       }
-      
+
       // Fallback: Generate new position for other new nodes
       return {
         id: node.label, // Use label as ID for D3
@@ -1128,9 +1321,9 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
 
   // Update data when it changes (excluding dimensions to avoid recreating graph on resize)
   useEffect(() => {
-    console.log("@@@@ setupSVGEventHandlers");
+    console.log('@@@@ setupSVGEventHandlers');
     setupSVGEventHandlers();
-    console.log("@@@@ Updating D3 data");
+    console.log('@@@@ Updating D3 data');
     updateD3Data();
   }, [data, mode, newNodePosition]);
 
@@ -1138,16 +1331,19 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
   useEffect(() => {
     if (d3InstanceRef.current?.simulation) {
       const { simulation } = d3InstanceRef.current;
-      
+
       // Update collision radius
       simulation.force('collision', d3.forceCollide().radius(nodeRadius + 10));
-      
+
       // Update boundary force with padding
-      simulation.force('boundary', createBoundaryForce(simulation, svgRef.current, nodeRadius));
-      
+      simulation.force(
+        'boundary',
+        createBoundaryForce(simulation, svgRef.current, nodeRadius)
+      );
+
       // Update drag behavior for existing nodes
       updateNodeDragBehavior(dimensions.width, dimensions.height);
-      
+
       // Restart simulation with new settings
       simulation.alpha(0.3).restart();
       // Re-fix nodes after restart to maintain current mode behavior
@@ -1164,7 +1360,7 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
   // Clear selections and interactive states when graph structure changes
   // Only clear if the actual structure changed, not just data object recreation
   useEffect(() => {
-    console.log("@@@@ Clearing selections");
+    console.log('@@@@ Clearing selections');
     if (d3InstanceRef.current) {
       d3InstanceRef.current.selectedNodeId = null;
       d3InstanceRef.current.selectedEdgeTuple = null;
@@ -1191,25 +1387,39 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
       const isSource = d3InstanceRef.current?.edgeCreationSource === d.id;
 
       applyNodeStyling(nodeSelection, isSelected, nodeRadius, isSource);
-      applyNodeNibs(nodeSelection, isEditMode && isSelected && !isSource, nodeRadius, (node) => {
-        // Nib click starts edge creation mode
-        if (mode === 'edit' && !d3InstanceRef.current?.edgeCreationSource) {
-          d3InstanceRef.current!.edgeCreationSource = node.label;
+      applyNodeNibs(
+        nodeSelection,
+        isEditMode && isSelected && !isSource,
+        nodeRadius,
+        node => {
+          // Nib click starts edge creation mode
+          if (mode === 'edit' && !d3InstanceRef.current?.edgeCreationSource) {
+            d3InstanceRef.current!.edgeCreationSource = node.label;
+          }
         }
-      });
+      );
     });
 
     // Update edge selection styling
     container.selectAll('.edge-container').each(function (this: any, d: any) {
       const edgeContainer = d3.select(this);
       const visibleEdge = edgeContainer.select('.graph-edge');
-      const sourceLabel = typeof d.source === 'string' ? d.source : d.source.label;
-      const targetLabel = typeof d.target === 'string' ? d.target : d.target.label;
-      const isSelected = d3InstanceRef.current?.selectedEdgeTuple && 
-        d3InstanceRef.current.selectedEdgeTuple[0] === sourceLabel && 
+      const sourceLabel =
+        typeof d.source === 'string' ? d.source : d.source.label;
+      const targetLabel =
+        typeof d.target === 'string' ? d.target : d.target.label;
+      const isSelected =
+        d3InstanceRef.current?.selectedEdgeTuple &&
+        d3InstanceRef.current.selectedEdgeTuple[0] === sourceLabel &&
         d3InstanceRef.current.selectedEdgeTuple[1] === targetLabel;
       const isDirected = data.type === 'directed';
-      applyEdgeStyling(visibleEdge, isSelected || false, '#000000', edgeStrokeWidth, isDirected);
+      applyEdgeStyling(
+        visibleEdge,
+        isSelected || false,
+        '#000000',
+        edgeStrokeWidth,
+        isDirected
+      );
     });
   }, [selectionChange, mode]);
 
@@ -1224,8 +1434,12 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
   useEffect(() => {
     if (d3InstanceRef.current) {
       const { container } = d3InstanceRef.current;
-      container.selectAll('.edge-clickable')
-        .attr('stroke', showClickableAreas ? 'rgba(255, 0, 0, 0.3)' : 'transparent');
+      container
+        .selectAll('.edge-clickable')
+        .attr(
+          'stroke',
+          showClickableAreas ? 'rgba(255, 0, 0, 0.3)' : 'transparent'
+        );
     }
   }, [showClickableAreas]);
 
@@ -1244,31 +1458,31 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
   // Comprehensive state cleanup function for mode transitions
   const performModeTransitionCleanup = () => {
     console.log('Performing comprehensive mode transition cleanup');
-    
+
     if (d3InstanceRef.current) {
       // Clear all interactive states
       d3InstanceRef.current.selectedNodeId = null;
       d3InstanceRef.current.selectedEdgeTuple = null;
       d3InstanceRef.current.edgeCreationSource = null;
       d3InstanceRef.current.mousePosition = null;
-      
+
       // Trigger re-renders to clear visual states
       setSelectionChange(val => !val);
       setEdgeCreationCancel(val => !val);
-      
+
       // Clear any editing states
       setEditingNodeLabel(null);
       setEditingLabel('');
-      
+
       // Clear preview line
       if (d3InstanceRef.current.svg) {
         d3InstanceRef.current.svg.selectAll('.preview-line').remove();
         d3InstanceRef.current.svg.style('cursor', getModeCursor());
       }
-      
+
       console.log('Mode transition cleanup completed');
     }
-    
+
     // Call parent cleanup callback if provided
     onModeTransitionCleanup?.();
   };
@@ -1277,31 +1491,45 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
   useEffect(() => {
     // Perform comprehensive state cleanup on mode change
     performModeTransitionCleanup();
-    
+
     if (d3InstanceRef.current?.simulation) {
       const { simulation } = d3InstanceRef.current;
-      
+
       // Always keep simulation running, but control node fixation
       setForceSimulationActive(true);
       setForceSimulationPaused(false);
-      
+
       // Update simulation preset if needed
-      const optimalPreset = d3Utils.getOptimalPreset(data.nodes.length, data.edges.length);
+      const optimalPreset = d3Utils.getOptimalPreset(
+        data.nodes.length,
+        data.edges.length
+      );
       if (optimalPreset !== forceSimulationPreset) {
-        d3Utils.updateForceSimulationPreset(simulation, optimalPreset, nodeRadius);
+        d3Utils.updateForceSimulationPreset(
+          simulation,
+          optimalPreset,
+          nodeRadius
+        );
         setForceSimulationPreset(optimalPreset);
       }
-      
+
       // Fix or unfix all nodes based on mode
       fixAllNodes(mode === 'view-force' ? false : true);
-      
+
       // Restart simulation with appropriate alpha
       if (mode === 'view-force') {
         simulation.alpha(0.5).restart();
-        console.log('Force simulation running in view-force mode with preset:', optimalPreset);
+        console.log(
+          'Force simulation running in view-force mode with preset:',
+          optimalPreset
+        );
       } else {
         simulation.alpha(0.1).restart(); // Lower alpha for edit/delete modes
-        console.log('Force simulation running in', mode, 'mode with fixed nodes');
+        console.log(
+          'Force simulation running in',
+          mode,
+          'mode with fixed nodes'
+        );
       }
       // Re-fix nodes after restart to maintain current mode behavior
       fixAllNodes(mode !== 'view-force');
@@ -1317,7 +1545,6 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
     };
   }, []);
 
-
   return (
     <div
       ref={containerRef}
@@ -1326,16 +1553,24 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
     >
       {/* Mode indicator */}
       <div className="absolute top-2 left-2 z-10">
-        <div className={`px-3 py-1 rounded-full text-xs font-medium ${
-          mode === 'edit' ? 'bg-blue-100 text-blue-800' :
-          mode === 'delete' ? 'bg-red-100 text-red-800' :
-          mode === 'view-force' ? 'bg-green-100 text-green-800' :
-          'bg-gray-100 text-gray-800'
-        }`}>
-          {mode === 'edit' ? 'Edit Mode' :
-           mode === 'delete' ? 'Delete Mode' :
-           mode === 'view-force' ? 'View/Force Mode' :
-           'Unknown Mode'}
+        <div
+          className={`px-3 py-1 rounded-full text-xs font-medium ${
+            mode === 'edit'
+              ? 'bg-blue-100 text-blue-800'
+              : mode === 'delete'
+                ? 'bg-red-100 text-red-800'
+                : mode === 'view-force'
+                  ? 'bg-green-100 text-green-800'
+                  : 'bg-gray-100 text-gray-800'
+          }`}
+        >
+          {mode === 'edit'
+            ? 'Edit Mode'
+            : mode === 'delete'
+              ? 'Delete Mode'
+              : mode === 'view-force'
+                ? 'View/Force Mode'
+                : 'Unknown Mode'}
         </div>
       </div>
       <svg
@@ -1345,7 +1580,7 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
         className={`graph-svg border border-gray-200 rounded-lg bg-white cursor-${getModeCursor().replace('-', '-')}`}
         style={{
           width: `${dimensions.width}px`,
-          height: `${dimensions.height}px`
+          height: `${dimensions.height}px`,
         }}
       />
 
@@ -1362,18 +1597,31 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
             stroke="currentColor"
             viewBox="0 0 24 24"
           >
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M19 9l-7 7-7-7"
+            />
           </svg>
         </button>
-        
+
         {debugPanelExpanded && (
           <div className="space-y-1">
             {/* Selection Info */}
             <div className="px-2 py-1 bg-blue-50 text-xs">
               <div className="font-medium text-blue-800">Selection</div>
               <div className="text-blue-700">
-                Node: {d3InstanceRef.current?.selectedNodeId ? data.nodes.find(n => n.label === d3InstanceRef.current?.selectedNodeId)?.label || `Node ${d3InstanceRef.current?.selectedNodeId}` : 'none'} | 
-                Edge: {d3InstanceRef.current?.selectedEdgeTuple ? `${d3InstanceRef.current.selectedEdgeTuple[0]}-${d3InstanceRef.current.selectedEdgeTuple[1]}` : 'none'}
+                Node:{' '}
+                {d3InstanceRef.current?.selectedNodeId
+                  ? data.nodes.find(
+                      n => n.label === d3InstanceRef.current?.selectedNodeId
+                    )?.label || `Node ${d3InstanceRef.current?.selectedNodeId}`
+                  : 'none'}{' '}
+                | Edge:{' '}
+                {d3InstanceRef.current?.selectedEdgeTuple
+                  ? `${d3InstanceRef.current.selectedEdgeTuple[0]}-${d3InstanceRef.current.selectedEdgeTuple[1]}`
+                  : 'none'}
               </div>
             </div>
 
@@ -1381,22 +1629,36 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
             {mode === 'view-force' && (
               <div className="px-2 py-1 bg-green-50 text-xs">
                 <div className="flex items-center justify-between">
-                  <div className="font-medium text-green-800">Force Simulation</div>
+                  <div className="font-medium text-green-800">
+                    Force Simulation
+                  </div>
                   <div className="flex items-center gap-2">
-                    <span className={`px-1 py-0.5 rounded text-xs ${
-                      forceSimulationActive && !forceSimulationPaused 
-                        ? 'bg-green-100 text-green-800' 
-                        : 'bg-gray-100 text-gray-600'
-                    }`}>
-                      {forceSimulationPaused ? 'Paused' : (mode === 'view-force' ? 'Active' : 'Fixed')}
+                    <span
+                      className={`px-1 py-0.5 rounded text-xs ${
+                        forceSimulationActive && !forceSimulationPaused
+                          ? 'bg-green-100 text-green-800'
+                          : 'bg-gray-100 text-gray-600'
+                      }`}
+                    >
+                      {forceSimulationPaused
+                        ? 'Paused'
+                        : mode === 'view-force'
+                          ? 'Active'
+                          : 'Fixed'}
                     </span>
-                    <span className="text-gray-600">α: {simulationAlpha.toFixed(3)}</span>
+                    <span className="text-gray-600">
+                      α: {simulationAlpha.toFixed(3)}
+                    </span>
                   </div>
                 </div>
-                
+
                 <div className="flex items-center gap-1 mt-1">
                   <button
-                    onClick={forceSimulationPaused ? resumeForceSimulation : pauseForceSimulation}
+                    onClick={
+                      forceSimulationPaused
+                        ? resumeForceSimulation
+                        : pauseForceSimulation
+                    }
                     className="px-2 py-0.5 text-xs bg-blue-100 hover:bg-blue-200 text-blue-800 rounded"
                   >
                     {forceSimulationPaused ? 'Resume' : 'Pause'}
@@ -1410,10 +1672,14 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
                   <label className="text-gray-700 ml-2">Preset:</label>
                   <select
                     value={forceSimulationPreset}
-                    onChange={(e) => changeForceSimulationPreset(e.target.value as ForceSimulationPreset)}
+                    onChange={e =>
+                      changeForceSimulationPreset(
+                        e.target.value as ForceSimulationPreset
+                      )
+                    }
                     className="px-1 py-0.5 text-xs border border-gray-300 rounded bg-white"
                   >
-                    {Object.keys(ForceSimulationPresets).map((preset) => (
+                    {Object.keys(ForceSimulationPresets).map(preset => (
                       <option key={preset} value={preset}>
                         {preset.charAt(0).toUpperCase() + preset.slice(1)}
                       </option>
@@ -1429,7 +1695,7 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
                 <input
                   type="checkbox"
                   checked={showClickableAreas}
-                  onChange={(e) => setShowClickableAreas(e.target.checked)}
+                  onChange={e => setShowClickableAreas(e.target.checked)}
                   className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                 />
                 <span className="text-gray-700">Show clickable areas</span>
@@ -1468,7 +1734,7 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
           <input
             type="text"
             value={editingLabel}
-            onChange={(e) => setEditingLabel(e.target.value)}
+            onChange={e => setEditingLabel(e.target.value)}
             onKeyDown={handleLabelEditKeyDown}
             onBlur={handleLabelEditSave}
             className="px-1 py-0.5 text-xs border border-blue-500 rounded shadow-lg bg-white focus:outline-none focus:ring-1 focus:ring-blue-500 w-12"
@@ -1496,7 +1762,7 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
           <input
             type="text"
             value={editingWeight}
-            onChange={(e) => setEditingWeight(e.target.value)}
+            onChange={e => setEditingWeight(e.target.value)}
             onKeyDown={handleWeightEditKeyDown}
             onBlur={handleWeightEditSave}
             className="px-1 py-0.5 text-xs border border-black rounded shadow-lg bg-white focus:outline-none focus:ring-1 focus:ring-black w-12"
@@ -1511,7 +1777,6 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
           />
         </div>
       )}
-
     </div>
   );
 };

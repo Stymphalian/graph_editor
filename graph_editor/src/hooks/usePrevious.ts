@@ -9,10 +9,13 @@ export function usePrevious<T>(initialValue: T) {
   const [current, setCurrent] = useState<T>(initialValue);
   const [previous, setPrevious] = useState<T | undefined>(undefined);
 
-  const setValue = useCallback((newValue: T) => {
-    setPrevious(current);
-    setCurrent(newValue);
-  }, [current]);
+  const setValue = useCallback(
+    (newValue: T) => {
+      setPrevious(current);
+      setCurrent(newValue);
+    },
+    [current]
+  );
 
   return {
     current,

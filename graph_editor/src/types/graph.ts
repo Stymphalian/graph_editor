@@ -103,7 +103,7 @@ export interface TextFormatData {
   metadata?: Record<string, unknown>;
 }
 
-export type GraphOperationType = 
+export type GraphOperationType =
   | 'NODE_ADD'
   | 'NODE_LABEL_CHANGE'
   | 'NODE_REMOVE'

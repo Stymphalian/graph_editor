@@ -8,8 +8,8 @@ import { D3Edge } from '@/utils/d3Config';
 // Mock D3Edge for testing
 const mockEdge: D3Edge = {
   id: 'edge-1',
-  source: 1,
-  target: 2,
+  source: '1',
+  target: '2',
   weight: '5',
 };
 

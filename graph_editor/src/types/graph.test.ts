@@ -66,10 +66,7 @@ describe('Graph Types', () => {
   describe('GraphData interface', () => {
     it('should create a valid graph data structure', () => {
       const graphData: GraphData = {
-        nodes: [
-          { label: 'A' },
-          { label: 'B' },
-        ],
+        nodes: [{ label: 'A' }, { label: 'B' }],
         edges: [{ source: 'A', target: 'B' }],
         type: 'directed',
         nodeIndexingMode: '0-indexed',

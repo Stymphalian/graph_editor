@@ -6,14 +6,19 @@ import GraphControls from './components/GraphControls';
 import NodeIndexingControls from './components/NodeIndexingControls';
 import VisualizationSettings from './components/VisualizationSettings';
 import { Graph } from './models/Graph';
-import { GraphData, GraphType, NodeIndexingMode, GraphOperation } from './types/graph';
+import {
+  GraphData,
+  GraphType,
+  NodeIndexingMode,
+  GraphOperation,
+} from './types/graph';
 import { Mode } from './components/ModeControls';
 import { applyGraphChanges, GraphDiffResult } from './models/GraphUtils';
 
 function App() {
   // Create a sample graph using the Graph model
   const graph = useMemo(() => {
-    const g = new Graph({ type: 'directed', nodeIndexingMode: "custom" });
+    const g = new Graph({ type: 'directed', nodeIndexingMode: 'custom' });
 
     // Add sample nodes and store their IDs
     const nodeA = g.addNode({ label: 'A' });
@@ -22,7 +27,8 @@ function App() {
     const nodeD = g.addNode({ label: 'D' });
 
     // Add sample edges using the actual node IDs
-    if (nodeA && nodeB) g.addEdge({ source: nodeA.label, target: nodeB.label, weight: '123' });
+    if (nodeA && nodeB)
+      g.addEdge({ source: nodeA.label, target: nodeB.label, weight: '123' });
     if (nodeB && nodeC) g.addEdge({ source: nodeB.label, target: nodeC.label });
     if (nodeC && nodeD) g.addEdge({ source: nodeC.label, target: nodeD.label });
     // if (nodeD && nodeA) g.addEdge({ source: nodeD.id, target: nodeA.id });
@@ -32,28 +38,33 @@ function App() {
 
   const [currentGraph] = useState<Graph>(graph);
   const [graphData, setGraphData] = useState<GraphData>(graph.getData());
-  const [newNodePosition, setNewNodePosition] = useState<{ x: number; y: number } | null>(null);
+  const [newNodePosition, setNewNodePosition] = useState<{
+    x: number;
+    y: number;
+  } | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [currentMode, setCurrentMode] = useState<Mode>('edit');
-  const [lastOperation, setLastOperation] = useState<GraphOperation | undefined>(undefined);
+  const [lastOperation, setLastOperation] = useState<
+    GraphOperation | undefined
+  >(undefined);
   const [nodeRadius, setNodeRadius] = useState<number>(20);
   const [edgeStrokeWidth, setEdgeStrokeWidth] = useState<number>(2);
 
   const handleNodeCreate = (x: number, y: number) => {
     console.log('Creating node at:', x, y);
-    
+
     // Store the click coordinates for the new node
     setNewNodePosition({ x, y });
-    
+
     // Create a new node with auto-generated label and coordinates
     const newNode = currentGraph.addNodeWithAutoLabel(x, y);
-    
+
     if (newNode) {
       console.log('Node created:', newNode);
       // Set the operation for partial text updates
       setLastOperation({
         type: 'NODE_ADD',
-        nodeLabel: newNode.label
+        nodeLabel: newNode.label,
       });
       // Update the graph data state to trigger re-render without recreating the graph
       setGraphData(currentGraph.getData());
@@ -67,19 +78,19 @@ function App() {
 
   const handleEdgeCreate = (sourceLabel: string, targetLabel: string) => {
     console.log('Creating edge:', sourceLabel, '->', targetLabel);
-    
+
     // Create a new edge between the source and target nodes using their labels
-    const newEdge = currentGraph.addEdge({ 
-      source: sourceLabel, 
-      target: targetLabel 
+    const newEdge = currentGraph.addEdge({
+      source: sourceLabel,
+      target: targetLabel,
     });
-    
+
     if (newEdge) {
       console.log('Edge created:', newEdge);
       // Set the operation for partial text updates
       setLastOperation({
         type: 'EDGE_ADD',
-        edgeTuple: [sourceLabel, targetLabel]
+        edgeTuple: [sourceLabel, targetLabel],
       });
       // Update the graph data state to trigger re-render without recreating the graph
       setGraphData(currentGraph.getData());
@@ -90,14 +101,16 @@ function App() {
 
   const handleNodeLabelEdit = (nodeLabel: string, newLabel: string) => {
     console.log('Editing node label:', nodeLabel, '->', newLabel);
-    
+
     // Get the current node to find the old label
-    const currentNode = currentGraph.getNodes().find(node => node.label === nodeLabel);
+    const currentNode = currentGraph
+      .getNodes()
+      .find(node => node.label === nodeLabel);
     const oldLabel = currentNode?.label;
-    
+
     // Update the node label using the Graph model
     const updatedNode = currentGraph.updateNode(nodeLabel, { label: newLabel });
-    
+
     if (updatedNode) {
       console.log('Node label updated:', updatedNode);
       // Set the operation for partial text updates
@@ -105,35 +118,38 @@ function App() {
         type: 'NODE_LABEL_CHANGE',
         nodeLabel: nodeLabel,
         previousValue: oldLabel,
-        newValue: newLabel
+        newValue: newLabel,
       });
       // Update the graph data state to trigger re-render
       setGraphData(currentGraph.getData());
     } else {
       console.error('Failed to update node label:', currentGraph.getError());
       // Show error to user via the error callback
-      const errorMessage = currentGraph.getError() || 'Failed to update node label';
+      const errorMessage =
+        currentGraph.getError() || 'Failed to update node label';
       handleError(errorMessage);
     }
   };
 
   const handleNodeDelete = (nodeLabel: string) => {
     console.log('Deleting node:', nodeLabel);
-    
+
     // Get the current node to find the label before deletion
-    const currentNode = currentGraph.getNodes().find(node => node.label === nodeLabel);
+    const currentNode = currentGraph
+      .getNodes()
+      .find(node => node.label === nodeLabel);
     const nodeLabelToDelete = currentNode?.label;
-    
+
     // Remove the node using the Graph model
     const success = currentGraph.removeNode(nodeLabel);
-    
+
     if (success) {
       console.log('Node deleted successfully');
       // Set the operation for partial text updates
       setLastOperation({
         type: 'NODE_REMOVE',
         nodeLabel: nodeLabel,
-        previousValue: nodeLabelToDelete
+        previousValue: nodeLabelToDelete,
       });
       // Update the graph data state to trigger re-render
       setGraphData(currentGraph.getData());
@@ -146,32 +162,39 @@ function App() {
   };
 
   const handleEdgeDelete = (sourceLabel: string, targetLabel: string) => {
-    console.log('handleEdgeDelete called with sourceLabel:', sourceLabel, 'targetLabel:', targetLabel);
+    console.log(
+      'handleEdgeDelete called with sourceLabel:',
+      sourceLabel,
+      'targetLabel:',
+      targetLabel
+    );
     console.log('Current graph data before deletion:', currentGraph.getData());
-    
+
     // Get the current edge to find the weight before deletion
-    const currentEdge = currentGraph.getEdges().find(edge => edge.source === sourceLabel && edge.target === targetLabel);
+    const currentEdge = currentGraph
+      .getEdges()
+      .find(edge => edge.source === sourceLabel && edge.target === targetLabel);
     let edgeData = null;
     if (currentEdge) {
       edgeData = {
         sourceLabel: currentEdge.source,
         targetLabel: currentEdge.target,
-        weight: currentEdge.weight
+        weight: currentEdge.weight,
       };
     }
-    
+
     // Remove the edge using the Graph model
     const success = currentGraph.removeEdgeByNodes(sourceLabel, targetLabel);
-    
+
     console.log('removeEdgeByNodes result:', success);
-    
+
     if (success) {
       console.log('Edge deleted successfully');
       // Set the operation for partial text updates
       setLastOperation({
         type: 'EDGE_REMOVE',
         edgeTuple: [sourceLabel, targetLabel],
-        data: edgeData
+        data: edgeData,
       });
       const newData = currentGraph.getData();
       console.log('New graph data after deletion:', newData);
@@ -185,21 +208,31 @@ function App() {
     }
   };
 
-  const handleEdgeWeightEdit = (sourceLabel: string, targetLabel: string, newWeight: string) => {
+  const handleEdgeWeightEdit = (
+    sourceLabel: string,
+    targetLabel: string,
+    newWeight: string
+  ) => {
     // Get the current edge to find the old weight
-    const currentEdge = currentGraph.getEdges().find(edge => edge.source === sourceLabel && edge.target === targetLabel);
+    const currentEdge = currentGraph
+      .getEdges()
+      .find(edge => edge.source === sourceLabel && edge.target === targetLabel);
     const oldWeight = currentEdge?.weight;
     let edgeData = null;
     if (currentEdge) {
       edgeData = {
         sourceLabel: currentEdge.source,
-        targetLabel: currentEdge.target
+        targetLabel: currentEdge.target,
       };
     }
-    
+
     // Update the edge weight using the Graph model
-    const success = currentGraph.updateEdgeWeightByNodes(sourceLabel, targetLabel, newWeight);
-    
+    const success = currentGraph.updateEdgeWeightByNodes(
+      sourceLabel,
+      targetLabel,
+      newWeight
+    );
+
     if (success) {
       // Set the operation for partial text updates
       const operation = {
@@ -207,14 +240,15 @@ function App() {
         edgeTuple: [sourceLabel, targetLabel] as [string, string],
         previousValue: oldWeight,
         newValue: newWeight,
-        data: edgeData
+        data: edgeData,
       };
       setLastOperation(operation);
       // Update the graph data state to trigger re-render
       setGraphData(currentGraph.getData());
     } else {
       // Show error to user via the error callback
-      const errorMessage = currentGraph.getError() || 'Failed to update edge weight';
+      const errorMessage =
+        currentGraph.getError() || 'Failed to update edge weight';
       handleError(errorMessage);
     }
   };
@@ -235,10 +269,10 @@ function App() {
   const handleModeChange = (mode: Mode) => {
     console.log('Mode changed to:', mode);
     console.log('Current graph data when mode changes:', graphData);
-    
+
     // Clear any ongoing operations when switching modes
     setErrorMessage(null);
-    
+
     setCurrentMode(mode);
   };
 
@@ -249,56 +283,57 @@ function App() {
     // Additional cleanup can be added here as needed
   };
 
-  const handleNodePositionUpdate = (positions: Array<{ label: string; x: number; y: number }>) => {
+  const handleNodePositionUpdate = (
+    positions: Array<{ label: string; x: number; y: number }>
+  ) => {
     // Update node positions in the Graph model
     currentGraph.updateNodePositions(positions);
   };
 
   const handleGraphTypeChange = (type: GraphType) => {
     console.log('Graph type changed to:', type);
-    
+
     // Update the graph type using the Graph model
     currentGraph.setType(type);
-    
+
     // Set the operation for partial text updates (do nothing for graph type changes)
     setLastOperation({
-      type: 'GRAPH_TYPE_CHANGE'
+      type: 'GRAPH_TYPE_CHANGE',
     });
-    
+
     // Update the graph data state to trigger re-render
     setGraphData(currentGraph.getData());
   };
 
   const handleNodeIndexingModeChange = (mode: NodeIndexingMode) => {
     console.log('Node indexing mode changed to:', mode);
-    
+
     // Update the node indexing mode using the Graph model
     currentGraph.setNodeIndexingMode(mode);
-    
+
     // Set the operation for partial text updates (regenerate entire text)
     setLastOperation({
-      type: 'INDEXING_MODE_CHANGE'
+      type: 'INDEXING_MODE_CHANGE',
     });
-    
+
     // Update the graph data state to trigger re-render
     setGraphData(currentGraph.getData());
   };
 
   const handleGraphDataChange = (newData: GraphDiffResult) => {
     console.log('Graph data changed from text panel:', newData);
-    
+
     try {
       // Set the operation for bidirectional sync - this was a text-based change
       setLastOperation({
-        type: 'TEXT_BASED_CHANGE'
+        type: 'TEXT_BASED_CHANGE',
       });
 
       applyGraphChanges(currentGraph, newData.changes);
-    
+
       // Update the graph data state to trigger re-render
       setGraphData(currentGraph.getData());
       console.log('Graph successfully updated from text panel');
-      
     } catch (error) {
       console.error('Error updating graph from text panel:', error);
       handleError('Failed to update graph from text input');

@@ -55,43 +55,77 @@ describe('GraphViewer', () => {
 
   describe('Mode-specific behaviors', () => {
     it('shows mode indicator for edit mode', () => {
-      render(<GraphViewer data={mockGraphData} mode="edit" onEdgeCreate={() => {}} />);
-      
-      const modeIndicator = document.querySelector('.absolute.top-2.left-2 div');
+      render(
+        <GraphViewer data={mockGraphData} mode="edit" onEdgeCreate={() => {}} />
+      );
+
+      const modeIndicator = document.querySelector(
+        '.absolute.top-2.left-2 div'
+      );
       expect(modeIndicator).toBeInTheDocument();
       expect(modeIndicator).toHaveTextContent('Edit Mode');
       expect(modeIndicator).toHaveClass('bg-blue-100', 'text-blue-800');
     });
 
     it('shows mode indicator for delete mode', () => {
-      render(<GraphViewer data={mockGraphData} mode="delete" onEdgeCreate={() => {}} />);
-      
-      const modeIndicator = document.querySelector('.absolute.top-2.left-2 div');
+      render(
+        <GraphViewer
+          data={mockGraphData}
+          mode="delete"
+          onEdgeCreate={() => {}}
+        />
+      );
+
+      const modeIndicator = document.querySelector(
+        '.absolute.top-2.left-2 div'
+      );
       expect(modeIndicator).toBeInTheDocument();
       expect(modeIndicator).toHaveTextContent('Delete Mode');
       expect(modeIndicator).toHaveClass('bg-red-100', 'text-red-800');
     });
 
     it('shows mode indicator for view-force mode', () => {
-      render(<GraphViewer data={mockGraphData} mode="view-force" onEdgeCreate={() => {}} />);
-      
-      const modeIndicator = document.querySelector('.absolute.top-2.left-2 div');
+      render(
+        <GraphViewer
+          data={mockGraphData}
+          mode="view-force"
+          onEdgeCreate={() => {}}
+        />
+      );
+
+      const modeIndicator = document.querySelector(
+        '.absolute.top-2.left-2 div'
+      );
       expect(modeIndicator).toBeInTheDocument();
       expect(modeIndicator).toHaveTextContent('View/Force Mode');
       expect(modeIndicator).toHaveClass('bg-green-100', 'text-green-800');
     });
 
     it('applies correct cursor class based on mode', () => {
-      const { rerender } = render(<GraphViewer data={mockGraphData} mode="edit" onEdgeCreate={() => {}} />);
-      
+      const { rerender } = render(
+        <GraphViewer data={mockGraphData} mode="edit" onEdgeCreate={() => {}} />
+      );
+
       let svgElement = document.querySelector('.graph-svg');
       expect(svgElement).toHaveClass('cursor-crosshair');
-      
-      rerender(<GraphViewer data={mockGraphData} mode="delete" onEdgeCreate={() => {}} />);
+
+      rerender(
+        <GraphViewer
+          data={mockGraphData}
+          mode="delete"
+          onEdgeCreate={() => {}}
+        />
+      );
       svgElement = document.querySelector('.graph-svg');
       expect(svgElement).toHaveClass('cursor-not-allowed');
-      
-      rerender(<GraphViewer data={mockGraphData} mode="view-force" onEdgeCreate={() => {}} />);
+
+      rerender(
+        <GraphViewer
+          data={mockGraphData}
+          mode="view-force"
+          onEdgeCreate={() => {}}
+        />
+      );
       svgElement = document.querySelector('.graph-svg');
       expect(svgElement).toHaveClass('cursor-grab');
     });
@@ -101,26 +135,26 @@ describe('GraphViewer', () => {
       const mockCleanup = () => {
         cleanupCalled = true;
       };
-      
+
       const { rerender } = render(
-        <GraphViewer 
-          data={mockGraphData} 
-          mode="edit" 
-          onEdgeCreate={() => {}} 
+        <GraphViewer
+          data={mockGraphData}
+          mode="edit"
+          onEdgeCreate={() => {}}
           onModeTransitionCleanup={mockCleanup}
         />
       );
-      
+
       // Change mode to trigger cleanup
       rerender(
-        <GraphViewer 
-          data={mockGraphData} 
-          mode="delete" 
-          onEdgeCreate={() => {}} 
+        <GraphViewer
+          data={mockGraphData}
+          mode="delete"
+          onEdgeCreate={() => {}}
           onModeTransitionCleanup={mockCleanup}
         />
       );
-      
+
       expect(cleanupCalled).toBe(true);
     });
   });
@@ -128,11 +162,7 @@ describe('GraphViewer', () => {
   describe('Edge interactions', () => {
     it('renders clickable edge elements', () => {
       render(
-        <GraphViewer 
-          data={mockGraphData} 
-          mode="edit" 
-          onEdgeCreate={() => {}} 
-        />
+        <GraphViewer data={mockGraphData} mode="edit" onEdgeCreate={() => {}} />
       );
 
       // Find edge elements
@@ -148,15 +178,13 @@ describe('GraphViewer', () => {
 
     it('shows edge selection in the UI', () => {
       render(
-        <GraphViewer 
-          data={mockGraphData} 
-          mode="edit" 
-          onEdgeCreate={() => {}} 
-        />
+        <GraphViewer data={mockGraphData} mode="edit" onEdgeCreate={() => {}} />
       );
 
       // Expand the debug panel first
-      const debugButton = document.querySelector('button[class*="bg-gray-100"]');
+      const debugButton = document.querySelector(
+        'button[class*="bg-gray-100"]'
+      );
       if (debugButton) {
         fireEvent.click(debugButton);
       }
@@ -169,11 +197,7 @@ describe('GraphViewer', () => {
 
     it('renders edges with correct styling structure', () => {
       render(
-        <GraphViewer 
-          data={mockGraphData} 
-          mode="edit" 
-          onEdgeCreate={() => {}} 
-        />
+        <GraphViewer data={mockGraphData} mode="edit" onEdgeCreate={() => {}} />
       );
 
       // Check that each edge has both clickable and visible elements
@@ -194,10 +218,10 @@ describe('GraphViewer', () => {
     it('handles edge double-click for weight editing in edit mode', () => {
       const mockOnEdgeWeightEdit = () => {};
       render(
-        <GraphViewer 
-          data={mockGraphData} 
-          mode="edit" 
-          onEdgeCreate={() => {}} 
+        <GraphViewer
+          data={mockGraphData}
+          mode="edit"
+          onEdgeCreate={() => {}}
           onEdgeWeightEdit={mockOnEdgeWeightEdit}
         />
       );
@@ -208,7 +232,9 @@ describe('GraphViewer', () => {
 
       // Simulate a double-click on the edge
       if (edgeElement) {
-        edgeElement.dispatchEvent(new MouseEvent('dblclick', { bubbles: true }));
+        edgeElement.dispatchEvent(
+          new MouseEvent('dblclick', { bubbles: true })
+        );
       }
 
       // The edge weight edit should be triggered
@@ -219,10 +245,10 @@ describe('GraphViewer', () => {
     it('does not allow edge weight editing in non-edit modes', () => {
       const mockOnEdgeWeightEdit = () => {};
       const { rerender } = render(
-        <GraphViewer 
-          data={mockGraphData} 
-          mode="delete" 
-          onEdgeCreate={() => {}} 
+        <GraphViewer
+          data={mockGraphData}
+          mode="delete"
+          onEdgeCreate={() => {}}
           onEdgeWeightEdit={mockOnEdgeWeightEdit}
         />
       );
@@ -233,7 +259,9 @@ describe('GraphViewer', () => {
 
       // Simulate a double-click on the edge
       if (edgeElement) {
-        edgeElement.dispatchEvent(new MouseEvent('dblclick', { bubbles: true }));
+        edgeElement.dispatchEvent(
+          new MouseEvent('dblclick', { bubbles: true })
+        );
       }
 
       // The edge weight edit should not be triggered in delete mode
@@ -242,17 +270,19 @@ describe('GraphViewer', () => {
 
       // Test view-force mode
       rerender(
-        <GraphViewer 
-          data={mockGraphData} 
-          mode="view-force" 
-          onEdgeCreate={() => {}} 
+        <GraphViewer
+          data={mockGraphData}
+          mode="view-force"
+          onEdgeCreate={() => {}}
           onEdgeWeightEdit={mockOnEdgeWeightEdit}
         />
       );
 
       // Simulate a double-click on the edge in view-force mode
       if (edgeElement) {
-        edgeElement.dispatchEvent(new MouseEvent('dblclick', { bubbles: true }));
+        edgeElement.dispatchEvent(
+          new MouseEvent('dblclick', { bubbles: true })
+        );
       }
 
       // The edge weight edit should not be triggered in view-force mode either
@@ -260,5 +290,4 @@ describe('GraphViewer', () => {
       expect(edgeElement).toHaveClass('edge-clickable');
     });
   });
-
 });
