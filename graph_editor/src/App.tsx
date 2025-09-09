@@ -325,8 +325,9 @@ function App() {
               />
             </div>
 
-            {/* Graph Visualization Panel - Flexible width */}
-            <div className="flex-1 min-w-0">
+            {/* Graph Visualization Panel - Flexible width with minimum size constraint */}
+            {/* Min width: 300px (D3 SVG) + 24px (p-3 padding) + 36px (buffer for header/help text) = 360px */}
+            <div className="flex-1 min-w-[360px]">
               <div className="graph-editor-panel p-3">
                 <h2 className="text-lg font-semibold text-gray-800 mb-3">
                   Graph Visualization
