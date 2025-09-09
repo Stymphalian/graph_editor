@@ -3,3 +3,5 @@
   pass in a function which validates if a label is okay.
 - node dragging still causes the simulatin to run
 - text-area with line numbers and with scrollbar. Scrollbar not working.
+- Tune the force strengths and lengths to make it look nice.
+- Adjust the new node placement logic when creating new nodes form text-representation

@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { d3, d3Utils, createBoundaryForce, ForceSimulation, D3Node, D3Edge } from '@/utils/d3Config';
+import { d3, d3Utils, createBoundaryForce, ForceSimulation, D3Node, D3Edge, ForceSimulationPreset, ForceSimulationPresets } from '@/utils/d3Config';
 import { GraphData, Node, Edge } from '@/types/graph';
 import { applyNodeStyling, createNodeEventHandlers, applyNodeNibs } from './Node';
 import { applyEdgeStyling, createEdgeEventHandlers } from './Edge';5
@@ -48,6 +48,15 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
   const [showClickableAreas, setShowClickableAreas] = useState<boolean>(false);
   const [editingNodeLabel, setEditingNodeLabel] = useState<string | null>(null);
   
+  // Force simulation state
+  const [forceSimulationActive, setForceSimulationActive] = useState<boolean>(false);
+  const [forceSimulationPreset, setForceSimulationPreset] = useState<ForceSimulationPreset>('default');
+  const [forceSimulationPaused, setForceSimulationPaused] = useState<boolean>(false);
+  const [simulationAlpha, setSimulationAlpha] = useState<number>(0);
+  
+  // Debug panel state
+  const [debugPanelExpanded, setDebugPanelExpanded] = useState<boolean>(false);
+  
   // Throttling for position updates
   const lastPositionUpdateRef = useRef<number>(0);
   const positionUpdateThrottle = 50; // Update positions max every 50ms
@@ -56,6 +65,22 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
   const [editingEdgeTuple, setEditingEdgeTuple] = useState<[string, string] | null>(null);
   const [editingWeight, setEditingWeight] = useState<string>('');
   const [editingEdgePosition, setEditingEdgePosition] = useState<{ x: number; y: number } | null>(null);
+
+  const svgRef = useRef<SVGSVGElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const d3InstanceRef = useRef<{
+    svg: any;
+    container: any;
+    simulation: ForceSimulation | null;
+    edgeCreationSource: string | null;
+    mousePosition: { x: number; y: number } | null;
+    selectedNodeId: string | null | undefined;
+    selectedEdgeTuple: [string, string] | null | undefined;
+  } | null>(null);
+  const [dimensions, setDimensions] = useState({
+    width: 400, // Default fallback
+    height: 400  // Default fallback
+  });
 
   // Internal click handlers
   const handleNodeClick = (node: Node) => {
@@ -165,21 +190,6 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
     }
   };
 
-  const svgRef = useRef<SVGSVGElement>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
-  const d3InstanceRef = useRef<{
-    svg: any;
-    container: any;
-    simulation: ForceSimulation | null;
-    edgeCreationSource: string | null;
-    mousePosition: { x: number; y: number } | null;
-    selectedNodeId: string | null | undefined;
-    selectedEdgeTuple: [string, string] | null | undefined;
-  } | null>(null);
-  const [dimensions, setDimensions] = useState({
-    width: 400, // Default fallback
-    height: 400  // Default fallback
-  });
 
   // Function to update drag behavior for existing nodes with new dimensions
   const updateNodeDragBehavior = (newWidth: number, newHeight: number) => {
@@ -370,8 +380,10 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
       .attr('class', 'graph-group')
       .attr('data-testid', 'graph-container');
 
-    // Create force simulation with responsive dimensions
-    const simulation = d3Utils.createForceSimulation(dimensions.width, dimensions.height, nodeRadius, svgRef.current);
+    // Create force simulation with responsive dimensions and optimal preset
+    const optimalPreset = d3Utils.getOptimalPreset(data.nodes.length, data.edges.length);
+    setForceSimulationPreset(optimalPreset);
+    const simulation = d3Utils.createForceSimulation(dimensions.width, dimensions.height, nodeRadius, svgRef.current, optimalPreset);
 
     // Store D3 instance
     d3InstanceRef.current = {
@@ -566,6 +578,38 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
   // Helper function to check if force simulation should be active
   const shouldForceSimulationBeActive = (): boolean => {
     return mode === 'view-force';
+  };
+
+  // Force simulation control functions
+  const pauseForceSimulation = () => {
+    if (d3InstanceRef.current?.simulation && forceSimulationActive && !forceSimulationPaused) {
+      setForceSimulationPaused(true);
+      d3InstanceRef.current.simulation.stop();
+    }
+  };
+
+  const resumeForceSimulation = () => {
+    if (d3InstanceRef.current?.simulation && forceSimulationActive && forceSimulationPaused) {
+      setForceSimulationPaused(false);
+      d3InstanceRef.current.simulation.alpha(0.3).restart();
+    }
+  };
+
+  const resetForceSimulation = () => {
+    if (d3InstanceRef.current?.simulation && forceSimulationActive) {
+      setForceSimulationPaused(false);
+      d3InstanceRef.current.simulation.alpha(0.8).restart();
+    }
+  };
+
+  const changeForceSimulationPreset = (newPreset: ForceSimulationPreset) => {
+    if (d3InstanceRef.current?.simulation) {
+      d3Utils.updateForceSimulationPreset(d3InstanceRef.current.simulation, newPreset, nodeRadius);
+      setForceSimulationPreset(newPreset);
+      if (forceSimulationActive && !forceSimulationPaused) {
+        d3InstanceRef.current.simulation.alpha(0.3).restart();
+      }
+    }
   };
 
   // Update D3 data and rendering
@@ -902,6 +946,8 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
 
       // Update positions on simulation tick
       simulation.on('tick', () => {
+        // Update simulation state
+        setSimulationAlpha(simulation.alpha());
         edges.each(function(this: any, d: D3Edge) {
           const edgeContainer = d3.select(this);
           const source = d.source as D3Node;
@@ -1194,10 +1240,23 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
       
       if (shouldForceSimulationBeActive()) {
         // Start or restart force simulation in view-force mode
-        simulation.alpha(0.3).restart();
-        console.log('Force simulation started for view-force mode');
+        setForceSimulationActive(true);
+        setForceSimulationPaused(false);
+        
+        // Update simulation preset if needed
+        const optimalPreset = d3Utils.getOptimalPreset(data.nodes.length, data.edges.length);
+        if (optimalPreset !== forceSimulationPreset) {
+          d3Utils.updateForceSimulationPreset(simulation, optimalPreset, nodeRadius);
+          setForceSimulationPreset(optimalPreset);
+        }
+        
+        // Restart simulation with higher alpha for better layout
+        simulation.alpha(0.5).restart();
+        console.log('Force simulation started for view-force mode with preset:', optimalPreset);
       } else {
         // Stop force simulation in edit and delete modes
+        setForceSimulationActive(false);
+        setForceSimulationPaused(false);
         simulation.stop();
         console.log('Force simulation stopped for', mode, 'mode');
       }
@@ -1245,24 +1304,94 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
         }}
       />
 
-      <div className="mb-2 px-3 py-1 bg-blue-100 border border-blue-300 rounded-full text-sm text-blue-800 font-medium">
-        Selected: {d3InstanceRef.current?.selectedNodeId ? data.nodes.find(n => n.label === d3InstanceRef.current?.selectedNodeId)?.label || `Node ${d3InstanceRef.current?.selectedNodeId}` : 'none'}
-        <span className="ml-2">
-          | Edge: {d3InstanceRef.current?.selectedEdgeTuple ? `${d3InstanceRef.current.selectedEdgeTuple[0]}-${d3InstanceRef.current.selectedEdgeTuple[1]}` : 'none'}
-        </span>
-      </div>
+      {/* Debug Panel */}
+      <div className="w-full">
+        <button
+          onClick={() => setDebugPanelExpanded(!debugPanelExpanded)}
+          className="w-full flex items-center justify-between px-2 py-1 bg-gray-100 hover:bg-gray-200 text-xs font-medium text-gray-700"
+        >
+          <span>Debug</span>
+          <svg
+            className={`w-3 h-3 transition-transform ${debugPanelExpanded ? 'rotate-180' : ''}`}
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
+        
+        {debugPanelExpanded && (
+          <div className="space-y-1">
+            {/* Selection Info */}
+            <div className="px-2 py-1 bg-blue-50 text-xs">
+              <div className="font-medium text-blue-800">Selection</div>
+              <div className="text-blue-700">
+                Node: {d3InstanceRef.current?.selectedNodeId ? data.nodes.find(n => n.label === d3InstanceRef.current?.selectedNodeId)?.label || `Node ${d3InstanceRef.current?.selectedNodeId}` : 'none'} | 
+                Edge: {d3InstanceRef.current?.selectedEdgeTuple ? `${d3InstanceRef.current.selectedEdgeTuple[0]}-${d3InstanceRef.current.selectedEdgeTuple[1]}` : 'none'}
+              </div>
+            </div>
 
-      {/* Debug Controls */}
-      <div className="flex items-center gap-4 px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm">
-        <label className="flex items-center gap-2 cursor-pointer">
-          <input
-            type="checkbox"
-            checked={showClickableAreas}
-            onChange={(e) => setShowClickableAreas(e.target.checked)}
-            className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-          />
-          <span className="text-gray-700">Show clickable areas</span>
-        </label>
+            {/* Force Simulation Controls */}
+            {mode === 'view-force' && (
+              <div className="px-2 py-1 bg-green-50 text-xs">
+                <div className="flex items-center justify-between">
+                  <div className="font-medium text-green-800">Force Simulation</div>
+                  <div className="flex items-center gap-2">
+                    <span className={`px-1 py-0.5 rounded text-xs ${
+                      forceSimulationActive && !forceSimulationPaused 
+                        ? 'bg-green-100 text-green-800' 
+                        : 'bg-gray-100 text-gray-600'
+                    }`}>
+                      {forceSimulationPaused ? 'Paused' : 'Active'}
+                    </span>
+                    <span className="text-gray-600">α: {simulationAlpha.toFixed(3)}</span>
+                  </div>
+                </div>
+                
+                <div className="flex items-center gap-1 mt-1">
+                  <button
+                    onClick={forceSimulationPaused ? resumeForceSimulation : pauseForceSimulation}
+                    className="px-2 py-0.5 text-xs bg-blue-100 hover:bg-blue-200 text-blue-800 rounded"
+                  >
+                    {forceSimulationPaused ? 'Resume' : 'Pause'}
+                  </button>
+                  <button
+                    onClick={resetForceSimulation}
+                    className="px-2 py-0.5 text-xs bg-orange-100 hover:bg-orange-200 text-orange-800 rounded"
+                  >
+                    Reset
+                  </button>
+                  <label className="text-gray-700 ml-2">Preset:</label>
+                  <select
+                    value={forceSimulationPreset}
+                    onChange={(e) => changeForceSimulationPreset(e.target.value as ForceSimulationPreset)}
+                    className="px-1 py-0.5 text-xs border border-gray-300 rounded bg-white"
+                  >
+                    {Object.keys(ForceSimulationPresets).map((preset) => (
+                      <option key={preset} value={preset}>
+                        {preset.charAt(0).toUpperCase() + preset.slice(1)}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            )}
+
+            {/* Debug Controls */}
+            <div className="px-2 py-1 text-xs">
+              <label className="flex items-center gap-1 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={showClickableAreas}
+                  onChange={(e) => setShowClickableAreas(e.target.checked)}
+                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                />
+                <span className="text-gray-700">Show clickable areas</span>
+              </label>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Error Message */}

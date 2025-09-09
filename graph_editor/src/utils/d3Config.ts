@@ -102,6 +102,60 @@ export const createBoundaryForce = (simulation: any, svgElement: SVGElement | nu
   };
 };
 
+// Force simulation configuration presets
+export const ForceSimulationPresets = {
+  // Default preset for general graph layout
+  default: {
+    linkDistance: 120,
+    linkStrength: 0.8,
+    chargeStrength: -300,
+    collisionRadius: 1.2,
+    centerStrength: 0.1,
+    xStrength: 0.1,
+    yStrength: 0.1,
+    alphaDecay: 0.0228,
+    velocityDecay: 0.4,
+  },
+  // Dense layout for tightly connected graphs
+  dense: {
+    linkDistance: 80,
+    linkStrength: 1.0,
+    chargeStrength: -200,
+    collisionRadius: 1.0,
+    centerStrength: 0.15,
+    xStrength: 0.15,
+    yStrength: 0.15,
+    alphaDecay: 0.028,
+    velocityDecay: 0.3,
+  },
+  // Sparse layout for loosely connected graphs
+  sparse: {
+    linkDistance: 200,
+    linkStrength: 0.6,
+    chargeStrength: -500,
+    collisionRadius: 1.5,
+    centerStrength: 0.05,
+    xStrength: 0.05,
+    yStrength: 0.05,
+    alphaDecay: 0.018,
+    velocityDecay: 0.5,
+  },
+  // Large graph preset for performance
+  large: {
+    linkDistance: 150,
+    linkStrength: 0.7,
+    chargeStrength: -400,
+    collisionRadius: 1.3,
+    centerStrength: 0.08,
+    xStrength: 0.08,
+    yStrength: 0.08,
+    alphaDecay: 0.025,
+    velocityDecay: 0.45,
+  }
+} as const;
+
+export type ForceSimulationPreset = keyof typeof ForceSimulationPresets;
+
 // Common D3 utilities for graph visualization
 export const d3Utils = {
 
@@ -184,20 +238,97 @@ export const d3Utils = {
       }),
 
   // Force simulation configuration
-  createForceSimulation: (width: number, height: number, nodeRadius: number = 15, svgElement?: SVGElement | null) => {
+  createForceSimulation: (
+    width: number, 
+    height: number, 
+    nodeRadius: number = 15, 
+    svgElement?: SVGElement | null,
+    preset: ForceSimulationPreset = 'default'
+  ) => {
+    const config = ForceSimulationPresets[preset];
     
     const simulation = forceSimulation<D3Node, D3Edge>()
-      .force('link', forceLink<D3Node, D3Edge>().id((d: D3Node) => d.id).distance(120).strength(0.8)) // Stronger link force for better connectivity
-      .force('charge', forceManyBody<D3Node>().strength(20)) // Gentle charge strength to minimize repulsion on new nodes
-      .force('collision', forceCollide<D3Node>().radius(nodeRadius + 10)) // Collision radius based on node radius
-      .force('center', forceCenter<D3Node>(width / 2, height / 2).strength(0.02)) // Reduced center force to minimize disruption
-      .force('x', forceX<D3Node>(width / 2).strength(0.1)) // X position force to keep nodes centered
-      .force('y', forceY<D3Node>(height / 2).strength(0.1)); // Y position force to keep nodes centered
+      .force('link', forceLink<D3Node, D3Edge>()
+        .id((d: D3Node) => d.id)
+        .distance(config.linkDistance)
+        .strength(config.linkStrength)
+      )
+      .force('charge', forceManyBody<D3Node>()
+        .strength(config.chargeStrength)
+        .distanceMax(300) // Limit charge force range for performance
+      )
+      .force('collision', forceCollide<D3Node>()
+        .radius(() => (nodeRadius + 10) * config.collisionRadius)
+        .strength(0.7)
+      )
+      .force('center', forceCenter<D3Node>(width / 2, height / 2)
+        .strength(config.centerStrength)
+      )
+      .force('x', forceX<D3Node>(width / 2)
+        .strength(config.xStrength)
+      )
+      .force('y', forceY<D3Node>(height / 2)
+        .strength(config.yStrength)
+      )
+      .alphaDecay(config.alphaDecay)
+      .velocityDecay(config.velocityDecay);
     
     // Add boundary force after simulation is created
     simulation.force('boundary', createBoundaryForce(simulation, svgElement || null, nodeRadius));
     
     return simulation;
+  },
+
+  // Update force simulation with new preset
+  updateForceSimulationPreset: (
+    simulation: ForceSimulation, 
+    preset: ForceSimulationPreset,
+    nodeRadius: number = 15
+  ) => {
+    const config = ForceSimulationPresets[preset];
+    
+    // Update existing forces
+    (simulation.force('link') as any)
+      ?.distance(config.linkDistance)
+      ?.strength(config.linkStrength);
+    
+    (simulation.force('charge') as any)
+      ?.strength(config.chargeStrength);
+    
+    (simulation.force('collision') as any)
+      ?.radius(() => (nodeRadius + 10) * config.collisionRadius);
+    
+    (simulation.force('center') as any)
+      ?.strength(config.centerStrength);
+    
+    (simulation.force('x') as any)
+      ?.strength(config.xStrength);
+    
+    (simulation.force('y') as any)
+      ?.strength(config.yStrength);
+    
+    // Update simulation parameters
+    simulation
+      .alphaDecay(config.alphaDecay)
+      .velocityDecay(config.velocityDecay);
+    
+    return simulation;
+  },
+
+  // Get optimal preset based on graph characteristics
+  getOptimalPreset: (nodeCount: number, edgeCount: number): ForceSimulationPreset => {
+    if (nodeCount >= 500) {
+      return 'large';
+    }
+    
+    const density = edgeCount / Math.max(nodeCount, 1);
+    if (density > 2) {
+      return 'dense';
+    } else if (density < 0.5) {
+      return 'sparse';
+    }
+    
+    return 'default';
   },
 
 

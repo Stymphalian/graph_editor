@@ -128,7 +128,7 @@
   - [ ] 7.10 Ensure undo/redo works correctly with all interaction modes
 
 - [ ] 8.0 Force Simulation and Layout
-  - [ ] 8.1 Integrate D3 force simulation for automatic node layout
+  - [x] 8.1 Integrate D3 force simulation for automatic node layout
   - [ ] 8.2 Configure force simulation parameters for optimal performance
   - [ ] 8.3 Implement force simulation activation in View/Force mode
   - [ ] 8.4 Add manual node repositioning during force simulation

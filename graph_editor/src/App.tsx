@@ -22,7 +22,7 @@ function App() {
     const nodeD = g.addNode({ label: 'D' });
 
     // Add sample edges using the actual node IDs
-    if (nodeA && nodeB) g.addEdge({ source: nodeA.label, target: nodeB.label, weight: '123456' });
+    if (nodeA && nodeB) g.addEdge({ source: nodeA.label, target: nodeB.label, weight: '123' });
     if (nodeB && nodeC) g.addEdge({ source: nodeB.label, target: nodeC.label });
     if (nodeC && nodeD) g.addEdge({ source: nodeC.label, target: nodeD.label });
     // if (nodeD && nodeA) g.addEdge({ source: nodeD.id, target: nodeA.id });
