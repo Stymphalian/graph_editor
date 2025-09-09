@@ -90,6 +90,7 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
 
   const svgRef = useRef<SVGSVGElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const resizeObserverRef = useRef<ResizeObserver | null>(null);
   const d3InstanceRef = useRef<{
     svg: any;
     container: any;
@@ -98,6 +99,8 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
     mousePosition: { x: number; y: number } | null;
     selectedNodeId: string | null | undefined;
     selectedEdgeTuple: [string, string] | null | undefined;
+    currentDimensions: { width: number; height: number };
+    previousDimensions: { width: number; height: number };
   } | null>(null);
 
   const getCurrentContainerDimensions = () => {
@@ -284,6 +287,74 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
 
     console.log("@@@@ updatedPositions", updatedPositions);
 
+    // Update the parent component with new positions
+    if (onNodePositionUpdate && updatedPositions.length > 0) {
+      onNodePositionUpdate(updatedPositions);
+    }
+  };
+
+  // Comprehensive resize handler
+  const handleResize = () => {
+    if (!containerRef.current || !svgRef.current || !d3InstanceRef.current) return;
+
+    const containerDimensions = getCurrentContainerDimensions();
+    const { currentDimensions, previousDimensions } = d3InstanceRef.current;
+
+    // Keep the area square by using the smaller dimension
+    const squareSize = Math.min(containerDimensions.width, containerDimensions.height);
+    const newDimensions = { width: squareSize, height: squareSize };
+
+    // Check if dimensions actually changed
+    const hasChanged = 
+      currentDimensions.width !== newDimensions.width || 
+      currentDimensions.height !== newDimensions.height;
+    if (!hasChanged) return;
+    if (Math.abs(currentDimensions.width - newDimensions.width) < 10 || 
+        Math.abs(currentDimensions.height - newDimensions.height) < 10) {
+      return;
+    }
+
+    console.log("@@@@ Resizing from", currentDimensions, "to", newDimensions);
+
+    // Update previous dimensions before scaling
+    d3InstanceRef.current.previousDimensions = { ...currentDimensions };
+    d3InstanceRef.current.currentDimensions = { ...newDimensions };
+
+    // Scale node positions if we have previous dimensions
+    if (previousDimensions.width > 0 && previousDimensions.height > 0) {
+      scaleNodePositions(
+        previousDimensions.width,
+        previousDimensions.height,
+        newDimensions.width,
+        newDimensions.height
+      );
+    }
+
+    // Update SVG dimensions
+    svgRef.current.setAttribute('width', newDimensions.width.toString());
+    svgRef.current.setAttribute('height', newDimensions.height.toString());
+    svgRef.current.style.width = `${newDimensions.width}px`;
+    svgRef.current.style.height = `${newDimensions.height}px`;
+
+    // Update drag behavior for existing nodes with new dimensions
+    updateNodeDragBehavior(newDimensions.width, newDimensions.height);
+
+    // Update force simulation boundaries
+    if (d3InstanceRef.current.simulation) {
+      const simulation = d3InstanceRef.current.simulation;
+      
+      // Update boundary force with new dimensions
+      simulation.force(
+        'boundary',
+        createBoundaryForce(simulation, svgRef.current, nodeRadius)
+      );
+
+      // Update collision radius if needed
+      simulation.force('collision', d3.forceCollide().radius(nodeRadius + 10));
+
+      // Restart simulation gently to apply new boundaries
+      simulation.alpha(0.1).restart();
+    }
   };
 
   // Function to update drag behavior for existing nodes with new dimensions
@@ -398,6 +469,17 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
     const svg = d3.select(svgRef.current);
     svg.selectAll('*').remove(); // Clear previous content
 
+    // Get initial dimensions and keep them square
+    const containerDimensions = getCurrentContainerDimensions();
+    const squareSize = Math.min(containerDimensions.width, containerDimensions.height);
+    const initialDimensions = { width: squareSize, height: squareSize };
+    
+    // Update SVG with initial dimensions
+    svgRef.current.setAttribute('width', initialDimensions.width.toString());
+    svgRef.current.setAttribute('height', initialDimensions.height.toString());
+    svgRef.current.style.width = `${initialDimensions.width}px`;
+    svgRef.current.style.height = `${initialDimensions.height}px`;
+
     // Create main group for graph elements
     const container = svg
       .append('g')
@@ -410,14 +492,14 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
       data.edges.length
     );
     const simulation = d3Utils.createForceSimulation(
-      WIDTH,
-      HEIGHT,
+      initialDimensions.width,
+      initialDimensions.height,
       nodeRadius,
       svgRef.current,
       optimalPreset
     );
 
-    // Store D3 instance
+    // Store D3 instance with initial dimensions
     d3InstanceRef.current = {
       svg,
       container,
@@ -426,6 +508,8 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
       mousePosition: null,
       selectedNodeId: null,
       selectedEdgeTuple: null,
+      currentDimensions: { ...initialDimensions },
+      previousDimensions: { width: 0, height: 0 },
     };
 
     // Setup SVG event handlers
@@ -648,8 +732,7 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
     if (!d3InstanceRef.current) return;
     // console.log("@@@@ updateD3Data");
 
-    const { container, simulation } = d3InstanceRef.current;
-    let currentDimensions = getCurrentContainerDimensions();
+    const { container, simulation, currentDimensions } = d3InstanceRef.current;
     const d3Data = convertToD3Data(data, currentDimensions);
 
     // Handle arrow markers for directed graphs (only add if not already present)
@@ -922,8 +1005,8 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
               d3Utils.createDrag(
                 simulation!,
                 mode,
-                WIDTH,
-                HEIGHT,
+                currentDimensions.width,
+                currentDimensions.height,
                 nodeRadius,
                 svgRef.current
               )
@@ -1216,6 +1299,31 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
     initializeD3Instance();
   }, []);
 
+  // Setup ResizeObserver for automatic resize detection
+  useEffect(() => {
+    if (!containerRef.current) return;
+
+    // Create ResizeObserver
+    resizeObserverRef.current = new ResizeObserver(() => {
+      handleResize();
+    });
+
+    // Start observing the container
+    resizeObserverRef.current.observe(containerRef.current);
+
+    // Initial resize to set accurate dimensions
+    const timer = setTimeout(() => {
+      handleResize();
+    }, 100);
+
+    return () => {
+      if (resizeObserverRef.current) {
+        resizeObserverRef.current.disconnect();
+      }
+      clearTimeout(timer);
+    };
+  }, []);
+
   // Update data when it changes (excluding dimensions to avoid recreating graph on resize)
   useEffect(() => {
     setupSVGEventHandlers();
@@ -1225,7 +1333,7 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
   // Recreate simulation when nodeRadius or edgeStrokeWidth changes
   useEffect(() => {
     if (d3InstanceRef.current?.simulation) {
-      const { simulation } = d3InstanceRef.current;
+      const { simulation, currentDimensions } = d3InstanceRef.current;
 
       // Update collision radius
       simulation.force('collision', d3.forceCollide().radius(nodeRadius + 10));
@@ -1237,7 +1345,7 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
       );
 
       // Update drag behavior for existing nodes
-      updateNodeDragBehavior(WIDTH, HEIGHT);
+      updateNodeDragBehavior(currentDimensions.width, currentDimensions.height);
 
       // Restart simulation with new settings
       simulation.alpha(0.3).restart();
@@ -1429,6 +1537,9 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
       if (d3InstanceRef.current?.simulation) {
         d3InstanceRef.current.simulation.stop();
       }
+      if (resizeObserverRef.current) {
+        resizeObserverRef.current.disconnect();
+      }
     };
   }, []);
 
@@ -1462,12 +1573,12 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
       </div>
       <svg
         ref={svgRef}
-        width={WIDTH}
-        height={HEIGHT}
+        width={d3InstanceRef.current?.currentDimensions.width || WIDTH}
+        height={d3InstanceRef.current?.currentDimensions.height || HEIGHT}
         className={`graph-svg border border-gray-200 rounded-lg bg-white cursor-${getModeCursor().replace('-', '-')}`}
         style={{
-          width: `${WIDTH}px`,
-          height: `${HEIGHT}px`,
+          width: `${d3InstanceRef.current?.currentDimensions.width || WIDTH}px`,
+          height: `${d3InstanceRef.current?.currentDimensions.height || HEIGHT}px`,
         }}
       />
 
@@ -1528,31 +1639,43 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
 
             {/* Resize Test Buttons */}
             <div className="px-2 py-1 text-xs">
-              <div className="font-medium text-gray-800 mb-1">Resize Test</div>
+              <div className="font-medium text-gray-800 mb-1">Resize Test (Square)</div>
               <div className="flex gap-1">
                 <button
                   onClick={() => {
                     if (containerRef.current) {
-                      containerRef.current.style.width = '600px';
-                      containerRef.current.style.height = '800px';
+                      containerRef.current.style.width = '400px';
+                      containerRef.current.style.height = '400px';
                       // ResizeObserver will automatically detect the change and trigger handleResize
                     }
                   }}
                   className="px-2 py-1 text-xs bg-blue-100 hover:bg-blue-200 text-blue-800 rounded"
                 >
-                  600x800
+                  400x400
                 </button>
                 <button
                   onClick={() => {
                     if (containerRef.current) {
-                      containerRef.current.style.width = '993px';
-                      containerRef.current.style.height = '800px';
+                      containerRef.current.style.width = '600px';
+                      containerRef.current.style.height = '600px';
                       // ResizeObserver will automatically detect the change and trigger handleResize
                     }
                   }}
                   className="px-2 py-1 text-xs bg-green-100 hover:bg-green-200 text-green-800 rounded"
                 >
-                  993x800
+                  600x600
+                </button>
+                <button
+                  onClick={() => {
+                    if (containerRef.current) {
+                      containerRef.current.style.width = '800px';
+                      containerRef.current.style.height = '500px';
+                      // ResizeObserver will automatically detect the change and trigger handleResize (will use 500x500)
+                    }
+                  }}
+                  className="px-2 py-1 text-xs bg-purple-100 hover:bg-purple-200 text-purple-800 rounded"
+                >
+                  800x500→500x500
                 </button>
               </div>
             </div>
