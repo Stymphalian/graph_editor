@@ -242,6 +242,8 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
             simulation.force('boundary', createBoundaryForce(simulation, svgRef.current, nodeRadius));
             
             simulation.alpha(0.3).restart(); // Gentle restart to adjust to new dimensions
+            // Re-fix nodes after restart to maintain current mode behavior
+            fixAllNodes(mode !== 'view-force');
             
             // Update drag behavior for existing nodes with new dimensions
             updateNodeDragBehavior(newDimensions.width, newDimensions.height);
@@ -575,30 +577,54 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
     }
   };
 
-  // Helper function to check if force simulation should be active
-  const shouldForceSimulationBeActive = (): boolean => {
-    return mode === 'view-force';
+
+  // Function to fix or unfix all nodes in the simulation
+  const fixAllNodes = (fix: boolean) => {
+    if (d3InstanceRef.current?.simulation) {
+      const nodes = d3InstanceRef.current.simulation.nodes() as D3Node[];
+      nodes.forEach(node => {
+        if (fix) {
+          // Fix nodes in place by setting fx and fy to current position
+          node.fx = node.x ?? 0;
+          node.fy = node.y ?? 0;
+        } else {
+          // Unfix nodes to allow free movement
+          node.fx = null;
+          node.fy = null;
+        }
+      });
+    }
   };
 
   // Force simulation control functions
   const pauseForceSimulation = () => {
-    if (d3InstanceRef.current?.simulation && forceSimulationActive && !forceSimulationPaused) {
+    if (d3InstanceRef.current?.simulation && !forceSimulationPaused) {
       setForceSimulationPaused(true);
+      // Fix all nodes in place to pause movement
+      fixAllNodes(true);
       d3InstanceRef.current.simulation.stop();
     }
   };
 
   const resumeForceSimulation = () => {
-    if (d3InstanceRef.current?.simulation && forceSimulationActive && forceSimulationPaused) {
+    if (d3InstanceRef.current?.simulation && forceSimulationPaused) {
       setForceSimulationPaused(false);
+      // Unfix nodes based on current mode
+      fixAllNodes(mode !== 'view-force');
       d3InstanceRef.current.simulation.alpha(0.3).restart();
+      // Re-fix nodes after restart to maintain current mode behavior
+      fixAllNodes(mode !== 'view-force');
     }
   };
 
   const resetForceSimulation = () => {
-    if (d3InstanceRef.current?.simulation && forceSimulationActive) {
+    if (d3InstanceRef.current?.simulation) {
       setForceSimulationPaused(false);
+      // Unfix all nodes for reset
+      fixAllNodes(false);
       d3InstanceRef.current.simulation.alpha(0.8).restart();
+      // Re-fix nodes after restart to maintain current mode behavior
+      fixAllNodes(mode !== 'view-force');
     }
   };
 
@@ -608,6 +634,8 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
       setForceSimulationPreset(newPreset);
       if (forceSimulationActive && !forceSimulationPaused) {
         d3InstanceRef.current.simulation.alpha(0.3).restart();
+        // Re-fix nodes after restart to maintain current mode behavior
+        fixAllNodes(mode !== 'view-force');
       }
     }
   };
@@ -618,6 +646,8 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
 
     const { container, simulation } = d3InstanceRef.current;
     const d3Data = convertToD3Data(data);
+
+    console.log("@@@@ updated d3Data");
 
     // Handle arrow markers for directed graphs (only add if not already present)
     if (data.type === 'directed') {
@@ -889,6 +919,7 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
           return nodeEnter;
         },
         (update: any) => {
+          console.log("@@@@ updated node", update);
           update.each(function (this: any, d: D3Node) {
             const nodeSelection = d3.select(this);
             const isSelected = d3InstanceRef.current?.selectedNodeId === d.id;
@@ -935,9 +966,12 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
           return update;
         },
         (exit: any) => {
+          console.log("@@@@ removed node", exit);
           return exit.remove();
         }
       );
+
+    console.log("@@@@ updated nodes");
 
     // Update simulation with new data - all forces are configured in d3Config.ts
     if (simulation) {
@@ -1019,10 +1053,14 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
         }
       });
     
-      if (mode === 'edit') {
-        simulation.alpha(0).restart(); // Very gentle restart to minimize disruption when adding nodes
+      if (mode === 'edit' || mode === 'delete') {
+        simulation.alpha(0).restart(); // Very gentle restart to minimize disruption when adding/removing nodes/edges
+        // Re-fix nodes after restart to maintain edit/delete mode behavior
+        fixAllNodes(true);
       }
     }
+
+    console.log("@@@@ simulation updated");
   };
 
   // Convert Graph model data to D3 format
@@ -1090,7 +1128,9 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
 
   // Update data when it changes (excluding dimensions to avoid recreating graph on resize)
   useEffect(() => {
+    console.log("@@@@ setupSVGEventHandlers");
     setupSVGEventHandlers();
+    console.log("@@@@ Updating D3 data");
     updateD3Data();
   }, [data, mode, newNodePosition]);
 
@@ -1110,6 +1150,8 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
       
       // Restart simulation with new settings
       simulation.alpha(0.3).restart();
+      // Re-fix nodes after restart to maintain current mode behavior
+      fixAllNodes(mode !== 'view-force');
     }
   }, [nodeRadius, edgeStrokeWidth]);
 
@@ -1122,6 +1164,7 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
   // Clear selections and interactive states when graph structure changes
   // Only clear if the actual structure changed, not just data object recreation
   useEffect(() => {
+    console.log("@@@@ Clearing selections");
     if (d3InstanceRef.current) {
       d3InstanceRef.current.selectedNodeId = null;
       d3InstanceRef.current.selectedEdgeTuple = null;
@@ -1238,28 +1281,30 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
     if (d3InstanceRef.current?.simulation) {
       const { simulation } = d3InstanceRef.current;
       
-      if (shouldForceSimulationBeActive()) {
-        // Start or restart force simulation in view-force mode
-        setForceSimulationActive(true);
-        setForceSimulationPaused(false);
-        
-        // Update simulation preset if needed
-        const optimalPreset = d3Utils.getOptimalPreset(data.nodes.length, data.edges.length);
-        if (optimalPreset !== forceSimulationPreset) {
-          d3Utils.updateForceSimulationPreset(simulation, optimalPreset, nodeRadius);
-          setForceSimulationPreset(optimalPreset);
-        }
-        
-        // Restart simulation with higher alpha for better layout
-        simulation.alpha(0.5).restart();
-        console.log('Force simulation started for view-force mode with preset:', optimalPreset);
-      } else {
-        // Stop force simulation in edit and delete modes
-        setForceSimulationActive(false);
-        setForceSimulationPaused(false);
-        simulation.stop();
-        console.log('Force simulation stopped for', mode, 'mode');
+      // Always keep simulation running, but control node fixation
+      setForceSimulationActive(true);
+      setForceSimulationPaused(false);
+      
+      // Update simulation preset if needed
+      const optimalPreset = d3Utils.getOptimalPreset(data.nodes.length, data.edges.length);
+      if (optimalPreset !== forceSimulationPreset) {
+        d3Utils.updateForceSimulationPreset(simulation, optimalPreset, nodeRadius);
+        setForceSimulationPreset(optimalPreset);
       }
+      
+      // Fix or unfix all nodes based on mode
+      fixAllNodes(mode === 'view-force' ? false : true);
+      
+      // Restart simulation with appropriate alpha
+      if (mode === 'view-force') {
+        simulation.alpha(0.5).restart();
+        console.log('Force simulation running in view-force mode with preset:', optimalPreset);
+      } else {
+        simulation.alpha(0.1).restart(); // Lower alpha for edit/delete modes
+        console.log('Force simulation running in', mode, 'mode with fixed nodes');
+      }
+      // Re-fix nodes after restart to maintain current mode behavior
+      fixAllNodes(mode !== 'view-force');
     }
   }, [mode]);
 
@@ -1343,7 +1388,7 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
                         ? 'bg-green-100 text-green-800' 
                         : 'bg-gray-100 text-gray-600'
                     }`}>
-                      {forceSimulationPaused ? 'Paused' : 'Active'}
+                      {forceSimulationPaused ? 'Paused' : (mode === 'view-force' ? 'Active' : 'Fixed')}
                     </span>
                     <span className="text-gray-600">α: {simulationAlpha.toFixed(3)}</span>
                   </div>

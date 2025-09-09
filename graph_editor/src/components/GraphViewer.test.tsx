@@ -1,4 +1,5 @@
 import { render, mockGraphData } from '../test-utils';
+import { fireEvent } from '@testing-library/react';
 import GraphViewer from './GraphViewer';
 
 describe('GraphViewer', () => {
@@ -154,8 +155,14 @@ describe('GraphViewer', () => {
         />
       );
 
-      // Check that the selection display shows edge information
-      const selectionDisplay = document.querySelector('.mb-2.px-3.py-1.bg-blue-100');
+      // Expand the debug panel first
+      const debugButton = document.querySelector('button[class*="bg-gray-100"]');
+      if (debugButton) {
+        fireEvent.click(debugButton);
+      }
+
+      // Check that the selection display shows edge information in debug panel
+      const selectionDisplay = document.querySelector('.px-2.py-1.bg-blue-50');
       expect(selectionDisplay).toBeInTheDocument();
       expect(selectionDisplay).toHaveTextContent('Edge: none');
     });
