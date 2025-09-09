@@ -177,13 +177,7 @@ export const d3Utils = {
         event.sourceEvent?.stopPropagation();
 
         if (!event.active && simulation) {
-          if (mode === 'view-force') {
-            // In view-force mode, temporarily reduce force simulation during drag
-            simulation.alphaTarget(0.1).restart();
-          } else {
-            // In edit/delete modes, keep simulation running but allow manual positioning
-            simulation.alphaTarget(0.1).restart();
-          }
+          simulation.alphaTarget(0.1).restart();
         }
 
         // Always allow dragging by temporarily unfixing the node
@@ -235,15 +229,14 @@ export const d3Utils = {
         event.sourceEvent?.stopPropagation();
 
         if (!event.active && simulation) {
+          simulation.alphaTarget(0.1).restart();
           if (mode === 'view-force') {
             // In view-force mode, restart force simulation after drag
-            simulation.alphaTarget(0.1).restart();
             // Unfix the node to allow free movement
             d.fx = null;
             d.fy = null;
           } else {
             // In edit/delete modes, fix the node in its new position
-            simulation.alphaTarget(0.1).restart();
             d.fx = d.x ?? null;
             d.fy = d.y ?? null;
           }

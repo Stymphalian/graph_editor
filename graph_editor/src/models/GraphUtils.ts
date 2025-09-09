@@ -84,7 +84,7 @@ export function extractDataChangesFromText(
   // Process each line operation
   for (const operation of operations) {
     switch (operation.type) {
-      case 'add':
+      case 'add': {
         const addChange = parseLineAsChange(operation.line, 'add');
         if (addChange) {
           if (Array.isArray(addChange)) {
@@ -94,8 +94,9 @@ export function extractDataChangesFromText(
           }
         }
         break;
+      }
 
-      case 'remove':
+      case 'remove': {
         const removeChange = parseLineAsChange(
           operation.line,
           'remove',
@@ -110,8 +111,9 @@ export function extractDataChangesFromText(
           }
         }
         break;
+      }
 
-      case 'modify':
+      case 'modify': {
         const modifyChanges = parseLineAsChange(
           operation.line,
           'modify',
@@ -128,6 +130,7 @@ export function extractDataChangesFromText(
           }
         }
         break;
+      }
 
       case 'keep':
         // No change needed for kept lines

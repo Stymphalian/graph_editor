@@ -162,3 +162,6 @@ setting the state should save the previous value.
 
 As we parse each line keep track of all the nodes we have seen in the new and old text.
 
+
+
+In the @GraphViewer.tsx and Node in @graph.ts I want to keep a state for 'anchored' or 'fixed' which informs the simulation that this Node's position should not get updated.

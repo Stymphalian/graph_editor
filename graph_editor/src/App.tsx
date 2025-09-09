@@ -288,6 +288,7 @@ function App() {
   ) => {
     // Update node positions in the Graph model
     currentGraph.updateNodePositions(positions);
+    // setGraphData(currentGraph.getData());
   };
 
   const handleGraphTypeChange = (type: GraphType) => {
