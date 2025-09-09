@@ -61,12 +61,53 @@ export type ForceLink = d3.ForceLink<D3Node, D3Edge>;
 export type ForceManyBody = d3.ForceManyBody<D3Node>;
 export type ForceCenter = d3.ForceCenter<D3Node>;
 
+// Create boundary force function
+export const createBoundaryForce = (simulation: any, svgElement: SVGElement | null, nodeRadius: number) => {
+  return (_alpha: number) => {
+    // Custom boundary force to keep nodes within SVG bounds with padding
+    const nodes = simulation.nodes() as D3Node[];
+    const padding = nodeRadius + 10; // Add 10px padding beyond node radius
+    
+    // Get actual SVG dimensions from the rendered element
+    let actualWidth = 400; // fallback
+    let actualHeight = 400; // fallback
+    
+    if (svgElement) {
+      const rect = svgElement.getBoundingClientRect();
+      actualWidth = rect.width;
+      actualHeight = rect.height;
+    }
+    
+    
+    nodes.forEach(node => {
+      if (node.x !== undefined && node.y !== undefined) {
+        // Left boundary
+        if (node.x < padding) {
+          node.x = padding;
+        }
+        // Right boundary
+        if (node.x > actualWidth - padding) {
+          node.x = actualWidth - padding;
+        }
+        // Top boundary
+        if (node.y < padding) {
+          node.y = padding;
+        }
+        // Bottom boundary
+        if (node.y > actualHeight - padding) {
+          node.y = actualHeight - padding;
+        }
+      }
+    });
+  };
+};
+
 // Common D3 utilities for graph visualization
 export const d3Utils = {
 
 
   // Drag behavior for nodes
-  createDrag: (simulation?: ForceSimulation, mode?: string, width?: number, height?: number, nodeRadius?: number) =>
+  createDrag: (simulation?: ForceSimulation, mode?: string, width?: number, height?: number, nodeRadius?: number, svgElement?: SVGElement | null) =>
     d3
       .drag<SVGGElement, D3Node, unknown>()
       .on('start', (event, d) => {
@@ -90,27 +131,36 @@ export const d3Utils = {
         event.sourceEvent?.stopPropagation();
         
         const radius = (nodeRadius || 15);
+        const padding = radius + 10; // Add 10px padding beyond node radius
         let newX = event.x;
         let newY = event.y;
         
-        // Apply boundary constraints during drag
-        if (width && height) {
-          // Left boundary
-          if (newX < radius) {
-            newX = radius;
-          }
-          // Right boundary
-          if (newX > width - radius) {
-            newX = width - radius;
-          }
-          // Top boundary
-          if (newY < radius) {
-            newY = radius;
-          }
-          // Bottom boundary
-          if (newY > height - radius) {
-            newY = height - radius;
-          }
+        // Get actual SVG dimensions for boundary constraints
+        let actualWidth = width || 400;
+        let actualHeight = height || 400;
+        
+        if (svgElement) {
+          const rect = svgElement.getBoundingClientRect();
+          actualWidth = rect.width;
+          actualHeight = rect.height;
+        }
+        
+        // Apply boundary constraints during drag with padding
+        // Left boundary
+        if (newX < padding) {
+          newX = padding;
+        }
+        // Right boundary
+        if (newX > actualWidth - padding) {
+          newX = actualWidth - padding;
+        }
+        // Top boundary
+        if (newY < padding) {
+          newY = padding;
+        }
+        // Bottom boundary
+        if (newY > actualHeight - padding) {
+          newY = actualHeight - padding;
         }
         
         d.fx = newX;
@@ -134,7 +184,7 @@ export const d3Utils = {
       }),
 
   // Force simulation configuration
-  createForceSimulation: (width: number, height: number, nodeRadius: number = 15) => {
+  createForceSimulation: (width: number, height: number, nodeRadius: number = 15, svgElement?: SVGElement | null) => {
     
     const simulation = forceSimulation<D3Node, D3Edge>()
       .force('link', forceLink<D3Node, D3Edge>().id((d: D3Node) => d.id).distance(120).strength(0.8)) // Stronger link force for better connectivity
@@ -142,34 +192,14 @@ export const d3Utils = {
       .force('collision', forceCollide<D3Node>().radius(nodeRadius + 10)) // Collision radius based on node radius
       .force('center', forceCenter<D3Node>(width / 2, height / 2).strength(0.02)) // Reduced center force to minimize disruption
       .force('x', forceX<D3Node>(width / 2).strength(0.1)) // X position force to keep nodes centered
-      .force('y', forceY<D3Node>(height / 2).strength(0.1)) // Y position force to keep nodes centered
-      .force('boundary', (_alpha: number) => {
-        // Custom boundary force to keep nodes within SVG bounds
-        const nodes = simulation.nodes() as D3Node[];
-        nodes.forEach(node => {
-          if (node.x !== undefined && node.y !== undefined) {
-            // Left boundary
-            if (node.x < nodeRadius) {
-              node.x = nodeRadius;
-            }
-            // Right boundary
-            if (node.x > width - nodeRadius) {
-              node.x = width - nodeRadius;
-            }
-            // Top boundary
-            if (node.y < nodeRadius) {
-              node.y = nodeRadius;
-            }
-            // Bottom boundary
-            if (node.y > height - nodeRadius) {
-              node.y = height - nodeRadius;
-            }
-          }
-        });
-      });
+      .force('y', forceY<D3Node>(height / 2).strength(0.1)); // Y position force to keep nodes centered
+    
+    // Add boundary force after simulation is created
+    simulation.force('boundary', createBoundaryForce(simulation, svgElement || null, nodeRadius));
     
     return simulation;
   },
+
 
   // Viewport management utilities
   fitToViewport: (svg: any, container: any, padding = 20) => {

@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { d3, d3Utils, ForceSimulation, D3Node, D3Edge } from '@/utils/d3Config';
+import { d3, d3Utils, createBoundaryForce, ForceSimulation, D3Node, D3Edge } from '@/utils/d3Config';
 import { GraphData, Node, Edge } from '@/types/graph';
 import { applyNodeStyling, createNodeEventHandlers, applyNodeNibs } from './Node';
 import { applyEdgeStyling, createEdgeEventHandlers } from './Edge';5
@@ -7,8 +7,6 @@ import { applyEdgeStyling, createEdgeEventHandlers } from './Edge';5
 
 interface GraphViewerProps {
   data: GraphData;
-  width?: number;
-  height?: number;
   onNodeCreate?: (x: number, y: number) => void;
   onEdgeCreate?: (sourceLabel: string, targetLabel: string) => void;
   onNodeLabelEdit?: (nodeLabel: string, newLabel: string) => void;
@@ -28,8 +26,6 @@ interface GraphViewerProps {
 
 const GraphViewer: React.FC<GraphViewerProps> = ({
   data,
-  width = 800,
-  height = 600,
   onNodeCreate,
   onEdgeCreate,
   onNodeLabelEdit,
@@ -181,8 +177,8 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
     selectedEdgeTuple: [string, string] | null | undefined;
   } | null>(null);
   const [dimensions, setDimensions] = useState({
-    width: Math.min(width || 800, height || 600),
-    height: Math.min(width || 800, height || 600)
+    width: 400, // Default fallback
+    height: 400  // Default fallback
   });
 
   // Function to update drag behavior for existing nodes with new dimensions
@@ -194,7 +190,7 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
     
     // Update drag behavior for all existing nodes
     container.selectAll('.node')
-      .call(d3Utils.createDrag(simulation, mode, newWidth, newHeight, nodeRadius));
+      .call(d3Utils.createDrag(simulation, mode, newWidth, newHeight, nodeRadius, svgRef.current));
   };
 
   // Handle responsive resizing without destroying the graph
@@ -202,16 +198,22 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
     const handleResize = () => {
       if (containerRef.current) {
         const rect = containerRef.current.getBoundingClientRect();
-        // Ensure container has minimum dimensions
+        
+        // Get the parent container's height if available (the one with h-[calc(100vh-200px)])
+        const parentElement = containerRef.current.parentElement;
+        const parentRect = parentElement?.getBoundingClientRect();
+        
+        // Use parent height if available and valid, otherwise fall back to container height
+        const effectiveHeight = parentRect && parentRect.height > 0 ? parentRect.height : rect.height;
+        
+        // Ensure container has minimum dimensions and use actual container size
         const containerWidth = Math.max(300, rect.width);
-        const containerHeight = Math.max(300, rect.height);
+        const containerHeight = Math.max(300, effectiveHeight);
 
-        // Calculate square dimensions based on the smaller dimension to maintain aspect ratio
-        const minDimension = Math.min(containerWidth, containerHeight);
-        const squareSize = Math.max(300, minDimension); // Minimum size of 300px
+        // Use the actual container dimensions instead of forcing square
         const newDimensions = {
-          width: squareSize,
-          height: squareSize,
+          width: containerWidth,
+          height: containerHeight,
         };
 
         // Update SVG dimensions without recreating the graph (if D3 instance exists)
@@ -226,30 +228,8 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
             simulation.force('x', d3.forceX(newDimensions.width / 2).strength(0.1));
             simulation.force('y', d3.forceY(newDimensions.height / 2).strength(0.1));
             
-            // Update boundary force with new dimensions
-            simulation.force('boundary', (_alpha: number) => {
-              const nodes = simulation.nodes() as D3Node[];
-              nodes.forEach(node => {
-                if (node.x !== undefined && node.y !== undefined) {
-                  // Left boundary
-                  if (node.x < nodeRadius) {
-                    node.x = nodeRadius;
-                  }
-                  // Right boundary
-                  if (node.x > newDimensions.width - nodeRadius) {
-                    node.x = newDimensions.width - nodeRadius;
-                  }
-                  // Top boundary
-                  if (node.y < nodeRadius) {
-                    node.y = nodeRadius;
-                  }
-                  // Bottom boundary
-                  if (node.y > newDimensions.height - nodeRadius) {
-                    node.y = newDimensions.height - nodeRadius;
-                  }
-                }
-              });
-            });
+            // Update boundary force with new dimensions and padding
+            simulation.force('boundary', createBoundaryForce(simulation, svgRef.current, nodeRadius));
             
             simulation.alpha(0.3).restart(); // Gentle restart to adjust to new dimensions
             
@@ -262,14 +242,30 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
       }
     };
 
-    // Initial size calculation
-    handleResize();
+    // Initial size calculation with a small delay to ensure container is properly sized
+    const initialResize = () => {
+      // Use requestAnimationFrame to ensure DOM is fully rendered
+      requestAnimationFrame(() => {
+        handleResize();
+      });
+    };
+    
+    initialResize();
+    
+    // Fallback timeout to ensure resize happens even if requestAnimationFrame fails
+    const timeoutId = setTimeout(() => {
+      handleResize();
+    }, 100);
 
     // Add resize observer for responsive behavior (with fallback for test environment)
     if (typeof ResizeObserver !== 'undefined') {
       const resizeObserver = new ResizeObserver(handleResize);
       if (containerRef.current) {
+        // Observe both the container and its parent to catch height changes
         resizeObserver.observe(containerRef.current);
+        if (containerRef.current.parentElement) {
+          resizeObserver.observe(containerRef.current.parentElement);
+        }
       }
     }
 
@@ -278,6 +274,7 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
 
     return () => {
       window.removeEventListener('resize', handleResize);
+      clearTimeout(timeoutId);
     };
   }, []);
 
@@ -374,7 +371,7 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
       .attr('data-testid', 'graph-container');
 
     // Create force simulation with responsive dimensions
-    const simulation = d3Utils.createForceSimulation(dimensions.width, dimensions.height, nodeRadius);
+    const simulation = d3Utils.createForceSimulation(dimensions.width, dimensions.height, nodeRadius, svgRef.current);
 
     // Store D3 instance
     d3InstanceRef.current = {
@@ -790,7 +787,7 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
             .attr('class', 'node')
             .attr('data-node-label', (d: D3Node) => d.label)
             .attr('opacity', 1)
-            .call(d3Utils.createDrag(simulation!, mode, dimensions.width, dimensions.height, nodeRadius));
+            .call(d3Utils.createDrag(simulation!, mode, dimensions.width, dimensions.height, nodeRadius, svgRef.current));
 
           nodeEnter
             .append('circle')
@@ -1059,30 +1056,8 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
       // Update collision radius
       simulation.force('collision', d3.forceCollide().radius(nodeRadius + 10));
       
-      // Update boundary force
-      simulation.force('boundary', (_alpha: number) => {
-        const nodes = simulation.nodes() as D3Node[];
-        nodes.forEach(node => {
-          if (node.x !== undefined && node.y !== undefined) {
-            // Left boundary
-            if (node.x < nodeRadius) {
-              node.x = nodeRadius;
-            }
-            // Right boundary
-            if (node.x > dimensions.width - nodeRadius) {
-              node.x = dimensions.width - nodeRadius;
-            }
-            // Top boundary
-            if (node.y < nodeRadius) {
-              node.y = nodeRadius;
-            }
-            // Bottom boundary
-            if (node.y > dimensions.height - nodeRadius) {
-              node.y = dimensions.height - nodeRadius;
-            }
-          }
-        });
-      });
+      // Update boundary force with padding
+      simulation.force('boundary', createBoundaryForce(simulation, svgRef.current, nodeRadius));
       
       // Update drag behavior for existing nodes
       updateNodeDragBehavior(dimensions.width, dimensions.height);

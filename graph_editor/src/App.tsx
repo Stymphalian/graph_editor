@@ -338,7 +338,6 @@ function App() {
                 <div className="h-[calc(100vh-200px)] min-h-[400px]">
                   <GraphViewer
                     data={graphData}
-                    height={300}
                     onNodeCreate={handleNodeCreate}
                     onEdgeCreate={handleEdgeCreate}
                     onNodeLabelEdit={handleNodeLabelEdit}
