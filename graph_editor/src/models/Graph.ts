@@ -399,11 +399,27 @@ export class Graph {
       }
     }
 
+    // Store the old label for edge reference updates
+    const oldLabel = this.state.data.nodes[nodeIndex]!.label;
+    const newLabel = updates.label;
+
     // Update the node
     this.state.data.nodes[nodeIndex] = {
       ...this.state.data.nodes[nodeIndex]!,
       ...updates,
     } as Node;
+
+    // If the label changed, update all edge references
+    if (newLabel && newLabel !== oldLabel) {
+      this.state.data.edges.forEach(edge => {
+        if (edge.source === oldLabel) {
+          edge.source = newLabel;
+        }
+        if (edge.target === oldLabel) {
+          edge.target = newLabel;
+        }
+      });
+    }
 
     this.markModified();
     this.clearError();

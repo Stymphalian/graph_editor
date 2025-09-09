@@ -66,42 +66,43 @@ describe('Graph', () => {
       graph.setNodeIndexingMode('1-indexed');
       
       const data = graph.getData();
-      expect(data.nodes[0].label).toBe('1'); // First node becomes 1
-      expect(data.nodes[1].label).toBe('2'); // Second node becomes 2
-      expect(data.nodes[2].label).toBe('3'); // Third node becomes 3
+      expect(data.nodes[0]?.label).toBe('1'); // First node becomes 1
+      expect(data.nodes[1]?.label).toBe('2'); // Second node becomes 2
+      expect(data.nodes[2]?.label).toBe('3'); // Third node becomes 3
       
       // Switch to custom mode (should keep same labels as 0-indexed for now)
       graph.setNodeIndexingMode('custom');
       
       const data2 = graph.getData();
-      expect(data2.nodes[0].label).toBe('0'); // First node becomes 0
-      expect(data2.nodes[1].label).toBe('1'); // Second node becomes 1
-      expect(data2.nodes[2].label).toBe('2'); // Third node becomes 2
+      expect(data2.nodes[0]?.label).toBe('0'); // First node becomes 0
+      expect(data2.nodes[1]?.label).toBe('1'); // Second node becomes 1
+      expect(data2.nodes[2]?.label).toBe('2'); // Third node becomes 2
       
       // Switch back to 0-indexed
       graph.setNodeIndexingMode('0-indexed');
       
       const data3 = graph.getData();
-      expect(data3.nodes[0].label).toBe('0'); // First node becomes 0
-      expect(data3.nodes[1].label).toBe('1'); // Second node becomes 1
-      expect(data3.nodes[2].label).toBe('2'); // Third node becomes 2
+      expect(data3.nodes[0]?.label).toBe('0'); // First node becomes 0
+      expect(data3.nodes[1]?.label).toBe('1'); // Second node becomes 1
+      expect(data3.nodes[2]?.label).toBe('2'); // Third node becomes 2
     });
 
     it('should preserve node order when re-labeling', () => {
       // Add some nodes
-      const node1 = graph.addNode({ label: 'A' });
-      const node2 = graph.addNode({ label: 'B' });
-      const node3 = graph.addNode({ label: 'C' });
+      graph.addNode({ label: 'A' });
+      graph.addNode({ label: 'B' });
+      graph.addNode({ label: 'C' });
       
-      const originalLabels = [node1?.label, node2?.label, node3?.label];
+      // Original labels stored for reference (not used in this test)
+      // const originalLabels = [node1?.label, node2?.label, node3?.label];
       
       // Switch to 1-indexed mode
       graph.setNodeIndexingMode('1-indexed');
       
       const data = graph.getData();
-      expect(data.nodes[0].label).toBe('1'); // First node becomes 1
-      expect(data.nodes[1].label).toBe('2'); // Second node becomes 2
-      expect(data.nodes[2].label).toBe('3'); // Third node becomes 3
+      expect(data.nodes[0]?.label).toBe('1'); // First node becomes 1
+      expect(data.nodes[1]?.label).toBe('2'); // Second node becomes 2
+      expect(data.nodes[2]?.label).toBe('3'); // Third node becomes 3
     });
 
     it('should get max nodes', () => {
@@ -169,7 +170,7 @@ describe('Graph', () => {
     });
 
     it('should remove a node', () => {
-      const node = graph.addNode({ label: 'A' });
+      graph.addNode({ label: 'A' });
       const result = graph.removeNode('A');
       
       expect(result).toBe(true);
@@ -178,8 +179,8 @@ describe('Graph', () => {
     });
 
     it('should remove edges when removing node', () => {
-      const nodeA = graph.addNode({ label: 'A' });
-      const nodeB = graph.addNode({ label: 'B' });
+      graph.addNode({ label: 'A' });
+      graph.addNode({ label: 'B' });
       graph.addEdge({ source: 'A', target: 'B' });
       
       expect(graph.getEdgeCount()).toBe(1);
@@ -194,13 +195,52 @@ describe('Graph', () => {
     });
 
     it('should update a node', () => {
-      const node = graph.addNode({ label: 'A' });
+      graph.addNode({ label: 'A' });
       const result = graph.updateNode('A', { label: 'B' });
 
         expect(result).toBeDefined();
       expect(result?.label).toBe('B');
       expect(graph.hasNode('A')).toBe(false);
       expect(graph.hasNode('B')).toBe(true);
+    });
+
+    it('should update edge references when node label changes', () => {
+      // Create nodes and edges
+      graph.addNode({ label: 'A' });
+      graph.addNode({ label: 'B' });
+      graph.addNode({ label: 'C' });
+      graph.addEdge({ source: 'A', target: 'B', weight: '1' });
+      graph.addEdge({ source: 'B', target: 'C', weight: '2' });
+      graph.addEdge({ source: 'A', target: 'C', weight: '3' });
+
+      // Verify initial state
+      const initialData = graph.getData();
+      expect(initialData.edges).toHaveLength(3);
+      expect(initialData.edges[0]?.source).toBe('A');
+      expect(initialData.edges[0]?.target).toBe('B');
+      expect(initialData.edges[1]?.source).toBe('B');
+      expect(initialData.edges[1]?.target).toBe('C');
+      expect(initialData.edges[2]?.source).toBe('A');
+      expect(initialData.edges[2]?.target).toBe('C');
+
+      // Update node label from A to A2
+      const result = graph.updateNode('A', { label: 'A2' });
+      expect(result).toBeDefined();
+      expect(result?.label).toBe('A2');
+
+      // Verify node was updated
+      expect(graph.hasNode('A')).toBe(false);
+      expect(graph.hasNode('A2')).toBe(true);
+
+      // Verify edge references were updated
+      const updatedData = graph.getData();
+      expect(updatedData.edges).toHaveLength(3);
+      expect(updatedData.edges[0]?.source).toBe('A2'); // Updated
+      expect(updatedData.edges[0]?.target).toBe('B');
+      expect(updatedData.edges[1]?.source).toBe('B');
+      expect(updatedData.edges[1]?.target).toBe('C');
+      expect(updatedData.edges[2]?.source).toBe('A2'); // Updated
+      expect(updatedData.edges[2]?.target).toBe('C');
     });
 
     it('should get node by label', () => {
@@ -221,12 +261,10 @@ describe('Graph', () => {
     });
 
   describe('Edge Management', () => {
-    let nodeA: any, nodeB: any, nodeC: any;
-    
     beforeEach(() => {
-      nodeA = graph.addNode({ label: 'A' });
-      nodeB = graph.addNode({ label: 'B' });
-      nodeC = graph.addNode({ label: 'C' });
+      graph.addNode({ label: 'A' });
+      graph.addNode({ label: 'B' });
+      graph.addNode({ label: 'C' });
     });
 
     it('should add an edge', () => {
@@ -283,7 +321,7 @@ describe('Graph', () => {
     });
 
     it('should remove an edge by source and target', () => {
-      const edge = graph.addEdge({ source: 'A', target: 'B' });
+      graph.addEdge({ source: 'A', target: 'B' });
       const result = graph.removeEdgeByNodes('A', 'B');
 
         expect(result).toBe(true);
@@ -299,7 +337,7 @@ describe('Graph', () => {
     });
 
     it('should update an edge', () => {
-      const edge = graph.addEdge({ source: 'A', target: 'B' });
+      graph.addEdge({ source: 'A', target: 'B' });
       const result = graph.updateEdgeByNodes('A', 'B', { weight: '10' });
       
       expect(result).toBeDefined();
@@ -307,7 +345,7 @@ describe('Graph', () => {
     });
 
     it('should get edge by source and target', () => {
-      const edge = graph.addEdge({ source: 'A', target: 'B' });
+      graph.addEdge({ source: 'A', target: 'B' });
       const found = graph.getEdgeByNodes('A', 'B');
       
       expect(found).toBeDefined();
@@ -331,7 +369,7 @@ describe('Graph', () => {
       });
 
       it('should update edge weight', () => {
-      const edge = graph.addEdge({ source: 'A', target: 'B' });
+      graph.addEdge({ source: 'A', target: 'B' });
       const result = graph.updateEdgeWeightByNodes('A', 'B', '15');
 
         expect(result).toBe(true);
@@ -340,7 +378,7 @@ describe('Graph', () => {
     });
 
     it('should remove edge weight', () => {
-      const edge = graph.addEdge({ source: 'A', target: 'B', weight: '5' });
+      graph.addEdge({ source: 'A', target: 'B', weight: '5' });
           const result = graph.removeEdgeWeightByNodes('A', 'B');
 
           expect(result).toBe(true);
@@ -358,8 +396,8 @@ describe('Graph', () => {
     });
 
     it('should get all edge tuples', () => {
-      const edge1 = graph.addEdge({ source: 'A', target: 'B' });
-      const edge2 = graph.addEdge({ source: 'B', target: 'C' });
+      graph.addEdge({ source: 'A', target: 'B' });
+      graph.addEdge({ source: 'B', target: 'C' });
       
       const tuples = graph.getEdgeTuples();
       expect(tuples).toHaveLength(2);
@@ -370,8 +408,8 @@ describe('Graph', () => {
 
   describe('Graph Reset and Clone', () => {
     it('should reset graph to empty state', () => {
-      const nodeA = graph.addNode({ label: 'A' });
-      const nodeB = graph.addNode({ label: 'B' });
+      graph.addNode({ label: 'A' });
+      graph.addNode({ label: 'B' });
       graph.addEdge({ source: 'A', target: 'B' });
       
       expect(graph.getNodeCount()).toBe(2);
@@ -385,8 +423,8 @@ describe('Graph', () => {
     });
 
     it('should clone graph', () => {
-      const nodeA = graph.addNode({ label: 'A' });
-      const nodeB = graph.addNode({ label: 'B' });
+      graph.addNode({ label: 'A' });
+      graph.addNode({ label: 'B' });
       graph.addEdge({ source: 'A', target: 'B' });
       
       const cloned = graph.clone();
@@ -405,8 +443,8 @@ describe('Graph', () => {
       });
 
     it('should serialize graph with nodes and edges to text', () => {
-      const nodeA = graph.addNode({ label: 'A' });
-      const nodeB = graph.addNode({ label: 'B' });
+      graph.addNode({ label: 'A' });
+      graph.addNode({ label: 'B' });
       graph.addEdge({ source: 'A', target: 'B', weight: '5' });
       
         const text = graph.serializeToText();
@@ -492,7 +530,7 @@ A B 5`;
       // Check edge with weight
       const edgesBetween1And2 = graph.getEdgesBetweenNodes('1', '2');
       expect(edgesBetween1And2).toHaveLength(1);
-      expect(edgesBetween1And2[0].weight).toBe('100');
+      expect(edgesBetween1And2[0]?.weight).toBe('100');
     });
 
     it('should ignore duplicate nodes and edges in edge-list format', () => {
@@ -513,9 +551,10 @@ A B 5`;
       expect(graph.getNodeCount()).toBe(3);
       expect(graph.getEdgeCount()).toBe(2); // Only 1->2 and 3->1, duplicates ignored
       
-      const node1 = graph.getNodeByLabel('1');
-      const node2 = graph.getNodeByLabel('2');
-      const node3 = graph.getNodeByLabel('3');
+      // Verify nodes exist
+      expect(graph.hasNode('1')).toBe(true);
+      expect(graph.hasNode('2')).toBe(true);
+      expect(graph.hasNode('3')).toBe(true);
       
       expect(graph.hasEdgeBetween('1', '2')).toBe(true);
       expect(graph.hasEdgeBetween('3', '1')).toBe(true);
