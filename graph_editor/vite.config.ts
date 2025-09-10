@@ -4,6 +4,7 @@ import path from 'path';
 
 // https://vitejs.dev/config/
 export default defineConfig({
+  base: '/tools/graph_editor/',
   plugins: [react()],
   resolve: {
     alias: {

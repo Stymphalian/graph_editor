@@ -1,8 +1,11 @@
 import '@testing-library/jest-dom';
 
 // Polyfill ResizeObserver for tests
-global.ResizeObserver = class ResizeObserver {
-  observe() {}
-  unobserve() {}
-  disconnect() {}
-};
+Object.defineProperty(window, 'ResizeObserver', {
+  writable: true,
+  value: class ResizeObserver {
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+  }
+});
