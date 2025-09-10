@@ -360,7 +360,7 @@ const TextPanel: React.FC<TextPanelProps> = ({
         onDataChange(diffResult);
       }
     }
-  }, [debouncedTextContent]);
+  }, [debouncedTextContent, isEditing, onDataChange, data]);
 
   // Handle graph text area changes
   const handleGraphTextChange = (

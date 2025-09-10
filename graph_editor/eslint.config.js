@@ -68,6 +68,7 @@ export default [
         ...globals.browser,
         ...globals.es2020,
         ...globals.jest,
+        ...globals.node,
       },
     },
     rules: {
