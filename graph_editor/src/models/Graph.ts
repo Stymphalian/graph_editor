@@ -333,7 +333,11 @@ export class Graph {
   /**
    * Add a node with auto-generated label based on indexing mode
    */
-  addNodeWithAutoLabel(x?: number, y?: number, anchored?: boolean): Node | null {
+  addNodeWithAutoLabel(
+    x?: number,
+    y?: number,
+    anchored?: boolean
+  ): Node | null {
     const index = this.getNextAvailableIndex();
     const label = this.generateNodeLabel(index);
     return this.addNode({
@@ -576,7 +580,7 @@ export class Graph {
       );
       return null;
     }
-    
+
     const newAnchoredState = !node.anchored;
     const success = this.setNodeAnchored(nodeLabel, newAnchoredState);
     return success ? newAnchoredState : null;

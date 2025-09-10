@@ -231,10 +231,10 @@ export const d3Utils = {
 
         if (!event.active && simulation) {
           simulation.alphaTarget(0.1).restart();
-          
+
           // Check if node should remain anchored
           const shouldRemainAnchored = isNodeAnchored?.(d.id) || false;
-          
+
           if (mode === 'view-force') {
             // In view-force mode, only unfix if not anchored
             if (shouldRemainAnchored) {

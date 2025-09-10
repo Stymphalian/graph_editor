@@ -400,7 +400,10 @@ const TextPanel: React.FC<TextPanelProps> = ({
   };
 
   return (
-    <div className={`text-panel ${className}`} style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+    <div
+      className={`text-panel ${className}`}
+      style={{ height: '100%', display: 'flex', flexDirection: 'column' }}
+    >
       <div className="text-panel-header">
         <h2 className="text-lg font-semibold text-gray-800 mb-0">Graph Data</h2>
       </div>
@@ -418,7 +421,15 @@ const TextPanel: React.FC<TextPanelProps> = ({
       </div>
 
       {/* Graph Representation Textarea (Editable) */}
-      <div className="text-panel-section" style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+      <div
+        className="text-panel-section"
+        style={{
+          flex: 1,
+          display: 'flex',
+          flexDirection: 'column',
+          minHeight: 0,
+        }}
+      >
         <label className="text-panel-label">Graph Representation</label>
         <div style={{ flex: 1, minHeight: 0 }}>
           <TextAreaWithLineNumbers

@@ -8,10 +8,7 @@ import {
   D3Edge,
 } from '@/utils/d3Config';
 import { GraphData, Node, Edge } from '@/types/graph';
-import {
-  applyNodeStyling,
-  createNodeEventHandlers,
-} from './Node';
+import { applyNodeStyling, createNodeEventHandlers } from './Node';
 import { applyEdgeStyling, createEdgeEventHandlers } from './Edge';
 // Removed usePrevious import - using useRef instead
 // Constants are now passed as props
@@ -105,22 +102,21 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
   } | null>(null);
 
   const getCurrentContainerDimensions = () => {
-    if (!containerRef.current) return {width: 0, height: 0};
+    if (!containerRef.current) return { width: 0, height: 0 };
 
     const rect = containerRef.current.getBoundingClientRect();
 
     const parentElement = containerRef.current.parentElement;
     const parentRect = parentElement?.getBoundingClientRect();
-    
+
     const effectiveHeight =
       parentRect && parentRect.height > 0 ? parentRect.height : rect.height;
 
     const containerWidth = Math.max(300, rect.width);
     const containerHeight = Math.max(300, effectiveHeight);
 
-    return {width: containerWidth, height: containerHeight};
-  }
-
+    return { width: containerWidth, height: containerHeight };
+  };
 
   // Internal click handlers
   const handleNodeClick = (node: Node) => {
@@ -245,29 +241,33 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
   };
 
   // Function to scale node positions proportionally when resizing
-  const scaleNodePositions = (oldWidth: number, oldHeight: number, newWidth: number, newHeight: number) => {
+  const scaleNodePositions = (
+    oldWidth: number,
+    oldHeight: number,
+    newWidth: number,
+    newHeight: number
+  ) => {
     if (!d3InstanceRef.current?.simulation) return;
 
     const simulation = d3InstanceRef.current.simulation;
     const nodes = simulation.nodes() as D3Node[];
-    
+
     // Calculate scale factors
     const scaleX = newWidth / oldWidth;
     const scaleY = newHeight / oldHeight;
-        
-    
+
     // Scale all node positions and update the graphData
     const updatedPositions: Array<{ label: string; x: number; y: number }> = [];
-    
+
     nodes.forEach(node => {
       if (node.x !== undefined && node.y !== undefined) {
         const newX = node.x * scaleX;
         const newY = node.y * scaleY;
-        
+
         // Update the D3 node position
         node.x = newX;
         node.y = newY;
-        
+
         // Also scale fixed positions if they exist
         if (node.fx !== undefined && node.fx !== null) {
           node.fx = node.fx * scaleX;
@@ -275,16 +275,15 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
         if (node.fy !== undefined && node.fy !== null) {
           node.fy = node.fy * scaleY;
         }
-        
+
         // Collect updated positions for graphData update
         updatedPositions.push({
           label: node.label || node.id,
           x: newX,
-          y: newY
+          y: newY,
         });
       }
     });
-
 
     // Update the parent component with new positions
     if (onNodePositionUpdate && updatedPositions.length > 0) {
@@ -294,25 +293,30 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
 
   // Comprehensive resize handler
   const handleResize = () => {
-    if (!containerRef.current || !svgRef.current || !d3InstanceRef.current) return;
+    if (!containerRef.current || !svgRef.current || !d3InstanceRef.current)
+      return;
 
     const containerDimensions = getCurrentContainerDimensions();
     const { currentDimensions, previousDimensions } = d3InstanceRef.current;
 
     // Keep the area square by using the smaller dimension
-    const squareSize = Math.min(containerDimensions.width, containerDimensions.height);
+    const squareSize = Math.min(
+      containerDimensions.width,
+      containerDimensions.height
+    );
     const newDimensions = { width: squareSize, height: squareSize };
 
     // Check if dimensions actually changed
-    const hasChanged = 
-      currentDimensions.width !== newDimensions.width || 
+    const hasChanged =
+      currentDimensions.width !== newDimensions.width ||
       currentDimensions.height !== newDimensions.height;
     if (!hasChanged) return;
-    if (Math.abs(currentDimensions.width - newDimensions.width) < 10 || 
-        Math.abs(currentDimensions.height - newDimensions.height) < 10) {
+    if (
+      Math.abs(currentDimensions.width - newDimensions.width) < 10 ||
+      Math.abs(currentDimensions.height - newDimensions.height) < 10
+    ) {
       return;
     }
-
 
     // Update previous dimensions before scaling
     d3InstanceRef.current.previousDimensions = { ...currentDimensions };
@@ -340,7 +344,7 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
     // Update force simulation boundaries
     if (d3InstanceRef.current.simulation) {
       const simulation = d3InstanceRef.current.simulation;
-      
+
       // Update boundary force with new dimensions
       simulation.force(
         'boundary',
@@ -391,7 +395,7 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
         if (d3InstanceRef.current) {
           d3InstanceRef.current.mousePosition = { x, y };
         }
-        
+
         // Update preview line for edge creation
         if (d3InstanceRef.current?.edgeCreationSource) {
           updatePreviewLine();
@@ -474,9 +478,12 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
 
     // Get initial dimensions and keep them square
     const containerDimensions = getCurrentContainerDimensions();
-    const squareSize = Math.min(containerDimensions.width, containerDimensions.height);
+    const squareSize = Math.min(
+      containerDimensions.width,
+      containerDimensions.height
+    );
     const initialDimensions = { width: squareSize, height: squareSize };
-    
+
     // Update SVG with initial dimensions
     svgRef.current.setAttribute('width', initialDimensions.width.toString());
     svgRef.current.setAttribute('height', initialDimensions.height.toString());
@@ -572,7 +579,6 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
       }
     }
   };
-
 
   // Helper function to handle node click logic
   const handleNodeClickLogic = (node: D3Node) => {
@@ -745,7 +751,6 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
       });
     }
   };
-
 
   // Update D3 data and rendering
   const updateD3Data = () => {
@@ -1049,7 +1054,13 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
             const originalNode = data.nodes.find(n => n.label === d.label);
             const isAnchored = originalNode?.anchored || false;
 
-            applyNodeStyling(nodeSelection, isSelected, nodeRadius, isSource, isAnchored);
+            applyNodeStyling(
+              nodeSelection,
+              isSelected,
+              nodeRadius,
+              isSource,
+              isAnchored
+            );
           });
 
           nodeEnter.each(function (this: any, d: D3Node) {
@@ -1103,7 +1114,13 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
             const originalNode = data.nodes.find(n => n.label === d.label);
             const isAnchored = originalNode?.anchored || false;
 
-            applyNodeStyling(nodeSelection, isSelected, nodeRadius, isSource, isAnchored);
+            applyNodeStyling(
+              nodeSelection,
+              isSelected,
+              nodeRadius,
+              isSource,
+              isAnchored
+            );
 
             // Re-attach event handlers for existing nodes
             const eventHandlers = createNodeEventHandlers(d, {
@@ -1143,7 +1160,6 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
           return exit.remove();
         }
       );
-
 
     // Update simulation with new data - all forces are configured in d3Config.ts
     if (simulation) {
@@ -1234,7 +1250,10 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
   };
 
   // Convert Graph model data to D3 format
-  const convertToD3Data = (graphData: GraphData, dimensions: {width: number, height: number}) => {
+  const convertToD3Data = (
+    graphData: GraphData,
+    dimensions: { width: number; height: number }
+  ) => {
     // Get existing node positions from the simulation if it exists
     const existingNodes = d3InstanceRef.current?.simulation?.nodes() || [];
     const existingNodeMap = new Map(
@@ -1242,7 +1261,7 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
     );
 
     let offsetX = 100;
-    let offsetY = dimensions.height/2;
+    let offsetY = dimensions.height / 2;
 
     const d3Nodes: D3Node[] = graphData.nodes.map((node, index) => {
       let d3Node: D3Node;
@@ -1284,8 +1303,8 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
         d3Node = {
           id: node.label, // Use label as ID for D3
           label: node.label,
-          x: offsetX + (index % 4) * dimensions.width / 4,
-          y: offsetY + Math.floor(index / 4) * dimensions.height / 4,
+          x: offsetX + ((index % 4) * dimensions.width) / 4,
+          y: offsetY + (Math.floor(index / 4) * dimensions.height) / 4,
         };
       }
 
@@ -1403,7 +1422,13 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
       const originalNode = data.nodes.find(n => n.label === d.label);
       const isAnchored = originalNode?.anchored || false;
 
-      applyNodeStyling(nodeSelection, isSelected, nodeRadius, isSource, isAnchored);
+      applyNodeStyling(
+        nodeSelection,
+        isSelected,
+        nodeRadius,
+        isSource,
+        isAnchored
+      );
     });
 
     // Update edge selection styling
@@ -1516,7 +1541,10 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
       }
 
       if (d3InstanceRef.current?.currentDimensions) {
-        updateNodeDragBehavior(d3InstanceRef.current.currentDimensions.width, d3InstanceRef.current.currentDimensions.height);
+        updateNodeDragBehavior(
+          d3InstanceRef.current.currentDimensions.width,
+          d3InstanceRef.current.currentDimensions.height
+        );
       }
     }
   }, [mode]);
@@ -1612,7 +1640,6 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
                   : 'none'}
               </div>
             </div>
-
 
             {/* Debug Controls */}
             <div className="px-2 py-1 text-xs">

@@ -20,7 +20,8 @@ function App() {
   const graph = useMemo(() => {
     const g = new Graph({ type: 'directed', nodeIndexingMode: 'custom' });
 
-    Graph.parseFromText(`
+    Graph.parseFromText(
+      `
       2
       0
       5
@@ -35,7 +36,9 @@ function App() {
       2 3
       2 4
       4 5
-    `, g)
+    `,
+      g
+    );
 
     // // Add sample nodes and store their IDs
     // const nodeA = g.addNode({ label: 'A' });
@@ -312,15 +315,16 @@ function App() {
 
   const handleNodeAnchorToggle = (nodeLabel: string) => {
     console.log('Toggling anchor state for node:', nodeLabel);
-    
+
     const newAnchoredState = currentGraph.toggleNodeAnchored(nodeLabel);
-    
+
     if (newAnchoredState !== null) {
       // Update the graph data state to trigger re-render
       setGraphData(currentGraph.getData());
     } else {
       console.error('Failed to toggle anchor state:', currentGraph.getError());
-      const errorMessage = currentGraph.getError() || 'Failed to toggle anchor state';
+      const errorMessage =
+        currentGraph.getError() || 'Failed to toggle anchor state';
       handleError(errorMessage);
     }
   };
@@ -389,7 +393,10 @@ function App() {
         <div className="w-full px-2 py-4">
           <div className="flex gap-4">
             {/* Text Panel - Fixed width */}
-            <div className="w-80 flex-shrink-0" style={{ maxHeight: 'calc(100vh - 120px)', overflow: 'hidden' }}>
+            <div
+              className="w-80 flex-shrink-0"
+              style={{ maxHeight: 'calc(100vh - 120px)', overflow: 'hidden' }}
+            >
               <TextPanel
                 data={graphData}
                 onDataChange={handleGraphDataChange}
@@ -427,7 +434,8 @@ function App() {
                   />
                 </div>
                 <p className="graph-editor-help-text mt-4">
-                  Click and drag nodes to move them. Right-click to anchor a node.
+                  Click and drag nodes to move them. Right-click to anchor a
+                  node.
                   <br />
                   {currentMode == `view-force` && (
                     <span>
@@ -436,15 +444,14 @@ function App() {
                   )}
                   {currentMode == `edit` && (
                     <span>
-                      Left-click empty space to create node. Select a node to start adding edges.
+                      Left-click empty space to create node. Select a node to
+                      start adding edges.
                       <br />
                       Double-click to edit a node's label or an edge's weight.
                     </span>
                   )}
                   {currentMode == `delete` && (
-                    <span>
-                      Select a node or edge to delete it.
-                    </span>
+                    <span>Select a node or edge to delete it.</span>
                   )}
                 </p>
               </div>

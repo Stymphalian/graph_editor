@@ -1,6 +1,0 @@
-
-- line edge weights should be smart about placing to the left or right of the line.
-- Adjust the new node placement logic when creating new nodes form text-representation
-- View-force mode and node drag causes the nodes to get stuck in position. probably a stale react state issue.
-- fix the useEffect dependencies for GraphViewer. it is too complicated and there are way-too many re-renders
-  it breaks some functionality which I only want triggered for a few things.

@@ -183,5 +183,4 @@ describe('Node Utility Functions', () => {
       ).toBe(true);
     });
   });
-
 });

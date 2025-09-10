@@ -54,7 +54,7 @@ const TextAreaWithLineNumbers: React.FC<TextAreaWithLineNumbersProps> = ({
   };
 
   return (
-    <div 
+    <div
       className={`text-panel-editor ${className}`}
       style={{ height: '100%', overflow: 'hidden', display: 'flex' }}
     >
@@ -63,10 +63,10 @@ const TextAreaWithLineNumbers: React.FC<TextAreaWithLineNumbersProps> = ({
         className={`text-panel-line-numbers ${lineNumbersClassName}`}
         onScroll={handleLineNumbersScroll}
         key={value.split('\n').length}
-        style={{ 
-          height: '100%', 
+        style={{
+          height: '100%',
           overflowY: 'hidden',
-          overflowX: 'hidden'
+          overflowX: 'hidden',
         }}
       >
         {generateLineNumberSpans(value)}
@@ -85,11 +85,11 @@ const TextAreaWithLineNumbers: React.FC<TextAreaWithLineNumbersProps> = ({
         spellCheck={spellCheck}
         className={`graph-editor-textarea text-panel-textarea ${textareaClassName}`}
         wrap="off"
-        style={{ 
-          height: '100%', 
+        style={{
+          height: '100%',
           overflowY: 'auto',
           overflowX: 'auto',
-          resize: 'none'
+          resize: 'none',
         }}
       />
     </div>
