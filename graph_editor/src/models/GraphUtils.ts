@@ -60,7 +60,6 @@ export function extractDataChangesFromText(
   originalGraph: GraphData
 ): GraphDiffResult {
   const operations = extractLineOperationsFromText(newText, prevText);
-  console.log('@@@@ operations', operations);
   const changes: ChangeOperation[] = [];
 
   // Get current graph data for reference

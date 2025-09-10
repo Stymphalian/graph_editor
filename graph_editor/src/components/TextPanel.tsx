@@ -351,7 +351,6 @@ const TextPanel: React.FC<TextPanelProps> = ({
         setHasErrors(true);
         return;
       }
-      console.log('@@@@ editedGraph', data.type, data.nodeIndexingMode);
 
       let originalGraph = new Graph(data, data.nodeIndexingMode);
       originalGraph.setType(data.type);

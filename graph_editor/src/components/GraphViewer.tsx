@@ -11,7 +11,6 @@ import { GraphData, Node, Edge } from '@/types/graph';
 import {
   applyNodeStyling,
   createNodeEventHandlers,
-  applyNodeNibs,
 } from './Node';
 import { applyEdgeStyling, createEdgeEventHandlers } from './Edge';
 // Removed usePrevious import - using useRef instead
@@ -383,7 +382,7 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
   const setupSVGEventHandlers = () => {
     const svg = d3.select(svgRef.current);
 
-    // Add mouse tracking for edge creation preview and nib positioning
+    // Add mouse tracking for edge creation preview
     svg.on('mousemove', (event: any) => {
       const rect = svg.node()?.getBoundingClientRect();
       if (rect) {
@@ -412,9 +411,6 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
 
           svg.style('cursor', targetNode ? 'crosshair' : 'not-allowed');
         }
-        
-        // Update nib positions for selected nodes
-        updateNibPositions();
       }
     });
 
@@ -577,49 +573,6 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
     }
   };
 
-  // Update nib positions for selected nodes
-  const updateNibPositions = () => {
-    if (!d3InstanceRef.current) return;
-
-    const { container, mousePosition, selectedNodeId } = d3InstanceRef.current;
-    
-    if (!mousePosition || !selectedNodeId) return;
-
-    // Find the selected node
-    const selectedNode = container
-      .selectAll('.node')
-      .data()
-      .find((d: D3Node) => d.id === selectedNodeId);
-
-    if (!selectedNode || selectedNode.x === undefined || selectedNode.y === undefined) return;
-
-    // Calculate nib position based on mouse position relative to node center
-    const dx = mousePosition.x - selectedNode.x;
-    const dy = mousePosition.y - selectedNode.y;
-    
-    // Always calculate angle to ensure consistent circumference positioning
-    const angle = Math.atan2(dy, dx);
-    
-    // Position nib on circumference at the calculated angle
-    // The nib center is positioned at a fixed distance from node center
-    const nibRadius = 6;
-    const nibDistance = nodeRadius + nibRadius; // Fixed distance ensures circumference hugging
-    const nibCx = Math.cos(angle) * nibDistance;
-    const nibCy = Math.sin(angle) * nibDistance;
-
-    // Update the nib position for the selected node
-    // Only update position attributes (cx, cy) to preserve hover state (r, fill, filter)
-    const nibElement = container.select(`[data-node-label="${selectedNodeId}"] .node-nib`);
-    
-    if (!nibElement.empty()) {
-      nibElement
-        .transition('position-update')
-        .duration(20)
-        .ease(d3.easeLinear)
-        .attr('cx', nibCx)
-        .attr('cy', nibCy);
-    }
-  };
 
   // Helper function to handle node click logic
   const handleNodeClickLogic = (node: D3Node) => {
@@ -640,22 +593,25 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
           if (d3InstanceRef.current?.svg) {
             d3InstanceRef.current.svg.style('cursor', getModeCursor());
           }
+          // Clear selection
+          d3InstanceRef.current.selectedNodeId = null;
+          setSelectionChange(val => !val);
         } else {
           // Complete edge creation and continue from target node
           onEdgeCreate?.(d3InstanceRef.current.edgeCreationSource, node.label);
           // Continue edge creation from the target node
           d3InstanceRef.current!.edgeCreationSource = node.label;
-          // Select the target node to show its nib
-          const originalNode = data.nodes.find(n => n.label === node.label);
-          if (originalNode) {
-            handleNodeClick(originalNode);
-          }
+          // Select the target node
+          d3InstanceRef.current.selectedNodeId = node.label;
+          setSelectionChange(val => !val);
         }
       } else {
-        // Handle node selection/deselection
-        const originalNode = data.nodes.find(n => n.label === node.label);
-        if (originalNode) {
-          handleNodeClick(originalNode);
+        // Directly enter edge creation mode from this node
+        if (d3InstanceRef.current) {
+          d3InstanceRef.current.edgeCreationSource = node.label;
+          d3InstanceRef.current.selectedNodeId = node.label;
+          d3InstanceRef.current.selectedEdgeTuple = null;
+          setSelectionChange(val => !val);
         }
       }
     } else if (mode === 'delete') {
@@ -1089,28 +1045,11 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
           nodeEnter.each(function (this: any, d: D3Node) {
             const nodeSelection = d3.select(this);
             const isSelected = d3InstanceRef.current?.selectedNodeId === d.id;
-            const isEditMode = mode === 'edit';
             const isSource = d3InstanceRef.current?.edgeCreationSource === d.id;
             const originalNode = data.nodes.find(n => n.label === d.label);
             const isAnchored = originalNode?.anchored || false;
 
             applyNodeStyling(nodeSelection, isSelected, nodeRadius, isSource, isAnchored);
-            applyNodeNibs(
-              nodeSelection,
-              isEditMode && isSelected && !isSource,
-              nodeRadius,
-              node => {
-                // Nib click starts edge creation mode
-                if (
-                  mode === 'edit' &&
-                  !d3InstanceRef.current?.edgeCreationSource
-                ) {
-                  d3InstanceRef.current!.edgeCreationSource = node.label;
-                }
-              },
-              d3InstanceRef.current?.mousePosition,
-              { x: d.x || 0, y: d.y || 0 }
-            );
           });
 
           nodeEnter.each(function (this: any, d: D3Node) {
@@ -1153,7 +1092,6 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
           update.each(function (this: any, d: D3Node) {
             const nodeSelection = d3.select(this);
             const isSelected = d3InstanceRef.current?.selectedNodeId === d.id;
-            const isEditMode = mode === 'edit';
             const isSource = d3InstanceRef.current?.edgeCreationSource === d.id;
 
             // Update the node label text and attribute
@@ -1166,22 +1104,6 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
             const isAnchored = originalNode?.anchored || false;
 
             applyNodeStyling(nodeSelection, isSelected, nodeRadius, isSource, isAnchored);
-            applyNodeNibs(
-              nodeSelection,
-              isEditMode && isSelected && !isSource,
-              nodeRadius,
-              node => {
-                // Nib click starts edge creation mode
-                if (
-                  mode === 'edit' &&
-                  !d3InstanceRef.current?.edgeCreationSource
-                ) {
-                  d3InstanceRef.current!.edgeCreationSource = node.label;
-                }
-              },
-              d3InstanceRef.current?.mousePosition,
-              { x: d.x || 0, y: d.y || 0 }
-            );
 
             // Re-attach event handlers for existing nodes
             const eventHandlers = createNodeEventHandlers(d, {
@@ -1443,8 +1365,6 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
 
       // Restart simulation with new settings
       simulation.alpha(0.3).restart();
-      // Re-fix nodes after restart to maintain current mode behavior
-      // fixAllNodes(mode !== 'view-force');
     }
   }, [nodeRadius, edgeStrokeWidth]);
 
@@ -1479,25 +1399,11 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
     container.selectAll('.node').each(function (this: any, d: any) {
       const nodeSelection = d3.select(this);
       const isSelected = d3InstanceRef.current?.selectedNodeId === d.id;
-      const isEditMode = mode === 'edit';
       const isSource = d3InstanceRef.current?.edgeCreationSource === d.id;
       const originalNode = data.nodes.find(n => n.label === d.label);
       const isAnchored = originalNode?.anchored || false;
 
       applyNodeStyling(nodeSelection, isSelected, nodeRadius, isSource, isAnchored);
-      applyNodeNibs(
-        nodeSelection,
-        isEditMode && isSelected && !isSource,
-        nodeRadius,
-        node => {
-          // Nib click starts edge creation mode
-          if (mode === 'edit' && !d3InstanceRef.current?.edgeCreationSource) {
-            d3InstanceRef.current!.edgeCreationSource = node.label;
-          }
-        },
-        d3InstanceRef.current?.mousePosition,
-        { x: d.x || 0, y: d.y || 0 }
-      );
     });
 
     // Update edge selection styling
@@ -1557,8 +1463,6 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
 
   // Comprehensive state cleanup function for mode transitions
   const performModeTransitionCleanup = () => {
-    console.log('Performing comprehensive mode transition cleanup');
-
     if (d3InstanceRef.current) {
       // Clear all interactive states
       d3InstanceRef.current.selectedNodeId = null;
@@ -1579,8 +1483,6 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
         d3InstanceRef.current.svg.selectAll('.preview-line').remove();
         d3InstanceRef.current.svg.style('cursor', getModeCursor());
       }
-
-      console.log('Mode transition cleanup completed');
     }
 
     // Call parent cleanup callback if provided
@@ -1606,30 +1508,16 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
         nodeRadius
       );
 
-      // Fix or unfix all nodes based on mode
-      // fixAllNodes(mode === 'view-force' ? false : true);
-
       // Restart simulation with appropriate alpha
       if (mode === 'view-force') {
         simulation.alpha(0.5).restart();
-        console.log(
-          'Force simulation running in view-force mode with preset:',
-          optimalPreset
-        );
       } else {
         simulation.alpha(0.1).restart(); // Lower alpha for edit/delete modes
-        console.log(
-          'Force simulation running in',
-          mode,
-          'mode with fixed nodes'
-        );
       }
 
       if (d3InstanceRef.current?.currentDimensions) {
         updateNodeDragBehavior(d3InstanceRef.current.currentDimensions.width, d3InstanceRef.current.currentDimensions.height);
       }
-      // Re-fix nodes after restart to maintain current mode behavior
-      // fixAllNodes(mode !== 'view-force');
     }
   }, [mode]);
 
@@ -1737,49 +1625,6 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
                 />
                 <span className="text-gray-700">Show clickable areas</span>
               </label>
-            </div>
-
-            {/* Resize Test Buttons */}
-            <div className="px-2 py-1 text-xs">
-              <div className="font-medium text-gray-800 mb-1">Resize Test (Square)</div>
-              <div className="flex gap-1">
-                <button
-                  onClick={() => {
-                    if (containerRef.current) {
-                      containerRef.current.style.width = '400px';
-                      containerRef.current.style.height = '400px';
-                      // ResizeObserver will automatically detect the change and trigger handleResize
-                    }
-                  }}
-                  className="px-2 py-1 text-xs bg-blue-100 hover:bg-blue-200 text-blue-800 rounded"
-                >
-                  400x400
-                </button>
-                <button
-                  onClick={() => {
-                    if (containerRef.current) {
-                      containerRef.current.style.width = '600px';
-                      containerRef.current.style.height = '600px';
-                      // ResizeObserver will automatically detect the change and trigger handleResize
-                    }
-                  }}
-                  className="px-2 py-1 text-xs bg-green-100 hover:bg-green-200 text-green-800 rounded"
-                >
-                  600x600
-                </button>
-                <button
-                  onClick={() => {
-                    if (containerRef.current) {
-                      containerRef.current.style.width = '800px';
-                      containerRef.current.style.height = '500px';
-                      // ResizeObserver will automatically detect the change and trigger handleResize (will use 500x500)
-                    }
-                  }}
-                  className="px-2 py-1 text-xs bg-purple-100 hover:bg-purple-200 text-purple-800 rounded"
-                >
-                  800x500→500x500
-                </button>
-              </div>
             </div>
           </div>
         )}

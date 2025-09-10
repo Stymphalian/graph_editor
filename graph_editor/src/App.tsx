@@ -20,18 +20,38 @@ function App() {
   const graph = useMemo(() => {
     const g = new Graph({ type: 'directed', nodeIndexingMode: 'custom' });
 
-    // Add sample nodes and store their IDs
-    const nodeA = g.addNode({ label: 'A' });
-    const nodeB = g.addNode({ label: 'B' });
-    const nodeC = g.addNode({ label: 'C' });
-    const nodeD = g.addNode({ label: 'D' });
+    Graph.parseFromText(`
+      2
+      0
+      5
+      3
+      4
+      1
+      0 2 10
+      0 4 30
+      0 5
+      1 4
+      1 5
+      2 3
+      2 4
+      4 5
+    `, g)
 
-    // Add sample edges using the actual node IDs
-    if (nodeA && nodeB)
-      g.addEdge({ source: nodeA.label, target: nodeB.label, weight: '123' });
-    if (nodeB && nodeC) g.addEdge({ source: nodeB.label, target: nodeC.label });
-    if (nodeC && nodeD) g.addEdge({ source: nodeC.label, target: nodeD.label });
-    // if (nodeD && nodeA) g.addEdge({ source: nodeD.id, target: nodeA.id });
+    // // Add sample nodes and store their IDs
+    // const nodeA = g.addNode({ label: 'A' });
+    // const nodeB = g.addNode({ label: 'B' });
+    // const nodeC = g.addNode({ label: 'C' });
+    // const nodeD = g.addNode({ label: 'D' });
+    // const nodeD = g.addNode({ label: 'E' });
+    // const nodeD = g.addNode({ label: 'F' });
+    // const nodeD = g.addNode({ label: 'G' });
+
+    // // Add sample edges using the actual node IDs
+    // if (nodeA && nodeB)
+    //   g.addEdge({ source: nodeA.label, target: nodeB.label, weight: '123' });
+    // if (nodeB && nodeC) g.addEdge({ source: nodeB.label, target: nodeC.label });
+    // if (nodeC && nodeD) g.addEdge({ source: nodeC.label, target: nodeD.label });
+    // // if (nodeD && nodeA) g.addEdge({ source: nodeD.id, target: nodeA.id });
 
     return g;
   }, []);
@@ -43,7 +63,7 @@ function App() {
     y: number;
   } | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [currentMode, setCurrentMode] = useState<Mode>('edit');
+  const [currentMode, setCurrentMode] = useState<Mode>('view-force');
   const [lastOperation, setLastOperation] = useState<
     GraphOperation | undefined
   >(undefined);
@@ -168,7 +188,7 @@ function App() {
       'targetLabel:',
       targetLabel
     );
-    console.log('Current graph data before deletion:', currentGraph.getData());
+    // console.log('Current graph data before deletion:', currentGraph.getData());
 
     // Get the current edge to find the weight before deletion
     const currentEdge = currentGraph
@@ -197,7 +217,7 @@ function App() {
         data: edgeData,
       });
       const newData = currentGraph.getData();
-      console.log('New graph data after deletion:', newData);
+      // console.log('New graph data after deletion:', newData);
       // Update the graph data state to trigger re-render
       setGraphData(newData);
     } else {
@@ -268,7 +288,7 @@ function App() {
 
   const handleModeChange = (mode: Mode) => {
     console.log('Mode changed to:', mode);
-    console.log('Current graph data when mode changes:', graphData);
+    // console.log('Current graph data when mode changes:', graphData);
 
     // Clear any ongoing operations when switching modes
     setErrorMessage(null);
@@ -277,7 +297,6 @@ function App() {
   };
 
   const handleModeTransitionCleanup = () => {
-    console.log('Performing mode transition cleanup');
     // Clear any ongoing operations when switching modes
     setErrorMessage(null);
     // Additional cleanup can be added here as needed
@@ -297,7 +316,6 @@ function App() {
     const newAnchoredState = currentGraph.toggleNodeAnchored(nodeLabel);
     
     if (newAnchoredState !== null) {
-      console.log(`Node ${nodeLabel} anchored state:`, newAnchoredState);
       // Update the graph data state to trigger re-render
       setGraphData(currentGraph.getData());
     } else {
@@ -409,8 +427,25 @@ function App() {
                   />
                 </div>
                 <p className="graph-editor-help-text mt-4">
-                  Click and drag nodes to move them. The force simulation will
-                  automatically adjust the layout.
+                  Click and drag nodes to move them. Right-click to anchor a node.
+                  <br />
+                  {currentMode == `view-force` && (
+                    <span>
+                      The force simulation will automatically adjust the layout.
+                    </span>
+                  )}
+                  {currentMode == `edit` && (
+                    <span>
+                      Left-click empty space to create node. Select a node to start adding edges.
+                      <br />
+                      Double-click to edit a node's label or an edge's weight.
+                    </span>
+                  )}
+                  {currentMode == `delete` && (
+                    <span>
+                      Select a node or edge to delete it.
+                    </span>
+                  )}
                 </p>
               </div>
             </div>
