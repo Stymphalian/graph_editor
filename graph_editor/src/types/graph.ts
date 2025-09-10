@@ -14,6 +14,8 @@ export interface Node {
   x?: number;
   /** Y coordinate for node position */
   y?: number;
+  /** Whether the node is anchored (fixed in place during force simulation) */
+  anchored?: boolean;
 }
 
 export interface Edge {
@@ -63,6 +65,8 @@ export interface NodeCreationData {
   x?: number;
   /** Y coordinate for node position */
   y?: number;
+  /** Whether the node is anchored (fixed in place during force simulation) */
+  anchored?: boolean;
 }
 
 export interface EdgeCreationData {

@@ -39,6 +39,7 @@ describe('Node Utility Functions', () => {
     it('creates event handlers that call the provided functions', async () => {
       let clickedNode: D3Node | undefined;
       let doubleClickedNode: D3Node | undefined;
+      let rightClickedNode: D3Node | undefined;
       let mouseEnteredNode: D3Node | undefined;
       let mouseLeftNode: D3Node | undefined;
 
@@ -48,6 +49,9 @@ describe('Node Utility Functions', () => {
         },
         onNodeDoubleClick: (node: D3Node) => {
           doubleClickedNode = node;
+        },
+        onNodeRightClick: (node: D3Node) => {
+          rightClickedNode = node;
         },
         onNodeMouseEnter: (node: D3Node) => {
           mouseEnteredNode = node;
@@ -70,6 +74,10 @@ describe('Node Utility Functions', () => {
       eventHandlers.dblclick(new Event('dblclick'));
       expect(doubleClickedNode).toEqual(mockNode);
 
+      // Test right click handler
+      eventHandlers.contextmenu(new Event('contextmenu'));
+      expect(rightClickedNode).toEqual(mockNode);
+
       // Test mouse enter handler
       eventHandlers.mouseenter(new Event('mouseenter'));
       expect(mouseEnteredNode).toEqual(mockNode);
@@ -87,6 +95,7 @@ describe('Node Utility Functions', () => {
       expect(() => {
         eventHandlers.click(new Event('click'));
         eventHandlers.dblclick(new Event('dblclick'));
+        eventHandlers.contextmenu(new Event('contextmenu'));
         eventHandlers.mouseenter(new Event('mouseenter'));
         eventHandlers.mouseleave(new Event('mouseleave'));
       }).not.toThrow();
@@ -213,7 +222,7 @@ describe('Node Utility Functions', () => {
 
       mockSelection.append = () => mockNib;
 
-      applyNodeNibs(mockSelection, true, 20);
+      applyNodeNibs(mockSelection, true, 20, undefined, { x: 100, y: 50 }, { x: 50, y: 50 });
 
       // Verify nib was created with correct attributes
       expect(

@@ -320,6 +320,7 @@ export class Graph {
       label: nodeData.label,
       ...(nodeData.x !== undefined && { x: nodeData.x }),
       ...(nodeData.y !== undefined && { y: nodeData.y }),
+      ...(nodeData.anchored !== undefined && { anchored: nodeData.anchored }),
     };
 
     this.state.data.nodes.push(node);
@@ -332,13 +333,14 @@ export class Graph {
   /**
    * Add a node with auto-generated label based on indexing mode
    */
-  addNodeWithAutoLabel(x?: number, y?: number): Node | null {
+  addNodeWithAutoLabel(x?: number, y?: number, anchored?: boolean): Node | null {
     const index = this.getNextAvailableIndex();
     const label = this.generateNodeLabel(index);
     return this.addNode({
       label,
       ...(x !== undefined && { x }),
       ...(y !== undefined && { y }),
+      ...(anchored !== undefined && { anchored }),
     });
   }
 
@@ -526,6 +528,58 @@ export class Graph {
       return null;
     }
     return { x: node.x, y: node.y };
+  }
+
+  /**
+   * Set node anchored state by label
+   */
+  setNodeAnchored(nodeLabel: string, anchored: boolean): boolean {
+    const nodeIndex = this.state.data.nodes.findIndex(
+      node => node.label === nodeLabel
+    );
+    if (nodeIndex === -1) {
+      this.setError(
+        `Cannot set anchored state: node with label '${nodeLabel}' not found`
+      );
+      return false;
+    }
+
+    this.state.data.nodes[nodeIndex] = {
+      ...this.state.data.nodes[nodeIndex]!,
+      anchored,
+    };
+
+    this.markModified();
+    this.clearError();
+    return true;
+  }
+
+  /**
+   * Get node anchored state by label
+   */
+  getNodeAnchored(nodeLabel: string): boolean | null {
+    const node = this.findNodeByLabel(nodeLabel);
+    if (!node) {
+      return null;
+    }
+    return node.anchored || false;
+  }
+
+  /**
+   * Toggle node anchored state by label
+   */
+  toggleNodeAnchored(nodeLabel: string): boolean | null {
+    const node = this.findNodeByLabel(nodeLabel);
+    if (!node) {
+      this.setError(
+        `Cannot toggle anchored state: node with label '${nodeLabel}' not found`
+      );
+      return null;
+    }
+    
+    const newAnchoredState = !node.anchored;
+    const success = this.setNodeAnchored(nodeLabel, newAnchoredState);
+    return success ? newAnchoredState : null;
   }
 
   // ==================== EDGE MANAGEMENT METHODS ====================

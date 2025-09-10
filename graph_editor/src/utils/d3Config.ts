@@ -168,7 +168,8 @@ export const d3Utils = {
     width?: number,
     height?: number,
     nodeRadius?: number,
-    svgElement?: SVGElement | null
+    svgElement?: SVGElement | null,
+    isNodeAnchored?: (nodeId: string) => boolean
   ) =>
     d3
       .drag<SVGGElement, D3Node, unknown>()
@@ -230,20 +231,38 @@ export const d3Utils = {
 
         if (!event.active && simulation) {
           simulation.alphaTarget(0.1).restart();
+          
+          // Check if node should remain anchored
+          const shouldRemainAnchored = isNodeAnchored?.(d.id) || false;
+          
           if (mode === 'view-force') {
-            // In view-force mode, restart force simulation after drag
-            // Unfix the node to allow free movement
-            d.fx = null;
-            d.fy = null;
+            // In view-force mode, only unfix if not anchored
+            if (shouldRemainAnchored) {
+              // Keep anchored nodes fixed in their new position
+              d.fx = d.x ?? null;
+              d.fy = d.y ?? null;
+            } else {
+              // Unfix non-anchored nodes to allow free movement
+              d.fx = null;
+              d.fy = null;
+            }
           } else {
             // In edit/delete modes, fix the node in its new position
             d.fx = d.x ?? null;
             d.fy = d.y ?? null;
           }
         } else {
-          // If no simulation, just unfix the node
-          d.fx = null;
-          d.fy = null;
+          // If no simulation, check anchored state
+          const shouldRemainAnchored = isNodeAnchored?.(d.id) || false;
+          if (shouldRemainAnchored) {
+            // Keep anchored nodes fixed
+            d.fx = d.x ?? null;
+            d.fy = d.y ?? null;
+          } else {
+            // Unfix non-anchored nodes
+            d.fx = null;
+            d.fy = null;
+          }
         }
       }),
 

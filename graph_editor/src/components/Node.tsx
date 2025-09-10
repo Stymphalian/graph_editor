@@ -11,6 +11,7 @@ export interface NodeConfig {
 export interface NodeEventHandlers {
   onNodeClick?: (node: D3Node) => void;
   onNodeDoubleClick?: (node: D3Node) => void;
+  onNodeRightClick?: (node: D3Node) => void;
   onNodeMouseEnter?: (node: D3Node) => void;
   onNodeMouseLeave?: (node: D3Node) => void;
 }
@@ -20,7 +21,8 @@ export interface NodeEventHandlers {
  */
 export const getNodeStyling = (
   isSelected: boolean,
-  isEdgeCreationSource: boolean = false
+  isEdgeCreationSource: boolean = false,
+  isAnchored: boolean = false
 ) => {
   if (isEdgeCreationSource) {
     return {
@@ -31,10 +33,13 @@ export const getNodeStyling = (
     };
   }
 
+  const baseStrokeWidth = isSelected ? 4 : 2;
+  const anchoredStrokeWidth = baseStrokeWidth + (isAnchored ? 3 : 0);
+
   return {
     fill: isSelected ? '#e3f2fd' : 'white',
     stroke: isSelected ? '#1976d2' : '#000000',
-    strokeWidth: isSelected ? 4 : 2,
+    strokeWidth: anchoredStrokeWidth,
     labelFill: isSelected ? '#1976d2' : '#000000',
   };
 };
@@ -80,6 +85,11 @@ export const createNodeEventHandlers = (
 
       handlers.onNodeDoubleClick?.(node);
     },
+    contextmenu: (event: Event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      handlers.onNodeRightClick?.(node);
+    },
     mouseenter: (event: Event) => {
       event.stopPropagation();
       handlers.onNodeMouseEnter?.(node);
@@ -106,9 +116,10 @@ export const applyNodeStyling = (
   nodeSelection: any,
   isSelected: boolean,
   radius: number = 20,
-  isEdgeCreationSource: boolean = false
+  isEdgeCreationSource: boolean = false,
+  isAnchored: boolean = false
 ) => {
-  const styling = getNodeStyling(isSelected, isEdgeCreationSource);
+  const styling = getNodeStyling(isSelected, isEdgeCreationSource, isAnchored);
 
   // Style the circle
   nodeSelection
@@ -142,7 +153,9 @@ export const applyNodeNibs = (
   nodeSelection: any,
   showNibs: boolean,
   radius: number = 20,
-  onNibClick?: (node: any) => void
+  onNibClick?: (node: any) => void,
+  mousePosition?: { x: number; y: number } | null,
+  nodePosition?: { x: number; y: number } | null
 ) => {
   // Remove existing nibs
   nodeSelection.selectAll('.node-nib').remove();
@@ -153,23 +166,44 @@ export const applyNodeNibs = (
     const hoverFill = '#1976d2'; // Blue highlight color
     const normalFill = '#000000'; // Black color
 
+    // Calculate nib position based on mouse position relative to node center
+    let nibCx = radius + nibRadius; // Default position at right edge
+    let nibCy = 0; // Default center vertically
+
+    if (mousePosition && nodePosition) {
+      // Calculate vector from node center to mouse position
+      const dx = mousePosition.x - nodePosition.x;
+      const dy = mousePosition.y - nodePosition.y;
+      
+      // Always calculate angle, even for very small distances to ensure consistent behavior
+      const angle = Math.atan2(dy, dx);
+      
+      // Position nib on circumference at the calculated angle
+      // The nib center is positioned at a fixed distance from node center
+      // This ensures the nib always hugs the circumference regardless of mouse position
+      const nibDistance = radius + nibRadius; // Fixed distance ensures circumference hugging
+      nibCx = Math.cos(angle) * nibDistance;
+      nibCy = Math.sin(angle) * nibDistance;
+    }
+
     const nib = nodeSelection
       .append('circle')
       .attr('class', 'node-nib')
-      .attr('cx', radius + nibRadius) // Position at right edge of main circle
-      .attr('cy', 0) // Center vertically
+      .attr('cx', nibCx)
+      .attr('cy', nibCy)
       .attr('r', nibRadius)
       .attr('fill', normalFill)
       .attr('stroke', 'none')
       .style('pointer-events', 'all')
       .style('cursor', 'pointer')
-      .style('transition', 'all 0.2s ease-in-out');
+      .style('transition', 'r 0.2s ease-in-out, fill 0.2s ease-in-out, filter 0.2s ease-in-out');
 
     // Add hover effects
     nib
       .on('mouseenter', function (this: SVGElement) {
         d3.select(this)
-          .transition()
+          .interrupt() // Stop any ongoing transitions that might interfere
+          .transition('hover-enter')
           .duration(200)
           .attr('r', hoverRadius)
           .attr('fill', hoverFill)
@@ -177,7 +211,8 @@ export const applyNodeNibs = (
       })
       .on('mouseleave', function (this: SVGElement) {
         d3.select(this)
-          .transition()
+          .interrupt() // Stop any ongoing transitions that might interfere
+          .transition('hover-leave')
           .duration(200)
           .attr('r', nibRadius)
           .attr('fill', normalFill)

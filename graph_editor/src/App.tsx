@@ -291,6 +291,22 @@ function App() {
     // setGraphData(currentGraph.getData());
   };
 
+  const handleNodeAnchorToggle = (nodeLabel: string) => {
+    console.log('Toggling anchor state for node:', nodeLabel);
+    
+    const newAnchoredState = currentGraph.toggleNodeAnchored(nodeLabel);
+    
+    if (newAnchoredState !== null) {
+      console.log(`Node ${nodeLabel} anchored state:`, newAnchoredState);
+      // Update the graph data state to trigger re-render
+      setGraphData(currentGraph.getData());
+    } else {
+      console.error('Failed to toggle anchor state:', currentGraph.getError());
+      const errorMessage = currentGraph.getError() || 'Failed to toggle anchor state';
+      handleError(errorMessage);
+    }
+  };
+
   const handleGraphTypeChange = (type: GraphType) => {
     console.log('Graph type changed to:', type);
 
@@ -381,6 +397,7 @@ function App() {
                     onNodeDelete={handleNodeDelete}
                     onEdgeDelete={handleEdgeDelete}
                     onNodePositionUpdate={handleNodePositionUpdate}
+                    onNodeAnchorToggle={handleNodeAnchorToggle}
                     onError={handleError}
                     errorMessage={errorMessage}
                     mode={currentMode}

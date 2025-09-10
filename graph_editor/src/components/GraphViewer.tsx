@@ -32,6 +32,7 @@ interface GraphViewerProps {
   onNodePositionUpdate?: (
     positions: Array<{ label: string; x: number; y: number }>
   ) => void;
+  onNodeAnchorToggle?: (nodeLabel: string) => void;
   onError?: (message: string) => void;
   errorMessage?: string | null;
   mode?: 'edit' | 'delete' | 'view-force';
@@ -54,6 +55,7 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
   onNodeDelete,
   onEdgeDelete,
   onNodePositionUpdate,
+  onNodeAnchorToggle,
   onError,
   errorMessage,
   mode = 'edit',
@@ -254,7 +256,6 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
     const scaleX = newWidth / oldWidth;
     const scaleY = newHeight / oldHeight;
         
-    console.log("@@@@ Scaling with factors:", { scaleX, scaleY });
     
     // Scale all node positions and update the graphData
     const updatedPositions: Array<{ label: string; x: number; y: number }> = [];
@@ -285,7 +286,6 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
       }
     });
 
-    console.log("@@@@ updatedPositions", updatedPositions);
 
     // Update the parent component with new positions
     if (onNodePositionUpdate && updatedPositions.length > 0) {
@@ -314,7 +314,6 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
       return;
     }
 
-    console.log("@@@@ Resizing from", currentDimensions, "to", newDimensions);
 
     // Update previous dimensions before scaling
     d3InstanceRef.current.previousDimensions = { ...currentDimensions };
@@ -374,7 +373,8 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
           newWidth,
           newHeight,
           nodeRadius,
-          svgRef.current
+          svgRef.current,
+          isNodeAnchored
         )
       );
   };
@@ -383,14 +383,18 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
   const setupSVGEventHandlers = () => {
     const svg = d3.select(svgRef.current);
 
-    // Add mouse tracking for edge creation preview
+    // Add mouse tracking for edge creation preview and nib positioning
     svg.on('mousemove', (event: any) => {
-      if (d3InstanceRef.current?.edgeCreationSource) {
-        const rect = svg.node()?.getBoundingClientRect();
-        if (rect) {
-          const x = event.clientX - rect.left;
-          const y = event.clientY - rect.top;
+      const rect = svg.node()?.getBoundingClientRect();
+      if (rect) {
+        const x = event.clientX - rect.left;
+        const y = event.clientY - rect.top;
+        if (d3InstanceRef.current) {
           d3InstanceRef.current.mousePosition = { x, y };
+        }
+        
+        // Update preview line for edge creation
+        if (d3InstanceRef.current?.edgeCreationSource) {
           updatePreviewLine();
 
           // Update cursor based on whether we're over a valid target
@@ -408,6 +412,9 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
 
           svg.style('cursor', targetNode ? 'crosshair' : 'not-allowed');
         }
+        
+        // Update nib positions for selected nodes
+        updateNibPositions();
       }
     });
 
@@ -570,6 +577,50 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
     }
   };
 
+  // Update nib positions for selected nodes
+  const updateNibPositions = () => {
+    if (!d3InstanceRef.current) return;
+
+    const { container, mousePosition, selectedNodeId } = d3InstanceRef.current;
+    
+    if (!mousePosition || !selectedNodeId) return;
+
+    // Find the selected node
+    const selectedNode = container
+      .selectAll('.node')
+      .data()
+      .find((d: D3Node) => d.id === selectedNodeId);
+
+    if (!selectedNode || selectedNode.x === undefined || selectedNode.y === undefined) return;
+
+    // Calculate nib position based on mouse position relative to node center
+    const dx = mousePosition.x - selectedNode.x;
+    const dy = mousePosition.y - selectedNode.y;
+    
+    // Always calculate angle to ensure consistent circumference positioning
+    const angle = Math.atan2(dy, dx);
+    
+    // Position nib on circumference at the calculated angle
+    // The nib center is positioned at a fixed distance from node center
+    const nibRadius = 6;
+    const nibDistance = nodeRadius + nibRadius; // Fixed distance ensures circumference hugging
+    const nibCx = Math.cos(angle) * nibDistance;
+    const nibCy = Math.sin(angle) * nibDistance;
+
+    // Update the nib position for the selected node
+    // Only update position attributes (cx, cy) to preserve hover state (r, fill, filter)
+    const nibElement = container.select(`[data-node-label="${selectedNodeId}"] .node-nib`);
+    
+    if (!nibElement.empty()) {
+      nibElement
+        .transition('position-update')
+        .duration(20)
+        .ease(d3.easeLinear)
+        .attr('cx', nibCx)
+        .attr('cy', nibCy);
+    }
+  };
+
   // Helper function to handle node click logic
   const handleNodeClickLogic = (node: D3Node) => {
     // Check if this event should be processed based on mode
@@ -708,19 +759,32 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
     }
   };
 
+  // Helper function to check if a node is anchored
+  const isNodeAnchored = (nodeId: string): boolean => {
+    const graphNode = data.nodes.find(n => n.label === nodeId);
+    return graphNode?.anchored || false;
+  };
+
   // Function to fix or unfix all nodes in the simulation
   const fixAllNodes = (fix: boolean) => {
     if (d3InstanceRef.current?.simulation) {
       const nodes = d3InstanceRef.current.simulation.nodes() as D3Node[];
       nodes.forEach(node => {
+        // Find corresponding node in graph data to check if it's anchored
+        const graphNode = data.nodes.find(n => n.label === node.label);
+        const isAnchored = graphNode?.anchored || false;
+
         if (fix) {
           // Fix nodes in place by setting fx and fy to current position
           node.fx = node.x ?? 0;
           node.fy = node.y ?? 0;
         } else {
-          // Unfix nodes to allow free movement
-          node.fx = null;
-          node.fy = null;
+          // Only unfix nodes that are not anchored
+          if (!isAnchored) {
+            node.fx = null;
+            node.fy = null;
+          }
+          // Anchored nodes remain fixed even when unfixing others
         }
       });
     }
@@ -730,7 +794,6 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
   // Update D3 data and rendering
   const updateD3Data = () => {
     if (!d3InstanceRef.current) return;
-    // console.log("@@@@ updateD3Data");
 
     const { container, simulation, currentDimensions } = d3InstanceRef.current;
     const d3Data = convertToD3Data(data, currentDimensions);
@@ -1008,7 +1071,8 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
                 currentDimensions.width,
                 currentDimensions.height,
                 nodeRadius,
-                svgRef.current
+                svgRef.current,
+                isNodeAnchored
               )
             );
 
@@ -1027,8 +1091,10 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
             const isSelected = d3InstanceRef.current?.selectedNodeId === d.id;
             const isEditMode = mode === 'edit';
             const isSource = d3InstanceRef.current?.edgeCreationSource === d.id;
+            const originalNode = data.nodes.find(n => n.label === d.label);
+            const isAnchored = originalNode?.anchored || false;
 
-            applyNodeStyling(nodeSelection, isSelected, nodeRadius, isSource);
+            applyNodeStyling(nodeSelection, isSelected, nodeRadius, isSource, isAnchored);
             applyNodeNibs(
               nodeSelection,
               isEditMode && isSelected && !isSource,
@@ -1041,7 +1107,9 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
                 ) {
                   d3InstanceRef.current!.edgeCreationSource = node.label;
                 }
-              }
+              },
+              d3InstanceRef.current?.mousePosition,
+              { x: d.x || 0, y: d.y || 0 }
             );
           });
 
@@ -1058,6 +1126,12 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
                   handleNodeLabelEdit(originalNode);
                 }
               },
+              onNodeRightClick: node => {
+                // Right-click to toggle anchor state
+                if (onNodeAnchorToggle) {
+                  onNodeAnchorToggle(node.label);
+                }
+              },
               onNodeMouseEnter: () => {
                 // Mouse enter/leave styling removed to avoid conflicts with selection styling
               },
@@ -1069,6 +1143,7 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
             nodeSelection
               .on('click', eventHandlers.click)
               .on('dblclick', eventHandlers.dblclick)
+              .on('contextmenu', eventHandlers.contextmenu)
               .on('dragstart', eventHandlers.dragstart);
           });
 
@@ -1087,7 +1162,10 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
               .select('text')
               .text(d.label);
 
-            applyNodeStyling(nodeSelection, isSelected, nodeRadius, isSource);
+            const originalNode = data.nodes.find(n => n.label === d.label);
+            const isAnchored = originalNode?.anchored || false;
+
+            applyNodeStyling(nodeSelection, isSelected, nodeRadius, isSource, isAnchored);
             applyNodeNibs(
               nodeSelection,
               isEditMode && isSelected && !isSource,
@@ -1100,7 +1178,9 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
                 ) {
                   d3InstanceRef.current!.edgeCreationSource = node.label;
                 }
-              }
+              },
+              d3InstanceRef.current?.mousePosition,
+              { x: d.x || 0, y: d.y || 0 }
             );
 
             // Re-attach event handlers for existing nodes
@@ -1115,6 +1195,12 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
                   handleNodeLabelEdit(originalNode);
                 }
               },
+              onNodeRightClick: node => {
+                // Right-click to toggle anchor state
+                if (onNodeAnchorToggle) {
+                  onNodeAnchorToggle(node.label);
+                }
+              },
               onNodeMouseEnter: () => {
                 // Mouse enter/leave styling removed to avoid conflicts with selection styling
               },
@@ -1126,6 +1212,7 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
             nodeSelection
               .on('click', eventHandlers.click)
               .on('dblclick', eventHandlers.dblclick)
+              .on('contextmenu', eventHandlers.contextmenu)
               .on('dragstart', eventHandlers.dragstart);
           });
           return update;
@@ -1236,53 +1323,60 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
     let offsetY = dimensions.height/2;
 
     const d3Nodes: D3Node[] = graphData.nodes.map((node, index) => {
+      let d3Node: D3Node;
+
       // First priority: Use stored position from Graph model
       if (node.x !== undefined && node.y !== undefined) {
-        return {
+        d3Node = {
           id: node.label, // Use label as ID for D3
           label: node.label,
           x: node.x,
           y: node.y,
         };
       }
-
       // Second priority: Preserve existing position from simulation if available
-      const existingPos = existingNodeMap.get(node.label);
-      if (
-        existingPos &&
-        existingPos.x !== undefined &&
-        existingPos.y !== undefined
+      else if (
+        existingNodeMap.has(node.label) &&
+        existingNodeMap.get(node.label)!.x !== undefined &&
+        existingNodeMap.get(node.label)!.y !== undefined
       ) {
-        return {
+        const existingPos = existingNodeMap.get(node.label)!;
+        d3Node = {
           id: node.label, // Use label as ID for D3
           label: node.label,
           x: existingPos.x,
           y: existingPos.y,
         };
       }
-
       // Third priority: Check if this is the newest node and we have a position for it
-      const isNewestNode = index === graphData.nodes.length - 1;
-      if (isNewestNode && newNodePosition) {
-        return {
+      else if (index === graphData.nodes.length - 1 && newNodePosition) {
+        d3Node = {
           id: node.label, // Use label as ID for D3
           label: node.label,
           x: newNodePosition.x,
           y: newNodePosition.y,
         };
       }
-
       // Fallback: Generate new position for other new nodes
-      return {
-        id: node.label, // Use label as ID for D3
-        label: node.label,
-        x: offsetX + (index % 4) * dimensions.width / 4,
-        y: offsetY + Math.floor(index / 4) * dimensions.height / 4,
-      };
+      else {
+        d3Node = {
+          id: node.label, // Use label as ID for D3
+          label: node.label,
+          x: offsetX + (index % 4) * dimensions.width / 4,
+          y: offsetY + Math.floor(index / 4) * dimensions.height / 4,
+        };
+      }
+
+      // If node is anchored, set fx and fy to fix it in place
+      if (node.anchored) {
+        d3Node.fx = d3Node.x ?? 0;
+        d3Node.fy = d3Node.y ?? 0;
+      }
+
+      return d3Node;
     });
 
     // Log the d3 nodes position data.
-    console.log("@@@@ d3Nodes", d3Nodes);
 
     const d3Edges: D3Edge[] = graphData.edges.map((edge, index) => ({
       id: `edge_${index}`, // Generate a simple ID for D3 edges
@@ -1387,8 +1481,10 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
       const isSelected = d3InstanceRef.current?.selectedNodeId === d.id;
       const isEditMode = mode === 'edit';
       const isSource = d3InstanceRef.current?.edgeCreationSource === d.id;
+      const originalNode = data.nodes.find(n => n.label === d.label);
+      const isAnchored = originalNode?.anchored || false;
 
-      applyNodeStyling(nodeSelection, isSelected, nodeRadius, isSource);
+      applyNodeStyling(nodeSelection, isSelected, nodeRadius, isSource, isAnchored);
       applyNodeNibs(
         nodeSelection,
         isEditMode && isSelected && !isSource,
@@ -1398,7 +1494,9 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
           if (mode === 'edit' && !d3InstanceRef.current?.edgeCreationSource) {
             d3InstanceRef.current!.edgeCreationSource = node.label;
           }
-        }
+        },
+        d3InstanceRef.current?.mousePosition,
+        { x: d.x || 0, y: d.y || 0 }
       );
     });
 
@@ -1525,6 +1623,10 @@ const GraphViewer: React.FC<GraphViewerProps> = ({
           mode,
           'mode with fixed nodes'
         );
+      }
+
+      if (d3InstanceRef.current?.currentDimensions) {
+        updateNodeDragBehavior(d3InstanceRef.current.currentDimensions.width, d3InstanceRef.current.currentDimensions.height);
       }
       // Re-fix nodes after restart to maintain current mode behavior
       // fixAllNodes(mode !== 'view-force');
