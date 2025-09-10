@@ -389,7 +389,7 @@ function App() {
         <div className="w-full px-2 py-4">
           <div className="flex gap-4">
             {/* Text Panel - Fixed width */}
-            <div className="w-80 flex-shrink-0">
+            <div className="w-80 flex-shrink-0" style={{ maxHeight: 'calc(100vh - 120px)', overflow: 'hidden' }}>
               <TextPanel
                 data={graphData}
                 onDataChange={handleGraphDataChange}

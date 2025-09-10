@@ -1,4 +1,4 @@
-- text-area with line numbers and with scrollbar. Scrollbar not working.
+
 - line edge weights should be smart about placing to the left or right of the line.
 - Adjust the new node placement logic when creating new nodes form text-representation
 - View-force mode and node drag causes the nodes to get stuck in position. probably a stale react state issue.
